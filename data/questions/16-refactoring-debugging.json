@@ -1,9 +1,18 @@
 {
   "module": "refactoring-debugging",
-  "title": "Refactoring, Debugging & Think-Aloud",
-  "description": "Turing Stage 3 alternative format: refactor/debug a dirty 500-line codebase in 35 min. Also: Andela pair-programming narration + SOLID refactor. Each drill is open-rubric — pull the linked snippet locally, work aloud, then self-score.",
-  "platformCoverage": ["turing-coding", "andela-pair", "toptal-live", "fde-loop"],
-  "estimatedHours": 4,
+  "title": "Refactoring, Debugging, Code Review & Think-Aloud",
+  "description": "Turing Stage 3 alternative format: refactor/debug a dirty 500-line codebase in 35 min. Andela pair-programming narration + SOLID refactor. Now includes PR review drills (Andela's most common pair-round pattern). Each drill is open-rubric — pull the linked snippet locally, work aloud, then self-score.",
+  "tracks": ["turing", "andela"],
+  "testStages": ["turing-t3-live", "andela-a4-pair"],
+  "platformCoverage": ["turing-t3-live", "andela-a4-pair"],
+  "estimatedHours": 5,
+  "studyNotes": {
+    "12.1 Think-Aloud & Narration": ["Restate the problem", "State assumptions", "Sketch approach + BigO before coding", "Confirm plan with interviewer"],
+    "12.2 Refactor & SOLID": ["Single-Responsibility", "Extract seams", "Dependency injection", "Composition over inheritance", "Strangler-fig for legacy"],
+    "12.3 Debugging Playbook": ["Reproduce first", "Bisect the change window", "Isolate variables", "Fix root cause not symptom", "Add regression test"],
+    "12.4 Code Review Drills": ["Read for correctness → security → readability → tests", "Constructive framing", "Specific suggestions with code", "Ask 'why' before rejecting", "Approve with note vs request changes"],
+    "12.5 Prod Incident Response": ["Acknowledge + join channel", "Check recent deploys", "Rollback OR feature-flag first", "Communicate ETA to stakeholders", "Post-mortem after"]
+  },
   "questions": [
     {
       "id": "rd-001",
@@ -235,7 +244,169 @@
       ],
       "modelAnswer": "Time: O(n²) — sort is O(n log n), then for each of n elements a two-pointer inner scan is O(n). Space: O(1) extra, ignoring the output. Edge cases: empty and length<3 return []; all zeros should return one triplet; duplicates require skipping same values at i, l, and r positions after finding a triplet; all negatives (or all positives) means we can early-terminate. If I had more time I'd add early termination when nums[i] > 0. One thing to watch: sort is destructive in JS if we don't want side effects — should confirm with the interviewer whether input can be mutated.",
       "tags": ["complexity", "code-defense"],
-      "sourcePlatforms": ["turing-coding", "toptal-live", "fde-loop"]
+      "sourcePlatforms": ["turing-t3-live", "andela-a4-pair"],
+      "subtopic": "12.1 Think-Aloud & Narration"
+    },
+    {
+      "id": "rd-013",
+      "type": "open-rubric",
+      "difficulty": "medium",
+      "subtopic": "12.4 Code Review Drills",
+      "niche": "silent-error PR",
+      "topic": "code-review",
+      "timeBudgetSec": 900,
+      "tracks": ["turing", "andela"],
+      "prompt": "Review this PR. A colleague submits: `async function saveUser(u) { try { await db.insert(u); } catch (e) { console.log(e); } }`. Give the review.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Names the silent swallow — errors get logged but the caller thinks it succeeded", "weight": 3},
+        {"criterion": "Suggests rethrow or return a Result/Error type", "weight": 3},
+        {"criterion": "console.log in prod path is wrong — use structured logger with level", "weight": 2},
+        {"criterion": "No input validation of `u`", "weight": 2},
+        {"criterion": "Constructive tone — 'suggest' not 'this is broken'", "weight": 2}
+      ],
+      "modelAnswer": "Two concrete asks: (1) swallowing the DB error means the caller can't recover — I'd rethrow after logging or return a discriminated Result. (2) `console.log` won't ship structured logs to our aggregator — use `logger.error({ userId: u.id, err }, 'saveUser failed')`. Also worth adding a zod schema on `u` at the boundary. Happy to pair on it if useful.",
+      "sourcePlatforms": ["turing-t3-live", "andela-a4-pair"],
+      "tags": ["code-review", "error-handling"]
+    },
+    {
+      "id": "rd-014",
+      "type": "open-rubric",
+      "difficulty": "medium",
+      "subtopic": "12.4 Code Review Drills",
+      "niche": "n+1 query PR",
+      "topic": "code-review",
+      "timeBudgetSec": 900,
+      "tracks": ["turing", "andela"],
+      "prompt": "PR adds `users.forEach(u => u.posts = await Post.find({ userId: u.id }))` inside a request handler serving 100 users at a time. Review.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Names the N+1 query pattern", "weight": 3},
+        {"criterion": "Notes that `forEach` doesn't await — this is a race/wrong pattern too", "weight": 3},
+        {"criterion": "Suggests: single query with WHERE userId IN (…) + group in memory, or ORM eager-load / include", "weight": 3},
+        {"criterion": "Considers pagination — 100 users may not stay 100", "weight": 2},
+        {"criterion": "Suggests DB index on Post.userId if missing", "weight": 1}
+      ],
+      "modelAnswer": "Two bugs stacked: (1) `forEach` doesn't await promises, so `u.posts` gets a pending Promise assigned and the handler races. (2) even if fixed with `for…of + await`, that's an N+1 — 1 query for users + 100 queries for posts. Better: `Post.find({ userId: { $in: users.map(u => u.id) } })` then group by userId in JS, or use the ORM's `include: [Post]`. Also worth checking the index on `Post.userId`.",
+      "sourcePlatforms": ["turing-t3-live", "andela-a4-pair"],
+      "tags": ["code-review", "n+1"]
+    },
+    {
+      "id": "rd-015",
+      "type": "open-rubric",
+      "difficulty": "medium",
+      "subtopic": "12.4 Code Review Drills",
+      "niche": "security PR",
+      "topic": "code-review",
+      "timeBudgetSec": 900,
+      "tracks": ["turing", "andela"],
+      "prompt": "PR adds `app.get('/user/:id', (req, res) => db.query(`SELECT * FROM users WHERE id = ${req.params.id}`))`. Review.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Names SQL injection risk (raw interpolation)", "weight": 3},
+        {"criterion": "Suggests parameterized query: `db.query('SELECT * FROM users WHERE id = $1', [req.params.id])`", "weight": 3},
+        {"criterion": "Notes SELECT * exposes all columns including password_hash — pick columns explicitly", "weight": 3},
+        {"criterion": "Missing authz check — should the requester see this user?", "weight": 3},
+        {"criterion": "No error handling / 404 for missing", "weight": 2}
+      ],
+      "modelAnswer": "Blockers: (1) SQL injection — must be parameterized; interpolation is CVE-territory. (2) `SELECT *` leaks columns like password_hash or PII — enumerate needed fields. (3) No authz — currently any logged-in user can pull any user's row; add ownership or role check. (4) No 404 handling. Suggested rewrite in the comment.",
+      "sourcePlatforms": ["turing-t3-live", "andela-a4-pair"],
+      "tags": ["code-review", "security"]
+    },
+    {
+      "id": "rd-016",
+      "type": "open-rubric",
+      "difficulty": "medium",
+      "subtopic": "12.4 Code Review Drills",
+      "niche": "test PR",
+      "topic": "code-review",
+      "timeBudgetSec": 900,
+      "tracks": ["andela"],
+      "prompt": "PR adds a new function but the only test is `expect(add(2, 2)).toBe(4)`. Review.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Notes single happy-path test is insufficient", "weight": 3},
+        {"criterion": "Asks for edge cases: negative, zero, floats, large numbers, non-numeric input", "weight": 3},
+        {"criterion": "Asks about behavior on invalid input — throw? return NaN? Document", "weight": 2},
+        {"criterion": "Suggests table-driven test / parameterized cases for readability", "weight": 2},
+        {"criterion": "Coverage note — measure branches not just lines", "weight": 1}
+      ],
+      "modelAnswer": "One happy-path assertion isn't enough — I'd want: (a) at least one negative-input case, (b) zero, (c) float precision (0.1 + 0.2), (d) very large numbers approaching Number.MAX_SAFE_INTEGER, (e) explicit case for what happens on non-numeric input (thrown TypeError? NaN? make it a documented contract with a test). Table-driven format keeps this readable. Andela weights test writing heavily on pair rounds.",
+      "sourcePlatforms": ["andela-a4-pair"],
+      "tags": ["code-review", "testing"]
+    },
+    {
+      "id": "rd-017",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "subtopic": "12.4 Code Review Drills",
+      "niche": "big PR",
+      "topic": "code-review",
+      "timeBudgetSec": 1500,
+      "tracks": ["turing", "andela"],
+      "prompt": "A colleague submits a 2000-line PR touching auth, database schema, and 3 unrelated bug fixes. How do you respond?",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Doesn't just approve or dump 40 comments — asks to split the PR first", "weight": 3},
+        {"criterion": "Names why: single-concern PRs are safer to revert, easier to review, easier to bisect regressions", "weight": 3},
+        {"criterion": "Offers concrete split: (a) schema migration, (b) auth change, (c) each bug fix separately", "weight": 3},
+        {"criterion": "Frames as help, not gatekeeping — 'happy to review each in <30 min'", "weight": 2},
+        {"criterion": "Escalates only if the pattern repeats after conversation", "weight": 1}
+      ],
+      "modelAnswer": "First comment: 'This is a lot to review in one go — can we split into (a) schema migration + backfill, (b) the auth change, (c) each of the three bug fixes? Each of those has different rollback profiles, and if one needs to revert we don't lose the others. Happy to review each in under 30 min if we split it.' Don't approve, don't leave nitpicks yet — get the split first.",
+      "sourcePlatforms": ["turing-t3-live", "andela-a4-pair"],
+      "tags": ["code-review", "process"]
+    },
+    {
+      "id": "rd-018",
+      "type": "open-rubric",
+      "difficulty": "medium",
+      "subtopic": "12.4 Code Review Drills",
+      "niche": "receiving review",
+      "topic": "code-review",
+      "timeBudgetSec": 600,
+      "tracks": ["turing", "andela"],
+      "prompt": "Reviewer left 15 comments on your PR, several are opinion-based ('I'd prefer this style'). How do you respond?",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Doesn't get defensive — treats review as help", "weight": 2},
+        {"criterion": "Separates correctness/security fixes (accept) from style/opinion (discuss)", "weight": 3},
+        {"criterion": "Asks 'why' on opinion items to learn or push back respectfully", "weight": 3},
+        {"criterion": "For pure style, offers to add a linter rule to remove the class of debate", "weight": 2},
+        {"criterion": "Merges what's clearly right + closes what's discussed with reasoning", "weight": 2}
+      ],
+      "modelAnswer": "Triage: (1) correctness/security → fix immediately, thank reviewer. (2) 'I'd prefer X' → reply 'what's the concern behind it?' — either learn something or explain my rationale for the current choice. (3) if it's genuinely just style, propose adding to lint config so the debate resolves once. Never merge silent — every comment gets an ack or a fix.",
+      "sourcePlatforms": ["turing-t3-live", "andela-a4-pair"],
+      "tags": ["code-review", "communication"]
+    },
+    {
+      "id": "rd-019",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "subtopic": "12.4 Code Review Drills",
+      "niche": "AI-generated PR",
+      "topic": "code-review",
+      "timeBudgetSec": 900,
+      "tracks": ["turing", "andela"],
+      "prompt": "Colleague submits a PR clearly generated by an AI assistant — works on happy path but adds try/catch swallowing everything, has invented API calls that don't exist, and duplicates a util you already have. Review.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Doesn't shame the tool — focuses on the code that shipped", "weight": 2},
+        {"criterion": "Flags invented API calls (hallucinations) explicitly", "weight": 3},
+        {"criterion": "Flags the swallowed try/catch", "weight": 2},
+        {"criterion": "Points to the existing util that's being duplicated", "weight": 3},
+        {"criterion": "Suggests: run it against real integration tests + grep for duplicates before opening", "weight": 3}
+      ],
+      "modelAnswer": "Two must-fixes: (1) `client.batchAsync()` on line 42 isn't a real method on our client — where did this come from? (2) the try/catch on line 60 swallows all errors including auth failures; needs to at least log and rethrow. Also: `lib/format.formatDate` already does exactly what your `dateFmt` function does — please use the existing one. For AI-assisted PRs, worth running against integration tests + a `git grep` for helpers before opening.",
+      "sourcePlatforms": ["turing-t3-live", "andela-a4-pair"],
+      "tags": ["code-review", "ai"]
     }
   ]
 }

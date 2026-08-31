@@ -1,0 +1,165 @@
+// Full 29-stage syllabus mapped from user's plan.
+// `moduleId` links to a real module in data/questions/*.json when built.
+// `targetQs` is the aspirational full-coverage count; used to compute progress %.
+
+export type SyllabusStatus = "built" | "partial" | "planned";
+
+export type SyllabusEntry = {
+  num: number;
+  id: string;
+  title: string;
+  blurb: string;
+  targetQs: number;
+  status: SyllabusStatus;
+  moduleId: string | null;
+  extraModuleIds?: string[]; // legacy modules that also contribute Qs
+  tracks: ("turing" | "andela")[];
+  testStages: string[];
+};
+
+export const SYLLABUS: SyllabusEntry[] = [
+  { num: 0, id: "programming-fundamentals", title: "Programming Fundamentals",
+    blurb: "Variables, memory, closures, complexity, types, recursion, OOP, logic puzzles.",
+    targetQs: 90, status: "built", moduleId: "programming-fundamentals",
+    tracks: ["turing", "andela"], testStages: ["turing-t1-mcq", "andela-a1-hackerrank", "andela-a3-screen"] },
+
+  { num: 1, id: "dsa", title: "Data Structures & Algorithms",
+    blurb: "Arrays, hash, strings, two-pointer, sliding window, trees, graphs, DP, greedy, heap, bits, binary search.",
+    targetQs: 220, status: "built", moduleId: "dsa",
+    tracks: ["turing", "andela"], testStages: ["turing-t2-oa", "turing-t3-live", "andela-a1-hackerrank", "andela-a2-qualified"] },
+
+  { num: 2, id: "python", title: "Python",
+    blurb: "Basics, data structures, OOP, async, decorators, GIL, testing idioms.",
+    targetQs: 70, status: "planned", moduleId: null,
+    tracks: ["turing", "andela"], testStages: ["turing-t1-mcq", "andela-a1-hackerrank"] },
+
+  { num: 3, id: "javascript-typescript", title: "JavaScript / TypeScript",
+    blurb: "Closures, event loop, this, async/await, TS generics, utility types, discriminated unions.",
+    targetQs: 100, status: "built", moduleId: "javascript-fundamentals", extraModuleIds: ["typescript"],
+    tracks: ["turing", "andela"], testStages: ["turing-t1-mcq", "turing-t3-live", "andela-a4-pair"] },
+
+  { num: 4, id: "backend-engineering", title: "Backend Engineering",
+    blurb: "Server internals, routing, middleware, auth, streams, error handling.",
+    targetQs: 60, status: "partial", moduleId: "nodejs",
+    tracks: ["turing", "andela"], testStages: ["turing-t1-mcq", "turing-t3-live", "andela-a3-screen", "andela-a4-pair"] },
+
+  { num: 5, id: "apis-comm", title: "APIs & Distributed Communication",
+    blurb: "REST, GraphQL, gRPC, WebSocket, SSE, versioning.",
+    targetQs: 60, status: "partial", moduleId: "web-protocols-security",
+    tracks: ["turing", "andela"], testStages: ["turing-t1-mcq", "turing-t4-fde"] },
+
+  { num: 6, id: "databases", title: "Databases",
+    blurb: "SQL joins/windows/CTE, indexes, isolation, execution plans, NoSQL basics.",
+    targetQs: 60, status: "built", moduleId: "sql",
+    tracks: ["turing", "andela"], testStages: ["turing-t1-mcq", "turing-t4-fde", "andela-a3-screen"] },
+
+  { num: 7, id: "redis-caching", title: "Redis & Caching",
+    blurb: "Data types, patterns, pub/sub, cluster, invalidation, cache-aside vs write-through.",
+    targetQs: 50, status: "planned", moduleId: null,
+    tracks: ["turing"], testStages: ["turing-t4-fde"] },
+
+  { num: 8, id: "async-queues", title: "Async / Concurrency / Queues",
+    blurb: "Event loop, promises, workers, Kafka, RabbitMQ, SQS, backpressure.",
+    targetQs: 60, status: "partial", moduleId: "distributed-systems",
+    tracks: ["turing", "andela"], testStages: ["turing-t1-mcq", "turing-t4-fde"] },
+
+  { num: 9, id: "system-design", title: "System Design",
+    blurb: "Rate limiting, webhooks, multi-tenancy, sharding, real production prompts.",
+    targetQs: 40, status: "built", moduleId: "system-design",
+    tracks: ["turing"], testStages: ["turing-t4-fde"] },
+
+  { num: 10, id: "cloud", title: "Cloud & Deployment",
+    blurb: "AWS core (EC2/S3/RDS/IAM/VPC/ALB), secrets, CDN, GCP/Azure basics.",
+    targetQs: 50, status: "planned", moduleId: null,
+    tracks: ["turing"], testStages: ["turing-t4-fde"] },
+
+  { num: 11, id: "docker-k8s", title: "Docker / Kubernetes",
+    blurb: "Docker basics, multi-stage, K8s pods/services/deployments/HPA/probes.",
+    targetQs: 30, status: "planned", moduleId: null,
+    tracks: ["turing"], testStages: ["turing-t4-fde"] },
+
+  { num: 12, id: "software-engineering", title: "Software Engineering",
+    blurb: "SOLID, patterns, semver, ADRs, code review, Git flow, PR review drills.",
+    targetQs: 40, status: "partial", moduleId: "refactoring-debugging",
+    tracks: ["turing", "andela"], testStages: ["turing-t3-live", "andela-a4-pair"] },
+
+  { num: 13, id: "testing-debugging", title: "Testing / Debugging",
+    blurb: "Unit/integration/e2e/mocks/coverage/flaky-test playbook.",
+    targetQs: 50, status: "partial", moduleId: "refactoring-debugging",
+    tracks: ["turing", "andela"], testStages: ["turing-t3-live", "andela-a4-pair"] },
+
+  { num: 14, id: "security", title: "Security",
+    blurb: "CSRF/XSS/SSRF, JWT, OAuth, SAML, CSP, TLS, secrets, supply chain.",
+    targetQs: 60, status: "built", moduleId: "web-protocols-security",
+    tracks: ["turing", "andela"], testStages: ["turing-t1-mcq"] },
+
+  { num: 15, id: "llm-fundamentals", title: "AI / LLM Fundamentals",
+    blurb: "Tokens, sampling, context, models, cost, latency, streaming.",
+    targetQs: 60, status: "partial", moduleId: "ai-llm",
+    tracks: ["turing"], testStages: ["turing-t4-fde"] },
+
+  { num: 16, id: "embeddings-vector", title: "Embeddings / Vector Search",
+    blurb: "Embed models, similarity, HNSW/IVF, pgvector, Pinecone, Qdrant.",
+    targetQs: 40, status: "partial", moduleId: "ai-llm",
+    tracks: ["turing"], testStages: ["turing-t4-fde"] },
+
+  { num: 17, id: "rag", title: "RAG",
+    blurb: "Chunking, retrieval, reranking, hybrid, HyDE, CRAG, Self-RAG, GraphRAG.",
+    targetQs: 60, status: "partial", moduleId: "ai-llm",
+    tracks: ["turing"], testStages: ["turing-t4-fde"] },
+
+  { num: 18, id: "llm-arch", title: "LLM Application Architecture",
+    blurb: "System prompts, guardrails, structured output, tracing, cost tracking.",
+    targetQs: 40, status: "planned", moduleId: null,
+    tracks: ["turing"], testStages: ["turing-t4-fde"] },
+
+  { num: 19, id: "agents-tools", title: "Agents / Tool Calling",
+    blurb: "ReAct, LangGraph, tools/schemas, HITL, checkpoints, function-calling.",
+    targetQs: 40, status: "partial", moduleId: "ai-llm",
+    tracks: ["turing"], testStages: ["turing-t4-fde"] },
+
+  { num: 20, id: "ai-eval", title: "AI Evaluation",
+    blurb: "RAGAS, LLM-as-judge, golden sets, drift, red teaming.",
+    targetQs: 30, status: "partial", moduleId: "ai-llm",
+    tracks: ["turing"], testStages: ["turing-t4-fde"] },
+
+  { num: 21, id: "ai-security", title: "AI Security",
+    blurb: "Prompt injection (direct/indirect), data leak, PII, tool abuse, sandboxing.",
+    targetQs: 30, status: "partial", moduleId: "ai-llm",
+    tracks: ["turing"], testStages: ["turing-t4-fde"] },
+
+  { num: 22, id: "ai-production", title: "AI Production / Optimization",
+    blurb: "Latency, streaming, batching, caching, quantization, vLLM / TGI.",
+    targetQs: 40, status: "partial", moduleId: "ai-llm",
+    tracks: ["turing"], testStages: ["turing-t4-fde"] },
+
+  { num: 23, id: "enterprise-integrations", title: "Enterprise Integrations",
+    blurb: "Webhooks, SSO/SAML, SCIM, OAuth bridging, CRM/ERP adapters, legacy.",
+    targetQs: 40, status: "partial", moduleId: "system-design",
+    tracks: ["turing"], testStages: ["turing-t4-fde"] },
+
+  { num: 24, id: "fde-customer-eng", title: "FDE / Customer Engineering",
+    blurb: "Decomposition (5-step framework), client sim (posture drills).",
+    targetQs: 40, status: "partial", moduleId: "fde-decomposition", extraModuleIds: ["fde-client-sim"],
+    tracks: ["turing"], testStages: ["turing-t4-fde"] },
+
+  { num: 25, id: "behavioral", title: "Behavioral / Communication",
+    blurb: "STAR stories across 8 core slots + comms drills + EPIC values.",
+    targetQs: 40, status: "partial", moduleId: "behavioral",
+    tracks: ["turing", "andela"], testStages: ["turing-t1-hm", "andela-a5-epic"] },
+
+  { num: 26, id: "project-deep-dive", title: "Project Deep Dive",
+    blurb: "Résumé drilling, 'I not we' audit, project story templates.",
+    targetQs: 20, status: "planned", moduleId: null,
+    tracks: ["turing", "andela"], testStages: ["turing-t1-hm", "andela-a3-screen"] },
+
+  { num: 27, id: "live-coding-take-home", title: "Live Coding / Take-Home",
+    blurb: "Timed drills, take-home rubrics, code defense.",
+    targetQs: 30, status: "partial", moduleId: "refactoring-debugging",
+    tracks: ["turing", "andela"], testStages: ["turing-t3-live", "andela-a4-pair"] },
+
+  { num: 28, id: "architecture-cases", title: "Architecture Case Studies",
+    blurb: "Multi-hour end-to-end scenarios with graded steps.",
+    targetQs: 20, status: "partial", moduleId: "system-design",
+    tracks: ["turing"], testStages: ["turing-t4-fde"] },
+];
