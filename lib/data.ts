@@ -15,10 +15,11 @@ import m13 from "@/data/questions/13-behavioral.json";
 import m14 from "@/data/questions/14-web-protocols-security.json";
 import m15 from "@/data/questions/15-distributed-systems.json";
 import m16 from "@/data/questions/16-refactoring-debugging.json";
+import m00 from "@/data/questions/00-programming-fundamentals.json";
 import type { Manifest, Module } from "./types";
 
 const MODULES: Record<string, Module> = Object.fromEntries(
-  [m01, m02, m03, m04, m05, m06, m07, m08, m09, m10, m11, m12, m13, m14, m15, m16].map(
+  [m00, m01, m02, m03, m04, m05, m06, m07, m08, m09, m10, m11, m12, m13, m14, m15, m16].map(
     (m) => [m.module, m as unknown as Module]
   )
 );

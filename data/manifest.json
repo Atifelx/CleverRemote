@@ -24,6 +24,7 @@
     }
   ],
   "modules": [
+    { "id": "programming-fundamentals", "file": "questions/00-programming-fundamentals.json", "priority": 1, "estimatedHours": 4 },
     { "id": "javascript-fundamentals", "file": "questions/01-javascript.json", "priority": 1, "estimatedHours": 8 },
     { "id": "typescript", "file": "questions/02-typescript.json", "priority": 2, "estimatedHours": 4 },
     { "id": "react", "file": "questions/03-react.json", "priority": 1, "estimatedHours": 6 },
