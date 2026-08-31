@@ -16,6 +16,10 @@ export type Question = {
   type: QuestionType;
   difficulty: Difficulty;
   topic: string;
+  subtopic?: string;
+  niche?: string;
+  timeBudgetSec?: number;
+  tracks?: string[];
   prompt: string;
   code?: string;
   options?: Option[];
@@ -31,8 +35,11 @@ export type Module = {
   module: string;
   title: string;
   description: string;
-  platformCoverage: string[];
+  platformCoverage?: string[];
+  tracks?: string[];
+  testStages?: string[];
   estimatedHours: number;
+  studyNotes?: Record<string, string[]>;
   questions: Question[];
 };
 
@@ -68,3 +75,5 @@ export type AppProgress = {
   lastQuestionId?: string;
   questions: Record<string, QuestionProgress>;
 };
+
+export type Track = "turing" | "andela" | "all";

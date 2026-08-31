@@ -2,21 +2,106 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Light-first, LeetCode-inspired: clean, sparse, high-contrast difficulty */
 :root {
-  --bg: 12 12 16;
-  --panel: 20 22 28;
-  --border: 40 45 55;
-  --muted: 130 138 155;
-  --fg: 235 238 245;
-  --accent: 99 179 237;
-  --ok: 72 187 120;
-  --warn: 237 137 54;
-  --err: 245 101 101;
+  --bg: 253 252 250;
+  --panel: 255 255 255;
+  --panel-2: 249 248 245;
+  --border: 232 230 224;
+  --border-strong: 210 205 195;
+  --muted: 115 110 100;
+  --fg: 24 22 18;
+  --fg-soft: 60 55 48;
+  --accent: 44 187 93;         /* leetcode green */
+  --accent-soft: 210 240 220;
+  --easy: 44 187 93;
+  --medium: 220 150 20;
+  --hard: 220 60 60;
+  --brand: 24 22 18;
+}
+:root { color-scheme: light; }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: 14 15 18;
+    --panel: 22 24 28;
+    --panel-2: 28 31 36;
+    --border: 40 44 52;
+    --border-strong: 60 66 76;
+    --muted: 140 148 162;
+    --fg: 236 238 242;
+    --fg-soft: 200 205 214;
+    --accent: 82 210 130;
+    --accent-soft: 22 60 40;
+    --easy: 82 210 130;
+    --medium: 240 175 60;
+    --hard: 245 100 100;
+    --brand: 236 238 242;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: 14 15 18;
+  --panel: 22 24 28;
+  --panel-2: 28 31 36;
+  --border: 40 44 52;
+  --border-strong: 60 66 76;
+  --muted: 140 148 162;
+  --fg: 236 238 242;
+  --fg-soft: 200 205 214;
+  --accent: 82 210 130;
+  --accent-soft: 22 60 40;
+  --easy: 82 210 130;
+  --medium: 240 175 60;
+  --hard: 245 100 100;
+  --brand: 236 238 242;
+  color-scheme: dark;
 }
 
-html, body { background: rgb(var(--bg)); color: rgb(var(--fg)); }
+* { box-sizing: border-box; }
+html, body {
+  background: rgb(var(--bg));
+  color: rgb(var(--fg));
+  font-family: -apple-system, "Inter", BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-feature-settings: "cv02", "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+  font-size: 14px;
+  line-height: 1.5;
+}
 
-pre, code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace; }
-pre { background: rgb(var(--panel)); padding: 12px; border-radius: 8px; overflow-x: auto; }
-code { background: rgb(var(--panel)); padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
-pre code { background: transparent; padding: 0; }
+pre, code, kbd, .mono {
+  font-family: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, Monaco, monospace;
+  font-feature-settings: normal;
+}
+pre {
+  background: rgb(var(--panel-2));
+  padding: 14px 16px;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-size: 13px;
+  line-height: 1.6;
+  border: 1px solid rgb(var(--border));
+}
+:not(pre) > code {
+  background: rgb(var(--panel-2));
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  border: 1px solid rgb(var(--border));
+}
+pre code { background: transparent; padding: 0; border: 0; }
+
+/* difficulty pills */
+.diff-easy   { color: rgb(var(--easy));   background: color-mix(in oklab, rgb(var(--easy))   14%, transparent); }
+.diff-medium { color: rgb(var(--medium)); background: color-mix(in oklab, rgb(var(--medium)) 14%, transparent); }
+.diff-hard   { color: rgb(var(--hard));   background: color-mix(in oklab, rgb(var(--hard))   14%, transparent); }
+
+.hide-scroll::-webkit-scrollbar { display: none; }
+.hide-scroll { scrollbar-width: none; }
+
+/* focus */
+:focus-visible {
+  outline: 2px solid rgb(var(--accent));
+  outline-offset: 2px;
+  border-radius: 4px;
+}

@@ -6,13 +6,11 @@ import { loadProgress } from "@/lib/storage";
 
 export function ResumeButton() {
   const [href, setHref] = useState<string | null>(null);
-  const [label, setLabel] = useState<string>("");
 
   useEffect(() => {
     const p = loadProgress();
     if (p.lastModuleId && p.lastQuestionId) {
       setHref(`/module/${p.lastModuleId}/question/${p.lastQuestionId}`);
-      setLabel(`Resume: ${p.lastModuleId} · ${p.lastQuestionId}`);
     }
   }, []);
 
@@ -20,9 +18,9 @@ export function ResumeButton() {
   return (
     <Link
       href={href}
-      className="inline-flex items-center gap-2 rounded-md bg-accent/20 border border-accent/40 px-4 py-2 text-accent hover:bg-accent/30 transition"
+      className="inline-flex items-center gap-2 h-9 px-4 rounded-md bg-[rgb(var(--accent))] text-white text-[13px] font-medium hover:opacity-90 transition"
     >
-      ↻ {label}
+      ↻ Resume last
     </Link>
   );
 }

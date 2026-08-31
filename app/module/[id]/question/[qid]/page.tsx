@@ -27,22 +27,13 @@ export default async function QuestionPage({
   const next = index < mod.questions.length - 1 ? mod.questions[index + 1] : null;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between text-sm">
-        <Link href={`/module/${mod.module}`} className="text-muted hover:text-fg">
-          ← {mod.title}
-        </Link>
-        <span className="text-muted">
-          {index + 1} / {mod.questions.length}
-        </span>
-      </div>
-
-      <QuestionRunner
-        moduleId={mod.module}
-        question={question}
-        prevHref={prev ? `/module/${mod.module}/question/${prev.id}` : null}
-        nextHref={next ? `/module/${mod.module}/question/${next.id}` : null}
-      />
-    </div>
+    <QuestionRunner
+      moduleId={mod.module}
+      moduleTitle={mod.title}
+      question={question}
+      prevHref={prev ? `/module/${mod.module}/question/${prev.id}` : null}
+      nextHref={next ? `/module/${mod.module}/question/${next.id}` : null}
+      positionLabel={`${index + 1} / ${mod.questions.length}`}
+    />
   );
 }
