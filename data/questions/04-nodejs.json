@@ -1,0 +1,833 @@
+{
+  "module": "nodejs",
+  "title": "Node.js (Event Loop, Streams, HTTP, Auth)",
+  "description": "Event loop phases, streams + backpressure, HTTP servers, middleware, auth, testing. Turing MCQ + FDE coding + Andela pair.",
+  "platformCoverage": ["turing-mcq", "turing-coding", "andela-hr", "andela-pair", "fde-loop"],
+  "estimatedHours": 5,
+  "questions": [
+    {
+      "id": "no-001",
+      "type": "mcq-single",
+      "difficulty": "easy",
+      "topic": "event-loop",
+      "prompt": "Which is a phase of the Node.js event loop?",
+      "options": [
+        {"id": "a", "text": "microtasks"},
+        {"id": "b", "text": "timers"},
+        {"id": "c", "text": "compile"},
+        {"id": "d", "text": "gc"}
+      ],
+      "correct": ["b"],
+      "explanation": "Phases: timers, pending callbacks, idle/prepare, poll, check, close callbacks. Microtasks/nextTick run between phases.",
+      "tags": ["event-loop"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "no-002",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "event-loop",
+      "prompt": "`process.nextTick` runs:",
+      "options": [
+        {"id": "a", "text": "In the next timer phase"},
+        {"id": "b", "text": "Before any other I/O or timer, after the current operation completes"},
+        {"id": "c", "text": "After microtasks"},
+        {"id": "d", "text": "On a separate thread"}
+      ],
+      "correct": ["b"],
+      "explanation": "nextTick queue drains BEFORE microtasks and any other queue in each cycle. Overuse can starve I/O.",
+      "tags": ["event-loop", "nextTick"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "no-003",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "streams",
+      "prompt": "What is backpressure in Node streams?",
+      "options": [
+        {"id": "a", "text": "A restart mechanism"},
+        {"id": "b", "text": "Signal from a slow consumer telling a producer to pause"},
+        {"id": "c", "text": "A retry queue"},
+        {"id": "d", "text": "SSL renegotiation"}
+      ],
+      "correct": ["b"],
+      "explanation": "`write()` returns false when internal buffer is full; wait for `drain` before writing again. `pipe()` handles this for you.",
+      "tags": ["streams", "backpressure"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "no-004",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "streams",
+      "prompt": "Which is the SAFEST way to copy a large file?",
+      "options": [
+        {"id": "a", "text": "fs.readFile then fs.writeFile"},
+        {"id": "b", "text": "fs.createReadStream(src).pipe(fs.createWriteStream(dest))"},
+        {"id": "c", "text": "Loop with sync read/write"},
+        {"id": "d", "text": "spawn cp"}
+      ],
+      "correct": ["b"],
+      "explanation": "pipe() handles backpressure automatically. readFile buffers the entire file into memory — dies on large files.",
+      "tags": ["streams", "fs"],
+      "sourcePlatforms": ["turing-mcq", "andela-pair"]
+    },
+    {
+      "id": "no-005",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "modules",
+      "prompt": "Node ESM vs CommonJS: which is TRUE?",
+      "options": [
+        {"id": "a", "text": "Both use `require()` interchangeably"},
+        {"id": "b", "text": "ESM imports are static and can be tree-shaken; CJS is dynamic"},
+        {"id": "c", "text": "ESM requires a .cjs extension"},
+        {"id": "d", "text": "CJS supports top-level await"}
+      ],
+      "correct": ["b"],
+      "explanation": "ESM is analyzable statically. CJS resolves at runtime. Interop rules apply (default vs named).",
+      "tags": ["modules"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "no-006",
+      "type": "code-output",
+      "difficulty": "hard",
+      "topic": "event-loop",
+      "prompt": "What order?",
+      "code": "console.log('1');\nsetImmediate(() => console.log('2'));\nprocess.nextTick(() => console.log('3'));\nPromise.resolve().then(() => console.log('4'));\nsetTimeout(() => console.log('5'), 0);\nconsole.log('6');",
+      "options": [
+        {"id": "a", "text": "1 6 3 4 5 2"},
+        {"id": "b", "text": "1 6 3 4 2 5"},
+        {"id": "c", "text": "1 6 5 2 3 4"},
+        {"id": "d", "text": "1 6 2 5 3 4"}
+      ],
+      "correct": ["a"],
+      "explanation": "Sync first (1,6). nextTick queue (3). Microtasks (4). Then macrotasks: timer (5), then check phase (2). setTimeout(0) fires before setImmediate when scheduled from main module (this is unstable, but typical).",
+      "tags": ["event-loop"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "no-007",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "http",
+      "prompt": "In an Express handler, why is this dangerous?",
+      "code": "app.get('/', async (req, res) => {\n  const data = await db.query();\n  res.json(data);\n});",
+      "options": [
+        {"id": "a", "text": "Nothing — it's fine"},
+        {"id": "b", "text": "Rejections in the async function don't propagate to Express's error middleware unless wrapped"},
+        {"id": "c", "text": "res.json is deprecated"},
+        {"id": "d", "text": "await is not allowed in Express"}
+      ],
+      "correct": ["b"],
+      "explanation": "Express 4 doesn't handle async errors. Wrap with a helper or use Express 5 / Fastify.",
+      "tags": ["http", "express", "error-handling"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "no-008",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "http",
+      "prompt": "Which status code is correct for a successful POST that created a resource?",
+      "options": [
+        {"id": "a", "text": "200"},
+        {"id": "b", "text": "201"},
+        {"id": "c", "text": "202"},
+        {"id": "d", "text": "204"}
+      ],
+      "correct": ["b"],
+      "explanation": "201 Created. 202 = Accepted (async). 204 = No Content.",
+      "tags": ["http", "status-codes"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "no-009",
+      "type": "mcq-multi",
+      "difficulty": "medium",
+      "topic": "auth",
+      "prompt": "Which are TRUE about JWT? (select all)",
+      "options": [
+        {"id": "a", "text": "The payload is encrypted"},
+        {"id": "b", "text": "The payload is base64url-encoded and readable"},
+        {"id": "c", "text": "The signature proves integrity, not confidentiality"},
+        {"id": "d", "text": "You can rotate JWTs without a refresh token"},
+        {"id": "e", "text": "Revoking a JWT before expiry requires server-side state"}
+      ],
+      "correct": ["b", "c", "e"],
+      "explanation": "JWT payload = base64url + signature. Encrypted variants exist (JWE) but standard JWT is signed only. Revocation needs a denylist / short expiry + refresh.",
+      "tags": ["auth", "jwt"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "no-010",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "auth",
+      "prompt": "OAuth 2.0 Authorization Code + PKCE is designed for:",
+      "options": [
+        {"id": "a", "text": "Public clients (SPAs, mobile) that can't hold a secret"},
+        {"id": "b", "text": "Server-to-server only"},
+        {"id": "c", "text": "Kerberos environments"},
+        {"id": "d", "text": "IoT devices without a browser"}
+      ],
+      "correct": ["a"],
+      "explanation": "PKCE prevents code-interception attacks by binding the code to a per-request verifier.",
+      "tags": ["auth", "oauth"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "no-011",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "middleware",
+      "prompt": "Order matters in Express because:",
+      "options": [
+        {"id": "a", "text": "It's random otherwise"},
+        {"id": "b", "text": "Middleware runs top-down; auth must come before protected routes; error handlers last"},
+        {"id": "c", "text": "Express uses alphabetical sort"},
+        {"id": "d", "text": "It doesn't"}
+      ],
+      "correct": ["b"],
+      "explanation": "Registration order = execution order. Body parsers first, auth, then routes, then error handlers (4-arg).",
+      "tags": ["middleware", "express"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "no-012",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "worker-threads",
+      "prompt": "CPU-bound work in Node should:",
+      "options": [
+        {"id": "a", "text": "Run inside the main event loop for simplicity"},
+        {"id": "b", "text": "Be offloaded to worker_threads or spawned processes"},
+        {"id": "c", "text": "Use setInterval to yield"},
+        {"id": "d", "text": "Use fs.promises"}
+      ],
+      "correct": ["b"],
+      "explanation": "Blocking JS on the main thread blocks all I/O. Worker threads share memory via SharedArrayBuffer; child processes don't.",
+      "tags": ["worker-threads", "cpu"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "no-013",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "cluster",
+      "prompt": "Why use the `cluster` module or PM2?",
+      "options": [
+        {"id": "a", "text": "To simulate a distributed database"},
+        {"id": "b", "text": "To use all CPU cores by forking worker processes"},
+        {"id": "c", "text": "To reduce memory"},
+        {"id": "d", "text": "To enable HTTPS"}
+      ],
+      "correct": ["b"],
+      "explanation": "Node is single-threaded per process. Cluster forks share the port via master. PM2 wraps this + adds restarts + logs.",
+      "tags": ["cluster", "scaling"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "no-014",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "security",
+      "prompt": "Which package/practice prevents Express XSS via response headers?",
+      "options": [
+        {"id": "a", "text": "helmet (sets CSP, X-Content-Type-Options, etc.)"},
+        {"id": "b", "text": "morgan"},
+        {"id": "c", "text": "body-parser"},
+        {"id": "d", "text": "cors"}
+      ],
+      "correct": ["a"],
+      "explanation": "helmet ships secure default headers. CORS handles cross-origin. Morgan is logging.",
+      "tags": ["security", "helmet"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "no-015",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "security",
+      "prompt": "Best practice for storing user passwords server-side:",
+      "options": [
+        {"id": "a", "text": "SHA-256 hash"},
+        {"id": "b", "text": "AES encryption"},
+        {"id": "c", "text": "bcrypt / argon2 with per-user salt"},
+        {"id": "d", "text": "MD5 with salt"}
+      ],
+      "correct": ["c"],
+      "explanation": "Adaptive hashing (bcrypt, argon2, scrypt) is slow-by-design to resist brute force. Fast hashes are wrong for passwords.",
+      "tags": ["security", "passwords"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "no-016",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "error-handling",
+      "prompt": "An `uncaughtException` in Node should:",
+      "options": [
+        {"id": "a", "text": "Be swallowed silently"},
+        {"id": "b", "text": "Log + gracefully exit; the process may be in undefined state"},
+        {"id": "c", "text": "Trigger a hot reload"},
+        {"id": "d", "text": "Be ignored — Node recovers"}
+      ],
+      "correct": ["b"],
+      "explanation": "After uncaught exception, process state is unreliable. Log with structured info and exit; supervisor restarts.",
+      "tags": ["error-handling", "process"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "no-017",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "testing",
+      "prompt": "In Jest, `beforeEach` vs `beforeAll` — `beforeEach` runs:",
+      "options": [
+        {"id": "a", "text": "Once for the whole file"},
+        {"id": "b", "text": "Before every test in its scope"},
+        {"id": "c", "text": "Only on failure"},
+        {"id": "d", "text": "Once per describe"}
+      ],
+      "correct": ["b"],
+      "explanation": "beforeAll = once per file/describe scope. beforeEach = per test. Use it to reset fixtures.",
+      "tags": ["testing", "jest"],
+      "sourcePlatforms": ["turing-mcq", "andela-pair"]
+    },
+    {
+      "id": "no-018",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "testing",
+      "prompt": "Which best isolates a unit under test that calls a DB?",
+      "options": [
+        {"id": "a", "text": "Skip the test"},
+        {"id": "b", "text": "Use a real prod DB"},
+        {"id": "c", "text": "Mock the DB module or inject a fake repository"},
+        {"id": "d", "text": "Snapshot the DB"}
+      ],
+      "correct": ["c"],
+      "explanation": "Unit test = pure logic. Integration test = real DB (usually docker/testcontainers). Don't skip.",
+      "tags": ["testing", "mocks"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "no-019",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "packages",
+      "prompt": "`npm ci` differs from `npm install` in that:",
+      "options": [
+        {"id": "a", "text": "It's faster and updates package-lock"},
+        {"id": "b", "text": "It requires an exact package-lock.json and never mutates it — used in CI for reproducibility"},
+        {"id": "c", "text": "It skips devDeps by default"},
+        {"id": "d", "text": "It downloads all major versions"}
+      ],
+      "correct": ["b"],
+      "explanation": "`ci` fails if lockfile is out of sync. It wipes node_modules and does a clean install from the lock.",
+      "tags": ["npm"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "no-020",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "async",
+      "prompt": "The `util.promisify` function is used to:",
+      "options": [
+        {"id": "a", "text": "Turn a Promise into a callback"},
+        {"id": "b", "text": "Convert a Node-style callback function (err-first) into a Promise-returning function"},
+        {"id": "c", "text": "Wrap sync code in async"},
+        {"id": "d", "text": "Delete promises"}
+      ],
+      "correct": ["b"],
+      "explanation": "Classic wrapper. Many APIs now have promise variants natively (fs/promises).",
+      "tags": ["async", "util"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "no-021",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "streams",
+      "prompt": "Given `readable.pipe(a).pipe(b)`, if `b` errors:",
+      "options": [
+        {"id": "a", "text": "All upstream sources also close automatically"},
+        {"id": "b", "text": "Nothing propagates — you must listen for error on each"},
+        {"id": "c", "text": "Only readable closes"},
+        {"id": "d", "text": "The process exits"}
+      ],
+      "correct": ["b"],
+      "explanation": "pipe() does NOT forward errors. Use `stream.pipeline()` to get unified error handling + cleanup.",
+      "tags": ["streams", "error-handling"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "no-022",
+      "type": "short-code",
+      "difficulty": "medium",
+      "topic": "practical",
+      "prompt": "Write an Express middleware `asyncHandler(fn)` that catches thrown/rejected errors and forwards to next(err).",
+      "options": [],
+      "correct": [],
+      "explanation": "```js\nconst asyncHandler = fn => (req, res, next) =>\n  Promise.resolve(fn(req, res, next)).catch(next);\n\napp.get('/x', asyncHandler(async (req, res) => {\n  const d = await db.q();\n  res.json(d);\n}));\n```",
+      "tags": ["express", "async"],
+      "sourcePlatforms": ["turing-coding", "fde-loop"]
+    },
+    {
+      "id": "no-023",
+      "type": "short-code",
+      "difficulty": "hard",
+      "topic": "practical",
+      "prompt": "Write a simple in-memory token-bucket rate limiter middleware `rateLimit({ tokens, refillPerSec })`.",
+      "options": [],
+      "correct": [],
+      "explanation": "```js\nfunction rateLimit({ tokens, refillPerSec }) {\n  const buckets = new Map();\n  return (req, res, next) => {\n    const key = req.ip;\n    const now = Date.now();\n    const b = buckets.get(key) || { t: tokens, last: now };\n    const elapsed = (now - b.last) / 1000;\n    b.t = Math.min(tokens, b.t + elapsed * refillPerSec);\n    b.last = now;\n    if (b.t < 1) return res.status(429).end();\n    b.t -= 1;\n    buckets.set(key, b);\n    next();\n  };\n}\n```\nProduction: Redis-backed for multi-node.",
+      "tags": ["rate-limit", "middleware"],
+      "sourcePlatforms": ["turing-coding", "fde-loop"]
+    },
+    {
+      "id": "no-024",
+      "type": "short-code",
+      "difficulty": "hard",
+      "topic": "practical",
+      "prompt": "Write `retry(fn, { attempts, baseMs })` with exponential backoff + jitter.",
+      "options": [],
+      "correct": [],
+      "explanation": "```js\nasync function retry(fn, { attempts = 3, baseMs = 100 } = {}) {\n  let last;\n  for (let i = 0; i < attempts; i++) {\n    try { return await fn(); } catch (e) {\n      last = e;\n      const wait = baseMs * 2 ** i + Math.random() * baseMs;\n      await new Promise(r => setTimeout(r, wait));\n    }\n  }\n  throw last;\n}\n```",
+      "tags": ["retry", "backoff"],
+      "sourcePlatforms": ["turing-coding", "fde-loop"]
+    },
+    {
+      "id": "no-025",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "logging",
+      "prompt": "For production logging, best practice is:",
+      "options": [
+        {"id": "a", "text": "console.log with prefixes"},
+        {"id": "b", "text": "Structured JSON logs (pino/winston) with levels, correlation IDs, and shipped to a store"},
+        {"id": "c", "text": "File-only logs"},
+        {"id": "d", "text": "Print stack traces only"}
+      ],
+      "correct": ["b"],
+      "explanation": "JSON is queryable. Correlation IDs tie logs across services. Ship to Loki/CloudWatch/Datadog.",
+      "tags": ["logging", "observability"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "no-026",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "event-loop",
+      "prompt": "A CPU-heavy sync function inside a request handler will:",
+      "options": [
+        {"id": "a", "text": "Run on a worker thread automatically"},
+        {"id": "b", "text": "Block the event loop — ALL concurrent requests wait, latency spikes across the app"},
+        {"id": "c", "text": "Use libuv"},
+        {"id": "d", "text": "Move to setImmediate"}
+      ],
+      "correct": ["b"],
+      "explanation": "Node is single-threaded for JS. Offload CPU work to worker_threads or split into `setImmediate` chunks.",
+      "tags": ["event-loop", "cpu"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "no-027",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "streams",
+      "prompt": "Preferred way to compose streams safely in modern Node:",
+      "options": [
+        {"id": "a", "text": "a.pipe(b).pipe(c) and hope"},
+        {"id": "b", "text": "`stream.pipeline(a, b, c, err => ...)` — propagates errors + cleans up"},
+        {"id": "c", "text": "spawn cp"},
+        {"id": "d", "text": "for await of only"}
+      ],
+      "correct": ["b"],
+      "explanation": "pipeline handles error propagation + auto-destroys sources; also has `pipeline.promises` for await.",
+      "tags": ["streams", "pipeline"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "no-028",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "streams",
+      "prompt": "For a 10GB file → gzip → S3 upload, memory-efficient approach:",
+      "options": [
+        {"id": "a", "text": "readFile then gzip then upload"},
+        {"id": "b", "text": "createReadStream → pipeline → zlib.createGzip → S3 upload stream (multipart under the hood)"},
+        {"id": "c", "text": "Split file first"},
+        {"id": "d", "text": "Use JSON"}
+      ],
+      "correct": ["b"],
+      "explanation": "Constant memory — bytes flow through. AWS SDK v3 accepts a Readable in the Body.",
+      "tags": ["streams"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "no-029",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "http",
+      "prompt": "Fastify vs Express key advantage:",
+      "options": [
+        {"id": "a", "text": "Larger community"},
+        {"id": "b", "text": "Native async handler support, JSON schema-based validation + serialization, faster throughput"},
+        {"id": "c", "text": "Older"},
+        {"id": "d", "text": "Only ESM"}
+      ],
+      "correct": ["b"],
+      "explanation": "Fastify treats async as first-class + JSON schema saves cycles on ser/de. Express is still simpler for tiny apps.",
+      "tags": ["http", "fastify"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "no-030",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "http",
+      "prompt": "For a Node HTTP client, connection pooling / keep-alive is critical because:",
+      "options": [
+        {"id": "a", "text": "It doesn't matter"},
+        {"id": "b", "text": "TCP + TLS handshake per request adds 100+ms; pooling reuses connections, cuts latency + resource cost"},
+        {"id": "c", "text": "It's illegal"},
+        {"id": "d", "text": "Node has no HTTP client"}
+      ],
+      "correct": ["b"],
+      "explanation": "undici (Node's native fetch backend) pools by default. axios/got need explicit agent. Set `keepAlive: true`.",
+      "tags": ["http", "keep-alive"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "no-031",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "auth",
+      "prompt": "Rotating a JWT signing secret across a fleet without logout:",
+      "options": [
+        {"id": "a", "text": "Impossible"},
+        {"id": "b", "text": "Publish JWKS with multiple public keys; issue with new key; verifiers accept any listed key; old key retired after old tokens expire"},
+        {"id": "c", "text": "Send an email"},
+        {"id": "d", "text": "Only via password reset"}
+      ],
+      "correct": ["b"],
+      "explanation": "kid (Key ID) header in JWT tells verifier which key to use. Standard rotation flow across auth0/cognito/etc.",
+      "tags": ["auth", "jwt"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "no-032",
+      "type": "mcq-multi",
+      "difficulty": "medium",
+      "topic": "security",
+      "prompt": "Preventing prototype pollution in a JSON-accepting API: (select all)",
+      "options": [
+        {"id": "a", "text": "Reject payload keys `__proto__`, `constructor`, `prototype`"},
+        {"id": "b", "text": "Use `Object.create(null)` for maps that will merge user input"},
+        {"id": "c", "text": "Freeze Object.prototype"},
+        {"id": "d", "text": "Use a schema validator (Zod/Joi/Ajv) that strips unknown keys"},
+        {"id": "e", "text": "Trust JSON.parse"}
+      ],
+      "correct": ["a", "b", "d"],
+      "explanation": "Merge/deep-set operations are the vector. Real bugs: lodash.merge, express-fileupload CVEs. Layer defenses.",
+      "tags": ["security", "prototype-pollution"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "no-033",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "config",
+      "prompt": "Best pattern for reading environment config in a typed way:",
+      "options": [
+        {"id": "a", "text": "`process.env.X` everywhere"},
+        {"id": "b", "text": "Validate + parse env at boot with a Zod/Joi schema; export a typed `config` object; fail fast on missing/invalid"},
+        {"id": "c", "text": "JSON file only"},
+        {"id": "d", "text": "Read from disk lazily"}
+      ],
+      "correct": ["b"],
+      "explanation": "Untyped env leaks strings-as-numbers bugs. Fail-fast at boot is better than runtime NaN.",
+      "tags": ["config"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "no-034",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "testing",
+      "prompt": "Test-database strategy for integration tests:",
+      "options": [
+        {"id": "a", "text": "Share prod DB"},
+        {"id": "b", "text": "Ephemeral DB per test run (Docker via testcontainers), migrated at startup, truncated between tests OR wrapped in a rolled-back txn"},
+        {"id": "c", "text": "SQLite"},
+        {"id": "d", "text": "Skip integration tests"}
+      ],
+      "correct": ["b"],
+      "explanation": "testcontainers-node spins Postgres/Redis on demand. Rollback-per-test is fastest.",
+      "tags": ["testing"],
+      "sourcePlatforms": ["turing-mcq", "andela-pair", "fde-loop"]
+    },
+    {
+      "id": "no-035",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "graceful-shutdown",
+      "prompt": "On SIGTERM, a well-behaved Node HTTP server should:",
+      "options": [
+        {"id": "a", "text": "process.exit(0) immediately"},
+        {"id": "b", "text": "Stop accepting new connections, drain in-flight requests within a timeout, then exit — enables zero-downtime rolling deploys"},
+        {"id": "c", "text": "Ignore SIGTERM"},
+        {"id": "d", "text": "Restart"}
+      ],
+      "correct": ["b"],
+      "explanation": "`server.close()` + finish outstanding work. K8s sends SIGTERM before terminating the pod.",
+      "tags": ["graceful-shutdown"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "no-036",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "streams",
+      "prompt": "A Transform stream should call `callback(null, chunk)` when:",
+      "options": [
+        {"id": "a", "text": "Immediately after receiving data"},
+        {"id": "b", "text": "After it's done processing THIS chunk and has produced output (or produced nothing but is ready for more)"},
+        {"id": "c", "text": "Only at stream end"},
+        {"id": "d", "text": "Never"}
+      ],
+      "correct": ["b"],
+      "explanation": "Callback signals 'ready for next chunk' — key to backpressure. Errors pass as first arg.",
+      "tags": ["streams", "transform"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "no-037",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "cluster",
+      "prompt": "For a stateless HTTP service on a 16-core machine, typical worker count is:",
+      "options": [
+        {"id": "a", "text": "1"},
+        {"id": "b", "text": "~16 (one per core), fronted by cluster module or PM2 or an orchestrator like K8s with pod-per-core"},
+        {"id": "c", "text": "100"},
+        {"id": "d", "text": "1000"}
+      ],
+      "correct": ["b"],
+      "explanation": "Node's JS is single-threaded per process — need ~1 process per core to use CPU. In K8s, one process per pod, cores per pod tuned via limits.",
+      "tags": ["cluster", "scaling"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "no-038",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "worker-threads",
+      "prompt": "Sharing large data between worker_threads without copying:",
+      "options": [
+        {"id": "a", "text": "postMessage always copies"},
+        {"id": "b", "text": "Use SharedArrayBuffer + Atomics for shared memory; or transferable ArrayBuffer for zero-copy handoff"},
+        {"id": "c", "text": "Impossible"},
+        {"id": "d", "text": "Requires Redis"}
+      ],
+      "correct": ["b"],
+      "explanation": "SharedArrayBuffer needs COOP/COEP headers in browsers. Node just works. Atomics for synchronization.",
+      "tags": ["worker-threads", "shared-memory"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "no-039",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "fs",
+      "prompt": "Sync FS methods in a request handler:",
+      "options": [
+        {"id": "a", "text": "Fine"},
+        {"id": "b", "text": "Block the event loop — never use `readFileSync` in a request path, only at startup"},
+        {"id": "c", "text": "Only affect that request"},
+        {"id": "d", "text": "Faster than async"}
+      ],
+      "correct": ["b"],
+      "explanation": "Any sync I/O in request path stalls all concurrent requests. `fs/promises` for everything hot-path.",
+      "tags": ["fs", "event-loop"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "no-040",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "opentelemetry",
+      "prompt": "Adding OpenTelemetry to a Node service typically:",
+      "options": [
+        {"id": "a", "text": "Requires manually wrapping every function"},
+        {"id": "b", "text": "Auto-instruments popular libs (http, express, pg, redis) via `require`/`import` hooks; manual spans for custom code"},
+        {"id": "c", "text": "Kills performance"},
+        {"id": "d", "text": "Only works in Java"}
+      ],
+      "correct": ["b"],
+      "explanation": "`@opentelemetry/auto-instrumentations-node` = zero-config traces for common libs. Export to Jaeger/Tempo/Datadog.",
+      "tags": ["opentelemetry"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "no-041",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "orm",
+      "prompt": "Prisma advantage over Sequelize:",
+      "options": [
+        {"id": "a", "text": "Older API"},
+        {"id": "b", "text": "Generated types from schema → full TS type-safety on queries; explicit relations; migrations as SQL diff"},
+        {"id": "c", "text": "Runs faster always"},
+        {"id": "d", "text": "No schema"}
+      ],
+      "correct": ["b"],
+      "explanation": "Codegen-based type safety is the killer feature. Downside: transaction API is more restrictive; escape hatches to raw SQL for complex queries.",
+      "tags": ["orm", "prisma"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "no-042",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "monorepo",
+      "prompt": "For a Node monorepo, pnpm/yarn/npm workspaces solve:",
+      "options": [
+        {"id": "a", "text": "Testing"},
+        {"id": "b", "text": "Shared dependencies + local package linking + one lockfile — replaces the old lerna+npm-link dance"},
+        {"id": "c", "text": "Deployment"},
+        {"id": "d", "text": "Docker"}
+      ],
+      "correct": ["b"],
+      "explanation": "pnpm is fastest + strictest. Turborepo/Nx add task caching on top.",
+      "tags": ["monorepo"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "no-043",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "http-security",
+      "prompt": "Preventing Slowloris-style attacks on your Node HTTP server:",
+      "options": [
+        {"id": "a", "text": "Ignore"},
+        {"id": "b", "text": "Set `server.headersTimeout`, `server.requestTimeout`, `keepAliveTimeout`; put a reverse proxy (nginx/Cloudflare) in front"},
+        {"id": "c", "text": "Restart every hour"},
+        {"id": "d", "text": "Use IPv6"}
+      ],
+      "correct": ["b"],
+      "explanation": "Default Node timeouts are lenient; explicit values close half-open attackers. RP in front absorbs most attack surface.",
+      "tags": ["security", "http"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "no-044",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "cache",
+      "prompt": "Best Redis client pattern for high-throughput Node service:",
+      "options": [
+        {"id": "a", "text": "New connection per request"},
+        {"id": "b", "text": "Single shared client (ioredis) reused across the process; enable pipelining; use cluster mode client for Redis Cluster"},
+        {"id": "c", "text": "One per user"},
+        {"id": "d", "text": "HTTP calls to Redis"}
+      ],
+      "correct": ["b"],
+      "explanation": "Redis is single-threaded — one TCP connection with pipelining is often faster than many. cluster mode client handles slot routing.",
+      "tags": ["redis"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "no-045",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "concurrency",
+      "prompt": "A background job triggers on webhook. Same webhook fires 5x fast (network retry). Preventing duplicate processing:",
+      "options": [
+        {"id": "a", "text": "Assume it doesn't happen"},
+        {"id": "b", "text": "Use idempotency key (from webhook headers) stored in DB with unique constraint; INSERT ON CONFLICT DO NOTHING; skip if already processed"},
+        {"id": "c", "text": "Retry all 5"},
+        {"id": "d", "text": "Random sleep"}
+      ],
+      "correct": ["b"],
+      "explanation": "DB unique constraint is the atomic gate. Distributed lock via Redis is a weaker alternative.",
+      "tags": ["idempotency", "concurrency"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "no-046",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "docker",
+      "prompt": "For a small production Node Docker image, best base:",
+      "options": [
+        {"id": "a", "text": "node:latest"},
+        {"id": "b", "text": "node:20-alpine or distroless, multi-stage build to drop devDeps + build tools"},
+        {"id": "c", "text": "ubuntu"},
+        {"id": "d", "text": "windows-servercore"}
+      ],
+      "correct": ["b"],
+      "explanation": "Alpine has smaller image; distroless has less attack surface. Multi-stage keeps final image lean.",
+      "tags": ["docker"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "no-047",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "async-storage",
+      "prompt": "`AsyncLocalStorage` in Node is useful for:",
+      "options": [
+        {"id": "a", "text": "Persistence"},
+        {"id": "b", "text": "Carrying per-request context (correlation ID, user) implicitly across async boundaries without threading it through every function"},
+        {"id": "c", "text": "File storage"},
+        {"id": "d", "text": "Caching"}
+      ],
+      "correct": ["b"],
+      "explanation": "Built on async_hooks. Every logger/tracer library uses it under the hood.",
+      "tags": ["async-local-storage"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "no-048",
+      "type": "short-code",
+      "difficulty": "medium",
+      "topic": "practical",
+      "prompt": "Write an idempotency-key Express middleware backed by Redis (skip processing if key seen in last 24h; return cached response).",
+      "options": [],
+      "correct": [],
+      "explanation": "```js\nconst idempotency = (redis) => async (req, res, next) => {\n  const key = req.header('Idempotency-Key');\n  if (!key) return next();\n  const cached = await redis.get(`idemp:${key}`);\n  if (cached) return res.status(200).json(JSON.parse(cached));\n  const origJson = res.json.bind(res);\n  res.json = (body) => {\n    if (res.statusCode < 400) redis.set(`idemp:${key}`, JSON.stringify(body), 'EX', 86400);\n    return origJson(body);\n  };\n  next();\n};\n```\nEdge cases: partial writes if server crashes between op and cache set — mitigate with 2-phase key (reserve → complete).",
+      "tags": ["idempotency", "middleware"],
+      "sourcePlatforms": ["turing-coding", "fde-loop"]
+    },
+    {
+      "id": "no-049",
+      "type": "short-code",
+      "difficulty": "hard",
+      "topic": "practical",
+      "prompt": "Write a WebSocket broadcast helper: `broadcast(room, message)` that sends to all sockets in a room across N app instances (Redis pub/sub backbone).",
+      "options": [],
+      "correct": [],
+      "explanation": "```js\nconst { WebSocketServer } = require('ws');\nconst Redis = require('ioredis');\nconst pub = new Redis(), sub = new Redis();\nconst rooms = new Map(); // room -> Set<WebSocket>\n\nfunction subscribe(ws, room) {\n  if (!rooms.has(room)) rooms.set(room, new Set());\n  rooms.get(room).add(ws);\n  ws.on('close', () => rooms.get(room)?.delete(ws));\n}\n\nasync function broadcast(room, message) {\n  await pub.publish(`room:${room}`, JSON.stringify(message));\n}\n\nsub.psubscribe('room:*');\nsub.on('pmessage', (_pat, channel, msg) => {\n  const room = channel.slice(5);\n  const set = rooms.get(room);\n  if (!set) return;\n  for (const ws of set) if (ws.readyState === ws.OPEN) ws.send(msg);\n});\n```\nEvery node subscribes to Redis; broadcasts fan out to whichever nodes hold sockets in that room.",
+      "tags": ["websocket", "pubsub"],
+      "sourcePlatforms": ["turing-coding", "fde-loop"]
+    },
+    {
+      "id": "no-050",
+      "type": "short-code",
+      "difficulty": "hard",
+      "topic": "practical",
+      "prompt": "Write `streamNdjson(url, onRow)` that fetches a large NDJSON endpoint and processes rows as they arrive without buffering the whole body.",
+      "options": [],
+      "correct": [],
+      "explanation": "```js\nasync function streamNdjson(url, onRow) {\n  const res = await fetch(url);\n  if (!res.body) throw new Error('no body');\n  const reader = res.body.getReader();\n  const decoder = new TextDecoder();\n  let buf = '';\n  while (true) {\n    const { value, done } = await reader.read();\n    if (done) break;\n    buf += decoder.decode(value, { stream: true });\n    let idx;\n    while ((idx = buf.indexOf('\\n')) >= 0) {\n      const line = buf.slice(0, idx);\n      buf = buf.slice(idx + 1);\n      if (line) await onRow(JSON.parse(line));\n    }\n  }\n  if (buf) await onRow(JSON.parse(buf));\n}\n```\nConstant memory. Handles multi-byte chars via decoder streaming mode.",
+      "tags": ["streams", "ndjson"],
+      "sourcePlatforms": ["turing-coding", "fde-loop"]
+    }
+  ]
+}

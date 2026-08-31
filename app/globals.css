@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: 12 12 16;
+  --panel: 20 22 28;
+  --border: 40 45 55;
+  --muted: 130 138 155;
+  --fg: 235 238 245;
+  --accent: 99 179 237;
+  --ok: 72 187 120;
+  --warn: 237 137 54;
+  --err: 245 101 101;
+}
+
+html, body { background: rgb(var(--bg)); color: rgb(var(--fg)); }
+
+pre, code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace; }
+pre { background: rgb(var(--panel)); padding: 12px; border-radius: 8px; overflow-x: auto; }
+code { background: rgb(var(--panel)); padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+pre code { background: transparent; padding: 0; }

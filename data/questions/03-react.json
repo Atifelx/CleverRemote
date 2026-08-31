@@ -1,0 +1,515 @@
+{
+  "module": "react",
+  "title": "React (Hooks, Rendering, Next.js)",
+  "description": "Hooks, rendering behavior, keys, memoization, Context, Next.js app router, RSC, forms. Heavy on Turing MCQ (React JS + React Hooks stacks) and Toptal live coding.",
+  "platformCoverage": ["turing-mcq", "turing-coding", "toptal-live", "fde-loop"],
+  "estimatedHours": 6,
+  "questions": [
+    {
+      "id": "rx-001",
+      "type": "mcq-single",
+      "difficulty": "easy",
+      "topic": "hooks-rules",
+      "prompt": "Which is a rule of hooks?",
+      "options": [
+        {"id": "a", "text": "Can be called inside conditions if wrapped in try/catch"},
+        {"id": "b", "text": "Must be called at the top level of a component or custom hook"},
+        {"id": "c", "text": "Can only be called in class components"},
+        {"id": "d", "text": "Order can vary between renders"}
+      ],
+      "correct": ["b"],
+      "explanation": "Hooks depend on call order between renders. Call at the top level; never inside conditions, loops, or nested functions.",
+      "tags": ["hooks-rules"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "rx-002",
+      "type": "code-output",
+      "difficulty": "medium",
+      "topic": "useState",
+      "prompt": "After clicking once, what is `count`?",
+      "code": "function Counter() {\n  const [count, setCount] = useState(0);\n  const onClick = () => {\n    setCount(count + 1);\n    setCount(count + 1);\n    setCount(count + 1);\n  };\n  return <button onClick={onClick}>{count}</button>;\n}",
+      "options": [
+        {"id": "a", "text": "1"},
+        {"id": "b", "text": "3"},
+        {"id": "c", "text": "0"},
+        {"id": "d", "text": "NaN"}
+      ],
+      "correct": ["a"],
+      "explanation": "All 3 setState calls use the stale `count` (0). Batched → all three set to 1. Use `setCount(c => c + 1)` to increment 3.",
+      "tags": ["useState", "stale-closure"],
+      "sourcePlatforms": ["turing-mcq", "toptal-live"]
+    },
+    {
+      "id": "rx-003",
+      "type": "code-output",
+      "difficulty": "medium",
+      "topic": "useState",
+      "prompt": "After clicking once, what is `count`?",
+      "code": "function Counter() {\n  const [count, setCount] = useState(0);\n  const onClick = () => {\n    setCount(c => c + 1);\n    setCount(c => c + 1);\n    setCount(c => c + 1);\n  };\n  return <button onClick={onClick}>{count}</button>;\n}",
+      "options": [
+        {"id": "a", "text": "1"},
+        {"id": "b", "text": "3"},
+        {"id": "c", "text": "0"},
+        {"id": "d", "text": "9"}
+      ],
+      "correct": ["b"],
+      "explanation": "Functional updates queue: each receives the latest state and returns the next.",
+      "tags": ["useState", "functional-update"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "rx-004",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "useEffect",
+      "prompt": "When does the cleanup function run?",
+      "options": [
+        {"id": "a", "text": "Only on unmount"},
+        {"id": "b", "text": "Before every subsequent effect run AND on unmount"},
+        {"id": "c", "text": "Only if deps change"},
+        {"id": "d", "text": "Never"}
+      ],
+      "correct": ["b"],
+      "explanation": "React runs cleanup before running the next effect, and on unmount. Use it for unsubscribe/cancel patterns.",
+      "tags": ["useEffect", "cleanup"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "rx-005",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "useEffect",
+      "prompt": "`useEffect(() => { fetchData(); }, [])` — what is the risk in dev?",
+      "options": [
+        {"id": "a", "text": "Only runs on server"},
+        {"id": "b", "text": "React 18 StrictMode double-invokes effects in dev; fetchData runs twice"},
+        {"id": "c", "text": "It never runs"},
+        {"id": "d", "text": "Deps array must have at least one item"}
+      ],
+      "correct": ["b"],
+      "explanation": "StrictMode mounts, unmounts, mounts again to surface cleanup bugs. Fix: make effects idempotent or move data-fetch to a framework loader.",
+      "tags": ["useEffect", "strict-mode"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "rx-006",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "keys",
+      "prompt": "Why is `key={index}` on a list dangerous when items can be reordered/inserted?",
+      "options": [
+        {"id": "a", "text": "It causes hydration mismatches"},
+        {"id": "b", "text": "React reuses component state against the wrong item, causing bugs"},
+        {"id": "c", "text": "It hurts SEO"},
+        {"id": "d", "text": "Slower than string keys"}
+      ],
+      "correct": ["b"],
+      "explanation": "Index keys tie state to position, not item identity. Prefer a stable id.",
+      "tags": ["keys", "reconciliation"],
+      "sourcePlatforms": ["turing-mcq", "toptal-live"]
+    },
+    {
+      "id": "rx-007",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "memo",
+      "prompt": "`React.memo` prevents re-render when:",
+      "options": [
+        {"id": "a", "text": "Component receives any prop"},
+        {"id": "b", "text": "Props are shallowly equal to the previous render"},
+        {"id": "c", "text": "State changes"},
+        {"id": "d", "text": "Context updates"}
+      ],
+      "correct": ["b"],
+      "explanation": "React.memo does a shallow prop compare. New object/array/function props defeat it — pair with useMemo/useCallback.",
+      "tags": ["memo"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "rx-008",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "useMemo",
+      "prompt": "When is `useMemo` NOT worth using?",
+      "options": [
+        {"id": "a", "text": "For expensive derived values"},
+        {"id": "b", "text": "To keep a referentially stable object for a memoized child"},
+        {"id": "c", "text": "For cheap primitives — the memo bookkeeping costs more than the work"},
+        {"id": "d", "text": "Never — useMemo is always free"}
+      ],
+      "correct": ["c"],
+      "explanation": "useMemo has overhead. Only worth it for genuinely expensive work or for ref stability.",
+      "tags": ["useMemo", "performance"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "rx-009",
+      "type": "code-output",
+      "difficulty": "medium",
+      "topic": "useEffect",
+      "prompt": "Does this fetch cancel on unmount?",
+      "code": "useEffect(() => {\n  const ac = new AbortController();\n  fetch(url, { signal: ac.signal }).then(r => setData(r));\n  return () => ac.abort();\n}, [url]);",
+      "options": [
+        {"id": "a", "text": "Yes"},
+        {"id": "b", "text": "No — fetch cannot be aborted"},
+        {"id": "c", "text": "Only if the URL changes"},
+        {"id": "d", "text": "Requires ReactQuery"}
+      ],
+      "correct": ["a"],
+      "explanation": "AbortController.signal aborts the fetch. On unmount OR url change, cleanup fires.",
+      "tags": ["useEffect", "abort", "cleanup"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "rx-010",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "context",
+      "prompt": "Which Context pitfall is REAL?",
+      "options": [
+        {"id": "a", "text": "Every consumer re-renders when the provider value's REFERENCE changes"},
+        {"id": "b", "text": "Only the first consumer re-renders"},
+        {"id": "c", "text": "Context skips reconciliation entirely"},
+        {"id": "d", "text": "Context requires class components"}
+      ],
+      "correct": ["a"],
+      "explanation": "Reference equality on the provider `value` triggers all consumers. Split contexts or memoize the value to control re-renders.",
+      "tags": ["context", "performance"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "rx-011",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "useRef",
+      "prompt": "When does updating `ref.current` cause a re-render?",
+      "options": [
+        {"id": "a", "text": "Always"},
+        {"id": "b", "text": "Never"},
+        {"id": "c", "text": "Only in strict mode"},
+        {"id": "d", "text": "Only if the ref is passed to a child"}
+      ],
+      "correct": ["b"],
+      "explanation": "Refs are the intentional escape hatch — mutable box, no render on change. Use state if the UI depends on it.",
+      "tags": ["useRef"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "rx-012",
+      "type": "code-output",
+      "difficulty": "hard",
+      "topic": "useEffect",
+      "prompt": "What breaks?",
+      "code": "function Chat({ userId }) {\n  const [msgs, setMsgs] = useState([]);\n  useEffect(() => {\n    const conn = connect(userId);\n    conn.onMessage(m => setMsgs([...msgs, m]));\n    return () => conn.close();\n  }, [userId]);\n}",
+      "options": [
+        {"id": "a", "text": "conn.close never fires"},
+        {"id": "b", "text": "setMsgs sees stale msgs (loses history)"},
+        {"id": "c", "text": "userId change doesn't reconnect"},
+        {"id": "d", "text": "The connection leaks memory"}
+      ],
+      "correct": ["b"],
+      "explanation": "The handler closes over the initial `msgs`. Fix: `setMsgs(prev => [...prev, m])`.",
+      "tags": ["useEffect", "stale-closure"],
+      "sourcePlatforms": ["turing-mcq", "toptal-live", "fde-loop"]
+    },
+    {
+      "id": "rx-013",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "controlled-forms",
+      "prompt": "What defines a CONTROLLED input?",
+      "options": [
+        {"id": "a", "text": "It uses a ref to read value on submit"},
+        {"id": "b", "text": "Its value prop is bound to state; onChange updates state"},
+        {"id": "c", "text": "It uses defaultValue"},
+        {"id": "d", "text": "It uses the browser autocomplete"}
+      ],
+      "correct": ["b"],
+      "explanation": "Controlled = React state is the source of truth. Uncontrolled = DOM is the source of truth (use ref + defaultValue).",
+      "tags": ["forms"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "rx-014",
+      "type": "mcq-multi",
+      "difficulty": "medium",
+      "topic": "next-js",
+      "prompt": "In Next.js App Router, which are TRUE about Server Components? (select all)",
+      "options": [
+        {"id": "a", "text": "Can access secrets / DBs directly"},
+        {"id": "b", "text": "Cannot use useState or useEffect"},
+        {"id": "c", "text": "Their JS ships to the client"},
+        {"id": "d", "text": "Can render Client Components inside them"},
+        {"id": "e", "text": "Must be async by default"}
+      ],
+      "correct": ["a", "b", "d"],
+      "explanation": "RSC render on server, no client JS bundle for them. No hooks or event handlers. Client Components can nest inside (as children/slots).",
+      "tags": ["next-js", "rsc"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "rx-015",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "next-js",
+      "prompt": "Where do you put `'use client'`?",
+      "options": [
+        {"id": "a", "text": "In every file"},
+        {"id": "b", "text": "At the top of a file to mark it (and its imports) as a Client Component boundary"},
+        {"id": "c", "text": "In next.config.js"},
+        {"id": "d", "text": "In tsconfig"}
+      ],
+      "correct": ["b"],
+      "explanation": "`'use client'` marks the module boundary between server and client trees.",
+      "tags": ["next-js", "use-client"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "rx-016",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "next-js",
+      "prompt": "Which fetches with automatic dedupe + caching in the App Router?",
+      "options": [
+        {"id": "a", "text": "axios in a Server Component"},
+        {"id": "b", "text": "Native `fetch()` inside a Server Component (Next patches it)"},
+        {"id": "c", "text": "window.fetch inside useEffect"},
+        {"id": "d", "text": "getStaticProps"}
+      ],
+      "correct": ["b"],
+      "explanation": "Next.js overrides global fetch on the server to dedupe requests within a render and to support caching.",
+      "tags": ["next-js", "fetch"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "rx-017",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "reconciliation",
+      "prompt": "Why is defining a component INSIDE another component's body an anti-pattern?",
+      "options": [
+        {"id": "a", "text": "Not allowed by React"},
+        {"id": "b", "text": "A new component identity is created each render → child fully unmounts + remounts (state loss + perf hit)"},
+        {"id": "c", "text": "Uses too much memory"},
+        {"id": "d", "text": "Breaks TypeScript"}
+      ],
+      "correct": ["b"],
+      "explanation": "React uses reference identity to reconcile. New function → new type → tree teardown.",
+      "tags": ["reconciliation", "anti-pattern"],
+      "sourcePlatforms": ["turing-mcq", "toptal-live"]
+    },
+    {
+      "id": "rx-018",
+      "type": "code-output",
+      "difficulty": "hard",
+      "topic": "useEffect",
+      "prompt": "What happens?",
+      "code": "function Comp() {\n  const [n, setN] = useState(0);\n  useEffect(() => { setN(n + 1); });\n  return <div>{n}</div>;\n}",
+      "options": [
+        {"id": "a", "text": "n stays 0"},
+        {"id": "b", "text": "n becomes 1 after mount"},
+        {"id": "c", "text": "Infinite render loop"},
+        {"id": "d", "text": "Throws"}
+      ],
+      "correct": ["c"],
+      "explanation": "Effect with no deps runs after every render. It sets state → re-render → effect runs → infinite loop.",
+      "tags": ["useEffect", "infinite-loop"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "rx-019",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "useReducer",
+      "prompt": "When is `useReducer` a better choice than `useState`?",
+      "options": [
+        {"id": "a", "text": "Always — it's faster"},
+        {"id": "b", "text": "When next state depends on multiple related pieces or complex transitions"},
+        {"id": "c", "text": "Only in class components"},
+        {"id": "d", "text": "For side effects"}
+      ],
+      "correct": ["b"],
+      "explanation": "Reducer centralizes complex transitions; dispatchers are ref-stable so easy to pass down without re-render cost.",
+      "tags": ["useReducer"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "rx-020",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "suspense",
+      "prompt": "What triggers a `<Suspense>` fallback?",
+      "options": [
+        {"id": "a", "text": "A component throws"},
+        {"id": "b", "text": "A child throws a Promise (or uses `use()` on a pending Promise)"},
+        {"id": "c", "text": "An error boundary above catches"},
+        {"id": "d", "text": "A useEffect returns a Promise"}
+      ],
+      "correct": ["b"],
+      "explanation": "Suspense catches thrown promises. Libraries like React Query and RSC integrate with it.",
+      "tags": ["suspense"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "rx-021",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "error-boundary",
+      "prompt": "What does an Error Boundary catch?",
+      "options": [
+        {"id": "a", "text": "Errors in event handlers"},
+        {"id": "b", "text": "Errors in async code"},
+        {"id": "c", "text": "Errors thrown during render, lifecycle, and constructor of the tree below"},
+        {"id": "d", "text": "Server-side errors"}
+      ],
+      "correct": ["c"],
+      "explanation": "Boundaries do NOT catch event handlers or async errors. Wrap those in try/catch.",
+      "tags": ["error-boundary"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "rx-022",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "hydration",
+      "prompt": "A hydration error typically means:",
+      "options": [
+        {"id": "a", "text": "Server-rendered HTML and first client render disagree"},
+        {"id": "b", "text": "The user is on an old browser"},
+        {"id": "c", "text": "React version mismatch between packages"},
+        {"id": "d", "text": "CSS conflicts"}
+      ],
+      "correct": ["a"],
+      "explanation": "Client's initial render must produce the same tree the server sent. Non-deterministic content (Date, random, window checks) is the usual culprit.",
+      "tags": ["hydration", "ssr"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "rx-023",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "custom-hooks",
+      "prompt": "What's the naming rule for custom hooks?",
+      "options": [
+        {"id": "a", "text": "Suffix `_hook`"},
+        {"id": "b", "text": "Prefix `use` — the linter uses this to enforce hook rules"},
+        {"id": "c", "text": "PascalCase"},
+        {"id": "d", "text": "No rule"}
+      ],
+      "correct": ["b"],
+      "explanation": "The `use` prefix is how the ESLint plugin identifies hooks to check rules.",
+      "tags": ["custom-hooks"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "rx-024",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "concurrent",
+      "prompt": "`useTransition` is used to:",
+      "options": [
+        {"id": "a", "text": "Animate CSS"},
+        {"id": "b", "text": "Mark a state update as non-urgent so React can interrupt/pause the render"},
+        {"id": "c", "text": "Redirect the router"},
+        {"id": "d", "text": "Preload a chunk"}
+      ],
+      "correct": ["b"],
+      "explanation": "isPending + startTransition lets urgent input stay responsive while heavy re-render is deferred.",
+      "tags": ["concurrent", "useTransition"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "rx-025",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "state-mgmt",
+      "prompt": "Which is NOT a reason to reach for Redux/Zustand over Context?",
+      "options": [
+        {"id": "a", "text": "Global state read by many components frequently"},
+        {"id": "b", "text": "Time-travel debugging"},
+        {"id": "c", "text": "Selective subscription (only re-render on slice change)"},
+        {"id": "d", "text": "Persisting local component form state"}
+      ],
+      "correct": ["d"],
+      "explanation": "Local form state = useState/useReducer. Global lib overkill.",
+      "tags": ["state-management"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "rx-026",
+      "type": "short-code",
+      "difficulty": "medium",
+      "topic": "practical",
+      "prompt": "Write a custom hook `useDebouncedValue(value, delay)` returning the debounced value.",
+      "options": [],
+      "correct": [],
+      "explanation": "```js\nfunction useDebouncedValue(value, delay) {\n  const [v, setV] = useState(value);\n  useEffect(() => {\n    const t = setTimeout(() => setV(value), delay);\n    return () => clearTimeout(t);\n  }, [value, delay]);\n  return v;\n}\n```",
+      "tags": ["custom-hooks", "debounce"],
+      "sourcePlatforms": ["turing-coding", "toptal-live", "fde-loop"]
+    },
+    {
+      "id": "rx-027",
+      "type": "short-code",
+      "difficulty": "hard",
+      "topic": "practical",
+      "prompt": "Write `usePrevious(value)` that returns the value from the previous render.",
+      "options": [],
+      "correct": [],
+      "explanation": "```js\nfunction usePrevious(value) {\n  const ref = useRef();\n  useEffect(() => { ref.current = value; });\n  return ref.current; // reads BEFORE the effect updates it\n}\n```",
+      "tags": ["custom-hooks", "useRef"],
+      "sourcePlatforms": ["turing-coding", "toptal-live"]
+    },
+    {
+      "id": "rx-028",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "portals",
+      "prompt": "`createPortal` is useful for:",
+      "options": [
+        {"id": "a", "text": "Rendering server components"},
+        {"id": "b", "text": "Rendering into a DOM node outside the parent's DOM subtree while keeping React parent-child"},
+        {"id": "c", "text": "Bypassing suspense"},
+        {"id": "d", "text": "Multi-window apps"}
+      ],
+      "correct": ["b"],
+      "explanation": "Great for modals/tooltips that need to escape overflow:hidden or z-index stacks but should still receive React context.",
+      "tags": ["portals"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "rx-029",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "server-actions",
+      "prompt": "In Next.js App Router, a Server Action is:",
+      "options": [
+        {"id": "a", "text": "Any function inside app/"},
+        {"id": "b", "text": "An async function marked `'use server'` invoked from the client as an RPC"},
+        {"id": "c", "text": "Only usable in API routes"},
+        {"id": "d", "text": "Deprecated"}
+      ],
+      "correct": ["b"],
+      "explanation": "Server Actions expose secure server functions callable from forms or client components without a manual endpoint.",
+      "tags": ["next-js", "server-actions"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "rx-030",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "data-fetching",
+      "prompt": "When choosing React Query / SWR over raw useEffect for data, the BIGGEST win is:",
+      "options": [
+        {"id": "a", "text": "Smaller bundle"},
+        {"id": "b", "text": "Automatic caching, request dedup, refetch on focus/mount, and mutation invalidation"},
+        {"id": "c", "text": "Less JavaScript at runtime"},
+        {"id": "d", "text": "SSR-only"}
+      ],
+      "correct": ["b"],
+      "explanation": "Cache + lifecycle bookkeeping you'd otherwise write by hand.",
+      "tags": ["data-fetching", "react-query"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    }
+  ]
+}

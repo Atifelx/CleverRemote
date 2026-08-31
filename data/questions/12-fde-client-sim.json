@@ -1,0 +1,161 @@
+{
+  "module": "fde-client-sim",
+  "title": "FDE Client Simulation",
+  "description": "45-min role-play round. Interviewer plays a stressed customer. Practice: ownership language, diagnostic Qs BEFORE solutions, acknowledge valid points, explicit trade-off options, never over-promise.",
+  "platformCoverage": ["fde-loop"],
+  "estimatedHours": 5,
+  "questions": [
+    {
+      "id": "cs-001",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "slip",
+      "prompt": "Deployment has slipped 3 weeks. The client's CTO is on the call, visibly frustrated. First 5 minutes.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Own it upfront: 'I take responsibility'; no shifting to third parties", "weight": 3},
+        {"criterion": "State the fact concisely — what slipped, why, what's confirmed vs still uncertain", "weight": 2},
+        {"criterion": "Ask 1-2 diagnostic questions about their operational pressure (customer commitments, revenue impact)", "weight": 2},
+        {"criterion": "Present a REVISED plan with dates, not vague promises", "weight": 3},
+        {"criterion": "Offer explicit trade-off options (ship narrower on original date vs. current scope on new date)", "weight": 2},
+        {"criterion": "Sets a next check-in and a written summary in follow-up", "weight": 1}
+      ],
+      "modelAnswer": "I want to own this. We're three weeks behind on X because of [concrete cause]. Y is confirmed complete; Z is still at risk. Before I lay out the recovery plan, can you tell me what's most exposed on your side — any customer or board commitments tied to the original date? Two options: (a) we cut scope to just the top three flows and ship in one week, (b) we hold scope and land two-and-a-half weeks late with everything verified. I'll send a written summary of whichever you pick within the hour, and I'll be on this call every Friday at 3 until we ship.",
+      "tags": ["ownership", "slip"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "cs-002",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "governance-push-back",
+      "prompt": "Client insists on a feature that would bypass their own governance policy. Push back without breaking the relationship.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Acknowledges the underlying need before objecting", "weight": 3},
+        {"criterion": "Names the specific policy in plain terms", "weight": 2},
+        {"criterion": "Explains the concrete risk (audit fail, breach, reputational)", "weight": 3},
+        {"criterion": "Offers 1-2 alternative paths that meet the same need within policy", "weight": 3},
+        {"criterion": "Doesn't moralize; escalates to their compliance team if needed", "weight": 2}
+      ],
+      "modelAnswer": "I hear you — you need X so your team can move faster on Y. Building it the way you described bypasses your data-classification policy Z. If we ship it and your auditor finds it, it's a bigger cleanup than the time we're saving. Two alternatives that get you to the same speed: [option A within policy], or [option B that requires your compliance team to sign off on a scoped exception]. I'll set up a 20-minute call with your compliance lead this week to walk through B — that's typically the fastest legit path.",
+      "tags": ["push-back", "governance"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "cs-003",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "accuracy-claim",
+      "prompt": "Non-technical VP wants a written guarantee of 100% accuracy from the LLM. How do you respond?",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Doesn't sign the guarantee — under any framing", "weight": 3},
+        {"criterion": "Explains why 100% is not achievable, in plain language", "weight": 3},
+        {"criterion": "Reframes the ask: what business outcome are they protecting?", "weight": 3},
+        {"criterion": "Proposes measurable SLOs + audit + human-in-the-loop for critical paths", "weight": 3},
+        {"criterion": "Offers reversibility: rollback + kill switch as risk mitigators", "weight": 2}
+      ],
+      "modelAnswer": "I understand this needs to be safe enough to defend to your board. I can't sign 100% because no LLM system on the planet is 100% — anyone who signs that is either lying or hasn't shipped. What I CAN commit to is: an audit trail of every response, a 99.X% task-success SLO measured weekly, human review on any high-impact action, and a one-click rollback. If we agree the review is what makes it safe, we can add another line of defense with a policy-check gate. Can we walk through your two or three riskiest scenarios and design the guardrails around those?",
+      "tags": ["expectation-management"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "cs-004",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "IT-blocking",
+      "prompt": "Client IT will not grant production credentials required for your integration. Unblock without circumventing security.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Asks WHY, not just what they need — surfaces the underlying concern", "weight": 3},
+        {"criterion": "Proposes least-privilege credential scope; time-bound; rotated", "weight": 3},
+        {"criterion": "Offers to work through their SSO / vault (Vault, AWS Secrets Manager, CyberArk)", "weight": 2},
+        {"criterion": "Suggests a phased approach: read-only first, write later after review", "weight": 2},
+        {"criterion": "Willing to defer the production step if it means keeping the relationship + policy intact", "weight": 2}
+      ],
+      "modelAnswer": "Fair — production creds are exactly what should be hard to get. What's the specific policy or risk they're worried about? If it's blast-radius, we can start with read-only creds scoped to two tables, rotated weekly, checked out via your Vault. I don't need to hold them — the runtime pulls them at request time. If that's still too much, we can shadow in a lower-tier environment for two weeks and only ask for prod once we've shown zero drift. Who from their security team should I loop in?",
+      "tags": ["security"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "cs-005",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "live-demo-fail",
+      "prompt": "A client calls during a live demo — errors are appearing in front of their executive team. Handle it.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Composure — no panicking, no blame", "weight": 3},
+        {"criterion": "Own it in the moment; the exec team hears an operator, not a victim", "weight": 3},
+        {"criterion": "Buys time: switch to a known-good scenario or a pre-recorded fallback", "weight": 2},
+        {"criterion": "Commits to a written follow-up with cause + fix within a stated window", "weight": 2},
+        {"criterion": "Does NOT ship a hotfix live in front of the exec team", "weight": 2}
+      ],
+      "modelAnswer": "Live: 'That's a real error — I own it. Let's continue with [known-good scenario] so you can see what the end-to-end feel is, and I'll be back to you by end of day with the fix and what caused it.' Off-call: root-cause fast, write a short summary email to the exec + your champion by close of business. Don't hotfix in the demo. Follow up in the next scheduled sync with the fix deployed + why.",
+      "tags": ["crisis", "composure"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "cs-006",
+      "type": "open-rubric",
+      "difficulty": "medium",
+      "topic": "unrealistic-timeline",
+      "prompt": "Client demands a six-week feature in three days.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Doesn't say yes to keep the peace", "weight": 3},
+        {"criterion": "Asks what problem the deadline solves — often the real ask is smaller", "weight": 3},
+        {"criterion": "Offers a smaller-in-3-days + full-in-6-weeks split", "weight": 3},
+        {"criterion": "Names what breaks if we try to compress: quality, tests, other commitments", "weight": 2}
+      ],
+      "modelAnswer": "Help me understand what's driving the three days — is it a specific meeting, an external commitment, or an internal deadline? If we compress, I can ship [thinnest slice that solves that specific thing] in three days, but the full feature stays six weeks — squeezing it further either misses the deadline anyway or ships something we'll have to rebuild. Which sounds better to you?",
+      "tags": ["expectation-management"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "cs-007",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "repeat-bug",
+      "prompt": "You deployed a fix two hours ago. Client reports the same problem is back. They're losing confidence.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Owns the confidence problem, not just the bug", "weight": 3},
+        {"criterion": "Doesn't debate whether it's 'the same' — treats their perception as data", "weight": 2},
+        {"criterion": "Rolls back if uncertain rather than shipping fix #2", "weight": 3},
+        {"criterion": "Names the process gap that let the first fix ship without full verification", "weight": 3},
+        {"criterion": "Written post-mortem within 24 hours with what changes so it doesn't happen a third time", "weight": 2}
+      ],
+      "modelAnswer": "You're right — two fixes in two hours would erode my trust too. I'm rolling back the change now while I confirm root cause; better to be stable than fast. My process gap: I shipped based on a repro on my side without verifying the customer environment path. I'll have a written post-mortem to you by end of tomorrow with (1) what the actual cause was, (2) what verification would have caught it, (3) how our process changes so it doesn't happen a third time. I'll also propose a monitoring signal we should have had.",
+      "tags": ["ownership", "incident"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "cs-008",
+      "type": "open-rubric",
+      "difficulty": "medium",
+      "topic": "internal-politics",
+      "prompt": "Two teams inside the client (Data and IT) are blocking each other; your project is stalled between them.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Doesn't pick a side", "weight": 3},
+        {"criterion": "Names the standoff to your exec sponsor before it becomes a delivery issue", "weight": 3},
+        {"criterion": "Proposes a joint 30-min meeting with a specific decision on the agenda", "weight": 2},
+        {"criterion": "Offers a technical middle path they can both accept (compromise architecture)", "weight": 2},
+        {"criterion": "Documents the decision so it doesn't reopen", "weight": 1}
+      ],
+      "modelAnswer": "Sponsor: 'We're blocked between Data and IT on X — neither has veto, but neither will move without the other. I'll set up a 30-min meeting on Thursday with one decision on the agenda: [specific choice]. I'll bring a proposal that gives both sides most of what they want. Can you attend and back the decision that comes out?' Then run the meeting to a written decision; distribute same day.",
+      "tags": ["politics", "client"],
+      "sourcePlatforms": ["fde-loop"]
+    }
+  ]
+}

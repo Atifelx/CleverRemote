@@ -1,0 +1,169 @@
+{
+  "module": "fde-decomposition",
+  "title": "FDE Decomposition / Case Study",
+  "description": "The single biggest filter in FDE loops (~40% pass rate). Practice narrating the 5-step rubric aloud: clarify → stakeholders → inputs → subproblems → walking-skeleton MVP. Every prompt below is drawn from documented Palantir/OpenAI/Anthropic/Turing FDE loops.",
+  "platformCoverage": ["fde-loop", "turing-mcq"],
+  "estimatedHours": 8,
+  "questions": [
+    {
+      "id": "fd-001",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "case",
+      "prompt": "A large city wants to reduce 911 response times using call data, traffic patterns, and ambulance GPS. Design your first 60 minutes with the customer.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Clarify: which failure mode matters most (dispatch delay? routing? staging?), current baseline, geographic scope", "weight": 3},
+        {"criterion": "Stakeholders named: dispatch, EMS ops, city IT, unions, civil-rights review; success metric owner identified", "weight": 3},
+        {"criterion": "Inputs mapped: freshness of GPS, call taxonomy, traffic feed licensing, PII rules", "weight": 2},
+        {"criterion": "Decomposed into 2-4 workstreams sequenced by risk/value", "weight": 3},
+        {"criterion": "Walking-skeleton MVP proposed: e.g. one district, one call type, dashboard-only recommendation before automated dispatch", "weight": 3},
+        {"criterion": "Names failure modes and rollback (bad recommendation harms response)", "weight": 2}
+      ],
+      "modelAnswer": "First 10 min: ask which metric moves — average response time, tail P95, or 'response by ZIP equity'. Identify the accountable exec. Next 20 min: map data — GPS refresh interval, call classifier fidelity, city traffic API terms. Next 15 min: decompose into (1) baseline analytics dashboard, (2) staging-location optimizer, (3) real-time dispatch assist. Sequence: (1) first (no risk), then (2) as recommendation, then (3) gated behind human confirmation. Last 15 min: propose 4-week MVP scope = dashboard for one borough, one call category, no automated action.",
+      "tags": ["decomposition"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "fd-002",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "case",
+      "prompt": "A regional bank has 3 recently-acquired fraud-detection systems with inconsistent labels. Scope a 90-day plan to unify.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Clarifies: keep all 3 models running or replace? cost of false positives vs negatives? regulatory reporting", "weight": 3},
+        {"criterion": "Data reconciliation plan: unified label schema, historical relabeling, gold-set curation", "weight": 3},
+        {"criterion": "Doesn't propose 'one big model' Day 1 — phased approach", "weight": 2},
+        {"criterion": "Weeks 1-30: shadow + eval; 30-60: pick winner or ensemble; 60-90: cutover with rollback", "weight": 3},
+        {"criterion": "Compliance & audit story: model risk management doc", "weight": 2},
+        {"criterion": "Explicit rollback + kill switch per system", "weight": 1}
+      ],
+      "modelAnswer": "Week 1: interview each fraud team on their taxonomy, get 6 months of labeled data, agree unified label set with regulator input. Weeks 2-6: replay all 3 models on unified holdout; measure precision/recall/economic impact per segment. Weeks 6-10: choose ensemble strategy (union of alerts with a meta-classifier). Weeks 10-12: shadow deployment. Week 12+: cutover behind a per-region flag with immediate rollback path. Deliver an MRM (Model Risk Management) doc for compliance.",
+      "tags": ["decomposition"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "fd-003",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "case",
+      "prompt": "A pharma researcher wants an AI assistant to query internal compound + trial data. Legal, IP, and compliance stakeholders are nervous.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Clarifies who is allowed to see which data (compound-level access controls, active trials)", "weight": 3},
+        {"criterion": "Deployment inside customer VPC only; no third-party API for retrieval or generation", "weight": 3},
+        {"criterion": "Full audit log with user, query, retrieved docs, response, timestamp", "weight": 3},
+        {"criterion": "PII / patient data redaction pre-embedding", "weight": 2},
+        {"criterion": "Read-only assistant to start; escalation to structured tools later", "weight": 2},
+        {"criterion": "Ethics + IP review board loop before wider rollout", "weight": 1}
+      ],
+      "modelAnswer": "Scope MVP as a read-only Q&A over public + Phase-completed compound docs. Data classification tags flow into retrieval filters keyed on user role. Self-hosted embedding + LLM in customer VPC. Every query logged to an immutable audit store with user identity and retrieved doc ids. Legal + IP review the retrieval corpus before onboarding. Second phase adds Phase-active data with additional attestation. No autonomous actions in v1.",
+      "tags": ["decomposition"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "fd-004",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "case",
+      "prompt": "A logistics company wants to deploy an AI agent to reroute shipments using SAP data, weather APIs, and 500 warehouse managers as end users.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Clarifies: what does 'success' mean — cost, on-time delivery, warehouse manager time saved?", "weight": 3},
+        {"criterion": "Human-in-the-loop for any action above impact threshold", "weight": 3},
+        {"criterion": "Phased rollout: shadow → advisory → semi-autonomous → autonomous", "weight": 3},
+        {"criterion": "Observability + kill-switch per warehouse", "weight": 2},
+        {"criterion": "Change-management for warehouse managers (training, feedback loop)", "weight": 2},
+        {"criterion": "Explicit failure modes (bad reroute costs money, upsets customers)", "weight": 2}
+      ],
+      "modelAnswer": "Start with 5 warehouses in shadow mode: agent produces recommendations, manager sees them but acts as normal. Compare agent decisions vs manager decisions vs outcomes for 30 days. Advance to advisory (manager one-click accept). Then to auto-approve for low-dollar reroutes; escalate high-dollar. Per-warehouse toggle; centralized dashboard on cost saved + errors. Weekly office hours with managers to feed corrections back into the eval set.",
+      "tags": ["decomposition"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "fd-005",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "case",
+      "prompt": "An insurer wants automated summarization of 30M historical claims for adjusters. Regulation varies by state.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Clarifies: is the summary attached to the claim (regulated artifact) or an adjuster's tool (advisory)?", "weight": 3},
+        {"criterion": "Per-state config drives allowed fields, PHI/PII handling, retention", "weight": 3},
+        {"criterion": "Eval set built with adjusters (what makes a 'good' summary?)", "weight": 2},
+        {"criterion": "Hallucination guardrails: cite source lines; refuse when uncertain", "weight": 3},
+        {"criterion": "Rollout: pilot state, then multi-state with per-state review", "weight": 2},
+        {"criterion": "Feedback loop from adjusters into evaluation", "weight": 1}
+      ],
+      "modelAnswer": "Advisory tool. Adjuster sees summary alongside raw claim, always. Model prompt requires cited spans; UI shows citations. State-config table drives what fields are allowed to appear. Golden eval set of 200 claims labeled by senior adjusters with 'must-have', 'nice-to-have', 'must-not-have'. Start in one small state; expand only after clean eval + adjuster satisfaction.",
+      "tags": ["decomposition"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "fd-006",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "case",
+      "prompt": "A healthcare client deployed your AI platform 90 days ago. Adoption is 12%. Diagnose + plan.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Refuses to jump to 'we need better training' — investigates first", "weight": 3},
+        {"criterion": "Talks to non-adopters directly; segments them by role/workflow", "weight": 3},
+        {"criterion": "Analyzes product telemetry: activation funnel, feature usage, drop-off points", "weight": 2},
+        {"criterion": "Compares heavy users vs light users vs non-users — what's different?", "weight": 3},
+        {"criterion": "Names 2-3 hypotheses with cheap tests, ranked", "weight": 2},
+        {"criterion": "Escalation plan if adoption is a workflow/political problem, not a product one", "weight": 2}
+      ],
+      "modelAnswer": "Week 1: pull activation funnel; interview 5 non-adopters + 5 heavy users. Common hypotheses: (a) workflow doesn't include our tool at the right moment, (b) results aren't trusted, (c) IT policy blocks part of the flow. Rank cheapest test first. Test 1: shadow the current workflow with a heavy user, see where they'd hand off. Test 2: run a trust survey. Week 2: prioritize the biggest gap and ship a 1-week fix. Report to the sponsoring exec with a written 30/60/90-day recovery plan.",
+      "tags": ["decomposition", "adoption"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "fd-007",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "case",
+      "prompt": "You deployed an AI agent at a bank. Three weeks in, outputs violate undisclosed internal policies.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Immediately pauses affected functions rather than debate scope", "weight": 3},
+        {"criterion": "Gets the actual policies documented in writing", "weight": 3},
+        {"criterion": "Retroactive audit: which past outputs also violated? Report + remediate", "weight": 2},
+        {"criterion": "Adds guardrails (policy-check pass) + updated eval set with policy violations as negatives", "weight": 3},
+        {"criterion": "Post-incident review with client, no blame, focus on process gap", "weight": 2},
+        {"criterion": "Escalation: contract has SLA — get legal + hiring manager in the loop early", "weight": 1}
+      ],
+      "modelAnswer": "Hour 0: kill affected function, notify client stakeholders + our leadership. Hour 4: interview client compliance to list every policy that applies. Day 2: retroactive audit — flag any output that likely violated; draft remediation. Day 3-7: build a policy-check gate that runs on every output before delivery; incorporate examples into eval set. Week 2: post-incident with client — process failure was ours (should have asked for policies up front) — propose new intake checklist for future engagements.",
+      "tags": ["decomposition", "incident"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "fd-008",
+      "type": "open-rubric",
+      "difficulty": "medium",
+      "topic": "framework",
+      "prompt": "Walk through the 5-step FDE decomposition framework on a NEW problem you've never seen: 'A city wants an AI to spot potholes from streetlight camera footage.'",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Step 1 clarify: which cameras, what resolution, which departments own the response", "weight": 2},
+        {"criterion": "Step 2 stakeholders: city IT, DoT, camera-owning agency, residents, unions, budget owner", "weight": 2},
+        {"criterion": "Step 3 inputs: video access legality, retention, night footage quality, false-positive tolerance", "weight": 2},
+        {"criterion": "Step 4 decompose: (a) detection, (b) triage/ranking, (c) dispatch workflow integration", "weight": 3},
+        {"criterion": "Step 5 walking skeleton: 10 cameras, daily batch, dashboard for DoT triage, no dispatch automation v1", "weight": 3},
+        {"criterion": "Names how to measure success (potholes-fixed-per-dollar; not just detection accuracy)", "weight": 2}
+      ],
+      "modelAnswer": "See rubric — the point is narrating each step aloud, ending with a scoped 4-week MVP that produces a dashboard reviewed by DoT before any autonomous action.",
+      "tags": ["framework"],
+      "sourcePlatforms": ["fde-loop"]
+    }
+  ]
+}

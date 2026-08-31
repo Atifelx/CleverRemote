@@ -1,0 +1,419 @@
+{
+  "module": "system-design",
+  "title": "System Design",
+  "description": "Real-world enterprise system design prompts as they appear in Turing FDE, Andela senior, and Toptal advanced rounds. Each has a rubric — self-score against it after drafting your answer aloud.",
+  "platformCoverage": ["turing-mcq", "andela-pair", "toptal-live", "fde-loop"],
+  "estimatedHours": 8,
+  "questions": [
+    {
+      "id": "sd-001",
+      "type": "open-rubric",
+      "difficulty": "medium",
+      "topic": "rate-limiter",
+      "prompt": "Design a rate limiter supporting BOTH per-user (100 req/min) AND global (10k req/min) limits, running across N application nodes.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Asks about consistency guarantees (strict vs lax), latency budget, and cost tolerance", "weight": 2},
+        {"criterion": "Proposes token bucket or leaky bucket (with rationale)", "weight": 2},
+        {"criterion": "Uses shared store (Redis with atomic Lua script or INCR+EXPIRE) to synchronize across nodes", "weight": 3},
+        {"criterion": "Handles clock skew, race conditions on refill, and Redis outage", "weight": 2},
+        {"criterion": "Returns 429 with Retry-After header and rate-limit response headers", "weight": 1},
+        {"criterion": "Discusses per-endpoint tiering and how to introduce new limits without downtime", "weight": 1}
+      ],
+      "modelAnswer": "Token bucket per key. State in Redis: HASH { tokens, last_refill_ts } per user_id and a global key. Refill using Lua script for atomic read-modify-write. On each request: refill both buckets, decrement if ≥1 else 429. Retry-After = ceil((1 - tokens)/refill_rate). Fallback if Redis is down: in-memory local limit with generous headroom + circuit breaker. For fan-out sanity, per-user key TTL after inactivity.",
+      "tags": ["rate-limit", "redis"],
+      "sourcePlatforms": ["fde-loop", "turing-mcq"]
+    },
+    {
+      "id": "sd-002",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "rag-vpc",
+      "prompt": "Design a private, VPC-deployed RAG system for a healthcare customer with HIPAA constraints and 50M documents.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Clarifies: doc types, refresh rate, latency SLO, expected QPS, retention/PHI rules", "weight": 2},
+        {"criterion": "All components in customer VPC — self-hosted embedding model + vector DB + inference; no data leaves the boundary", "weight": 3},
+        {"criterion": "Ingestion pipeline: chunk (semantic or fixed) → embed → store with metadata; incremental re-embed on updates", "weight": 2},
+        {"criterion": "Retrieval: ANN (HNSW/IVF) + BM25 hybrid; reranker; metadata filters; retrieval eval offline", "weight": 2},
+        {"criterion": "Guardrails: PII redaction pre-embed, output PHI check, audit log of every query + retrieved docs", "weight": 3},
+        {"criterion": "Access control: user attributes cascade into filter (RBAC/ABAC); no cross-tenant leakage", "weight": 2},
+        {"criterion": "Observability + evaluation: precision@k, faithfulness, human review loop", "weight": 1}
+      ],
+      "modelAnswer": "Deploy on customer's AWS via CloudFormation. S3 (SSE-KMS) for source docs → Lambda triggers on put → SageMaker endpoint for embedding (self-hosted sentence-transformers or BGE) → OpenSearch (or pgvector) for hybrid retrieval. Inference: vLLM/TGI hosting a self-hosted LLM (Llama or medical-fine-tuned). Kong/API Gateway with per-role JWT. Presidio for PII scrub. CloudWatch + S3 audit trail. Ground-truth eval set curated with clinicians for precision + faithfulness monitoring.",
+      "tags": ["rag", "healthcare", "hipaa"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "sd-003",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "webhooks",
+      "prompt": "Design a reliable webhook integration with a client system that frequently goes offline.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "At-least-once delivery + idempotency key so retries are safe", "weight": 3},
+        {"criterion": "Exponential backoff with jitter and a max retry window", "weight": 2},
+        {"criterion": "Dead-letter queue for terminal failures with alerting + replay tool", "weight": 2},
+        {"criterion": "Signed payloads (HMAC + timestamp) so client can verify authenticity + block replays", "weight": 2},
+        {"criterion": "Delivery persistence (outbox pattern) so events survive service restarts", "weight": 2},
+        {"criterion": "Backpressure/throttling per endpoint to avoid overloading recovering clients", "weight": 1}
+      ],
+      "modelAnswer": "Outbox in the same DB txn that produced the event. Worker reads outbox → PUT to client URL with X-Signature (HMAC-SHA256 over body + ts) and X-Idempotency-Key. On non-2xx, requeue with exp backoff (1s, 4s, 15s, 1m, 5m, 30m, 2h, 6h, cap 24h). After N failures → DLQ + alert. Small circuit breaker per endpoint to pause after repeated failures. Dashboard for redelivery.",
+      "tags": ["webhooks", "reliability"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "sd-004",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "oauth-bridge",
+      "prompt": "Design an integration between a client CRM using OAuth 1.0 and your platform using OAuth 2.0.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Names both protocols correctly and identifies the bridging service as the boundary", "weight": 2},
+        {"criterion": "Bridge stores client OAuth 1.0 tokens + secret encrypted at rest per user", "weight": 3},
+        {"criterion": "Signs outbound requests with HMAC-SHA1 + nonce + timestamp for OAuth 1.0", "weight": 2},
+        {"criterion": "Client-side uses OAuth 2.0 Auth Code + PKCE to obtain platform tokens", "weight": 2},
+        {"criterion": "Token rotation, refresh handling, and re-consent flow when tokens expire or scopes change", "weight": 2},
+        {"criterion": "Audit log + revoke path for compliance", "weight": 1}
+      ],
+      "modelAnswer": "Introduce an Adapter Service. Users log in to our platform via OAuth 2.0 (with PKCE). During onboarding, redirect through OAuth 1.0 flow to CRM: request-token → user authorizes → access-token. Encrypt (KMS) and store the CRM tokens keyed by our user id. Adapter signs OAuth 1.0 requests per RFC 5849 whenever CRM API is called. Health check + refresh flow. Revocation endpoint invalidates stored tokens.",
+      "tags": ["auth", "oauth"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "sd-005",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "multi-tenant",
+      "prompt": "Design a monitoring system for a multi-tenant SaaS where each client has different SLA requirements (99%, 99.9%, 99.99%).",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Isolates per-tenant metrics (labels/tags) end-to-end", "weight": 2},
+        {"criterion": "SLO-based alerting: error budget consumption per tenant, not just raw thresholds", "weight": 3},
+        {"criterion": "Multi-window burn-rate alerts to avoid noisy false positives", "weight": 2},
+        {"criterion": "Per-tenant dashboards + customer-facing status page", "weight": 1},
+        {"criterion": "Data-retention tiering per tier (99.99% keeps longer, higher-resolution)", "weight": 2},
+        {"criterion": "Incident routing to the right on-call based on tenant tier", "weight": 1}
+      ],
+      "modelAnswer": "Prometheus (or Datadog) with tenant_id label on every metric. Define SLIs (availability, latency P95, error rate) per tenant. SLOs stored as YAML per tier. Sloth or Pyrra to generate burn-rate alert rules. Grafana per-tenant dashboards + external status page via Statuspage.io. Alertmanager routes by tier → PagerDuty escalation policy per tier.",
+      "tags": ["observability", "multi-tenant"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "sd-006",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "queue",
+      "prompt": "Design a distributed job queue with priorities, retries, and dead-letter handling.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Chooses backing store (Redis/BullMQ, SQS+DLQ, or Kafka) with rationale", "weight": 2},
+        {"criterion": "Priority mechanism (per-priority queues OR weighted scheduling)", "weight": 2},
+        {"criterion": "Retry with exp backoff, max attempts, then DLQ", "weight": 2},
+        {"criterion": "Idempotent job handlers via idempotency key", "weight": 2},
+        {"criterion": "Worker scaling (concurrency + auto-scaling on queue depth)", "weight": 2},
+        {"criterion": "Observability: age of oldest message, throughput, failure rate", "weight": 1}
+      ],
+      "modelAnswer": "Redis + BullMQ. Multiple named queues (critical/normal/low) each with its own worker pool sized by SLA. Each job has jobId (dedup) + idempotency-safe handler. Retry: 5 attempts, exp backoff. Terminal fail → DLQ + Slack alert. Autoscale workers via KEDA on queue length. Prometheus exporter for age/throughput. Nightly job to reap zombie locks.",
+      "tags": ["queue", "distributed"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "sd-007",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "ingestion",
+      "prompt": "Design ingestion + transformation for 12 fragmented retail data sources into a forecasting model.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Classifies each source (batch vs stream, structured vs semi-structured, refresh)", "weight": 2},
+        {"criterion": "Landing zone (raw layer) → cleaned/silver → aggregated/gold pattern", "weight": 3},
+        {"criterion": "Schema-on-read for messy sources; contracts on the gold layer", "weight": 2},
+        {"criterion": "Orchestration (Airflow/Dagster/dbt) + observability of pipeline SLAs", "weight": 2},
+        {"criterion": "Data quality: freshness, volume, distribution checks; alert on drift", "weight": 2},
+        {"criterion": "Backfill + reprocessing story for corrections", "weight": 1}
+      ],
+      "modelAnswer": "S3 raw zone partitioned by source/date. Fivetran + custom Airbyte connectors ingest each source (or Kafka Connect for streaming). dbt transforms to silver (cleaned) then gold (per-SKU per-day features). Airflow DAG orchestrates dependencies. Great Expectations for DQ. Feature store (Feast) feeds the model. Backfills: idempotent DAGs keyed by logical date.",
+      "tags": ["data-pipeline", "etl"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "sd-008",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "latency",
+      "prompt": "A naïve RAG endpoint takes 1.5s. Requirement: sub-100ms latency. Walk through the plan.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Decomposes latency: tokenize, embed, vector search, prompt build, LLM inference, network", "weight": 3},
+        {"criterion": "Applies caching: embed cache, response cache with semantic key, prefetch", "weight": 3},
+        {"criterion": "Reduces LLM cost: smaller model, distillation, or answer-only classifier for FAQ path", "weight": 2},
+        {"criterion": "Uses streaming to reduce time-to-first-token perception", "weight": 1},
+        {"criterion": "Batches, KV-cache reuse, GPU/TPU choice, quantization", "weight": 2},
+        {"criterion": "Acknowledges sub-100ms with an LLM in the loop is often impossible — proposes a cascading design", "weight": 2}
+      ],
+      "modelAnswer": "Break down: 30ms tokenize, 100ms embed, 200ms vector, 700ms LLM. Sub-100ms overall requires bypassing the LLM for common paths. Semantic-cache lookup first (edge-deployed). If miss, small-model classifier for FAQ intents. Only true novel queries hit the LLM (async streaming). Precompute embeddings for query templates. Colocate embedding model + vector DB. Set p50 SLO for cached path <50ms; be honest that novel-query p50 will be ~500ms streamed.",
+      "tags": ["latency", "rag"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "sd-009",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "legacy",
+      "prompt": "A client's existing system is a 15-year-old on-premise ERP with no API layer. Design an integration.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Asks about DB access, batch export windows, existing extract processes", "weight": 2},
+        {"criterion": "Doesn't propose an invasive rewrite — respects change control", "weight": 2},
+        {"criterion": "Extraction strategy: read replica, CDC, file drops, screen-scrape as last resort", "weight": 3},
+        {"criterion": "Transform + landing in modern data layer (S3/Snowflake), with schema versioning", "weight": 2},
+        {"criterion": "Two-way sync considerations + conflict handling", "weight": 2},
+        {"criterion": "Security + audit + rollback plan", "weight": 1}
+      ],
+      "modelAnswer": "Ask about DB engine and whether we can attach a read replica. Prefer: CDC via Debezium reading from replica → Kafka → S3/warehouse. Fallback: nightly SQL exports as CSV to SFTP. For writes: if ERP has import files, submit through their batch window; otherwise scope a thin adapter service that talks to whatever RPC/DB access is authorized. Everything auditable. Change-management flags every deploy.",
+      "tags": ["legacy", "integration"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "sd-010",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "prompt-versioning",
+      "prompt": "Design prompt versioning, A/B testing, and rollback in production.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Prompts as versioned artifacts (git or DB with immutable IDs)", "weight": 3},
+        {"criterion": "Traffic-splitting infra (feature flag / experiment platform) with per-user sticky assignment", "weight": 2},
+        {"criterion": "Metrics: task success rate, user thumbs-up/down, cost/latency deltas", "weight": 2},
+        {"criterion": "Offline eval set replay before rollout", "weight": 2},
+        {"criterion": "Fast rollback: single flag flip; last-known-good pinned", "weight": 2},
+        {"criterion": "Audit: log which prompt version served which response for reproducibility", "weight": 1}
+      ],
+      "modelAnswer": "Prompts live in git as YAML with semantic versions. Deploy loads them into a Prompt Registry (DB + cache). Requests carry prompt_id/version. LaunchDarkly assigns users to variants; per-user hash for stickiness. Every response logs prompt_version + inputs + score. Weekly report: cohort success rates + cost. Rollback = disable flag. Offline eval on golden set runs on every PR affecting prompts.",
+      "tags": ["prompt-ops", "llm"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "sd-011",
+      "type": "open-rubric",
+      "difficulty": "medium",
+      "topic": "caching",
+      "prompt": "Design a caching strategy for a read-heavy product-catalog API (100k RPS, 10M products, updates once per hour).",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Multi-layer: CDN edge → in-memory app cache → Redis → DB", "weight": 3},
+        {"criterion": "Invalidation strategy: TTL + explicit purge on update; versioned cache keys", "weight": 3},
+        {"criterion": "Cache-aside vs write-through choice with rationale", "weight": 2},
+        {"criterion": "Hot-key + thundering-herd mitigation (request coalescing / stale-while-revalidate)", "weight": 2},
+        {"criterion": "Metrics: hit ratio per layer, evictions, p99 tail", "weight": 1}
+      ],
+      "modelAnswer": "CDN caches full JSON per product for 5 min. App uses SWR with 30s freshness. Redis L2 with 1-hour TTL. Cache key includes catalog version so cutover is atomic. On product update: bump version + explicit CDN purge for changed IDs. Coalesce back-fills with sync.Once/singleflight to prevent stampede on cache-miss on hot IDs.",
+      "tags": ["caching"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "sd-012",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "observability",
+      "prompt": "Design observability for an AI agent system (LLM calls + tool use + state) that a client's ops team must run.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Traces every agent step (LLM call, tool call, retry) with trace + span ids", "weight": 3},
+        {"criterion": "Log inputs, outputs, and prompt versions for reproducibility; PII redaction", "weight": 2},
+        {"criterion": "Metrics: task success rate, LLM cost per task, tool failure rate, latency P95", "weight": 2},
+        {"criterion": "Live dashboards + on-call alert rules on burn rates", "weight": 2},
+        {"criterion": "Replay tooling: recreate a bad run from stored inputs", "weight": 2},
+        {"criterion": "Client-visible view for their ops team, not just our engineers", "weight": 1}
+      ],
+      "modelAnswer": "OpenTelemetry spans per agent step. Langfuse or Arize AI for LLM-specific tracing (prompt/response/cost). Grafana dashboards for cost + success. Golden-run replayer that hydrates trace payloads to reproduce failures. Client-facing lightweight UI showing recent runs + drill-down.",
+      "tags": ["observability", "llm"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "sd-013",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "webhook-engine",
+      "prompt": "Design a webhook INGESTION engine handling 100k requests/sec with per-tenant rate limiting, retry backoffs, and tenant isolation. (The canonical Turing FDE Stage 4 prompt.)",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Clarifies: are we the sender or receiver? What's the durability SLA? What ordering guarantees per tenant?", "weight": 3},
+        {"criterion": "Front door: API Gateway / LB (nginx or ALB) with TLS termination, HMAC signature verification, sync 2xx ASAP", "weight": 3},
+        {"criterion": "Ingest is a THIN handler: validate + write to durable queue (Kafka partitioned by tenant_id) and 202 back", "weight": 3},
+        {"criterion": "Separate consumer fleet processes; auto-scales on queue depth per tenant partition", "weight": 3},
+        {"criterion": "Per-tenant rate limit at edge (token bucket in Redis) + per-tenant queue quotas (backpressure surfaces as 429)", "weight": 3},
+        {"criterion": "Retry with exp backoff + jitter, capped attempts, DLQ + replay tool", "weight": 3},
+        {"criterion": "Tenant isolation: separate queue partitions (or separate topics), per-tenant worker pools OR bulkhead capacity", "weight": 3},
+        {"criterion": "Idempotency key from sender + dedup store (Redis SET with TTL)", "weight": 3},
+        {"criterion": "Observability: golden signals per tenant, alert on ingest failure rate, DLQ depth, consumer lag", "weight": 2},
+        {"criterion": "Capacity math: 100k/sec × ~1KB = 100MB/s → 8.6TB/day → sizing Kafka + replication + retention", "weight": 2}
+      ],
+      "modelAnswer": "Edge: ALB → nginx (TLS, HMAC verify, rate limit per tenant via Redis Lua) → 3-tier fleet of ingest pods. Ingest pods do: (1) parse header, (2) verify HMAC, (3) check idempotency key in Redis (SETNX with 24h TTL), (4) write to Kafka topic `wh-events`, partitioned by tenant_id (~256 partitions), (5) return 202 with ID. Consumer fleet: per-tenant consumer groups, workers scale on lag (KEDA). Each worker processes with retry (5 attempts, exp backoff, jitter). Terminal failure → DLQ Kafka topic `wh-dlq` with error context + retryable flag. Ops UI to replay from DLQ. Per-tenant quotas enforced at edge (tokens/sec) and at consumer level (max in-flight per tenant). Sizing: 100k RPS × 1KB = 100MB/s → 6 brokers with RF=3 → ~150GB/hour → 7-day retention = ~25TB. Monitor: ingest 5xx rate, HMAC failures, per-tenant lag, DLQ depth. Alerts: >0.1% failure or lag > 5m. Golden path: end-to-end median <50ms; DLQ replay tool with dry-run mode.",
+      "tags": ["webhook", "kafka", "multi-tenant"],
+      "sourcePlatforms": ["fde-loop", "turing-mcq"]
+    },
+    {
+      "id": "sd-014",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "multi-region",
+      "prompt": "Design an active-active multi-region API with strong per-user consistency (a user always reads their own writes) but tolerant of one region failing.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Route users to home region (geo-DNS + user cookie for stickiness after failover)", "weight": 3},
+        {"criterion": "Each region owns a slice of users (avoids cross-region write contention)", "weight": 3},
+        {"criterion": "Global data (catalog, config) uses master-in-one-region + async read replicas", "weight": 2},
+        {"criterion": "Failover: promote a healthy region to serve the failed region's users; RPO/RTO stated", "weight": 3},
+        {"criterion": "Cross-region latency budget accounted for (writes to home region only; reads local)", "weight": 2},
+        {"criterion": "Observability: per-region SLO + cross-region replication lag alerts", "weight": 2},
+        {"criterion": "Data-residency / compliance considerations (EU users stay in EU)", "weight": 2}
+      ],
+      "modelAnswer": "Home-region-per-user pattern: user profile stores home_region; global service directory (Route 53 latency + failover) sends the user to home region. Home region owns writes for that user + async replica in disaster region. Failover flow: health checks flip DNS to disaster region; disaster promotes replica → primary; users may see 30-60s of writes replayed as replication catches up (documented RPO). Global catalog (products, config) has a leader region + eventual read replicas in each region. Latency SLO stated per region. Compliance: EU users pinned to EU home; disaster is another EU region.",
+      "tags": ["multi-region", "failover"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "sd-015",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "sso",
+      "prompt": "A client requires SAML SSO from their Okta and only allows their employees to reach your app. Design.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "SP-initiated flow: user → app → redirect to Okta with SAMLRequest → Okta auth → SAMLResponse POST back → we validate signature + issuer + audience + not-before/not-on-or-after", "weight": 3},
+        {"criterion": "Store Okta metadata (public cert, IdP entity ID) per tenant; support cert rotation", "weight": 3},
+        {"criterion": "Map SAML attributes → our user model (email, groups → roles)", "weight": 2},
+        {"criterion": "JIT provisioning: first SAML login creates the user record", "weight": 2},
+        {"criterion": "SLO (Single Logout) support, or clear communication that we do only local logout", "weight": 1},
+        {"criterion": "SCIM for user lifecycle (deprovision on offboarding)", "weight": 2},
+        {"criterion": "Tenant-restricted subdomain / IdP-selection page so login lands on the right IdP", "weight": 2}
+      ],
+      "modelAnswer": "Multi-tenant. Login page routes by email domain to the tenant's IdP config or shows a picker at `/sso/select`. Use `saml2-js` or `passport-saml`. Per-tenant record: {sp_entity_id, idp_entity_id, idp_x509_cert, callback_url}. On response: validate signature, issuer, audience, timing, replay (store InResponseTo). Attributes → user: `NameID` → email, `groups` → roles. JIT: if no user, create. Optional SCIM v2 endpoint for Okta to POST provisioning events. Certificate rotation: support multiple valid certs simultaneously during rollover.",
+      "tags": ["saml", "sso"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "sd-016",
+      "type": "open-rubric",
+      "difficulty": "medium",
+      "topic": "search",
+      "prompt": "Design product search over 5M items: filters, facets, typeahead, ranking. Traffic 5k QPS peak.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Choose search engine (Elasticsearch/OpenSearch/Meilisearch/Typesense) with rationale", "weight": 2},
+        {"criterion": "Indexing pipeline: CDC from Postgres → transform → bulk index, incremental updates", "weight": 3},
+        {"criterion": "Query design: bool query with must (text) + filter (facets) + sort (ranking); highlight", "weight": 2},
+        {"criterion": "Typeahead via edge n-grams + separate lighter index, aggressive cache", "weight": 2},
+        {"criterion": "Ranking: BM25 + business signals (popularity, freshness, revenue-weight) via function score", "weight": 3},
+        {"criterion": "Multi-tenancy / geography / language shards", "weight": 1},
+        {"criterion": "SLO: P95 <150ms; alert on latency + relevance regression", "weight": 2}
+      ],
+      "modelAnswer": "OpenSearch cluster, 3 data + 3 master, 5-shard 1-replica index. Debezium CDC from `products` table → Kafka → indexer service transforms + bulks. Query: `bool { must: multi_match(title, description) filter: {terms: {category, brand}, range: {price}} function_score: {popularity, freshness}}`. Typeahead: `products_suggest` index with completion suggester. Redis in front for suggest cache. Golden dataset of top 500 queries with expected ordering; nightly ranking eval. Auto-scale ingest workers on Kafka lag.",
+      "tags": ["search", "elasticsearch"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "sd-017",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "streaming",
+      "prompt": "Design a real-time analytics dashboard: 500k events/sec ingest, sub-second aggregations for 100 active dashboards.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Kafka ingest + Flink (or Materialize/RisingWave) for stateful streaming aggregation", "weight": 3},
+        {"criterion": "Sink to a fast time-series / columnar store (ClickHouse, Druid, Pinot) OR Redis for the hot cube", "weight": 3},
+        {"criterion": "Dashboards subscribe via WebSocket or SSE to only their needed cubes", "weight": 2},
+        {"criterion": "Windowing choice (tumbling / sliding / session) with watermarks for late events", "weight": 3},
+        {"criterion": "Exactly-once via Kafka EOS + idempotent sink", "weight": 2},
+        {"criterion": "Cost + retention tiering (hot in RAM, warm in ClickHouse, cold in S3)", "weight": 1}
+      ],
+      "modelAnswer": "Events → Kafka (100 partitions). Flink jobs compute 1s tumbling + 1m sliding aggregates. Sink hot windows to Redis; historical to ClickHouse. Dashboard server subscribes to relevant Redis keys + broadcasts via WebSocket to browsers. Watermarks tolerate 10s late events; late-late events emit correction records. Kafka EOS + ClickHouse ReplacingMergeTree for idempotency. Retention: 1h in Redis, 90d in ClickHouse, forever in S3 (parquet).",
+      "tags": ["streaming", "analytics"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "sd-018",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "feature-flags",
+      "prompt": "Design a feature-flag system usable across 200 services and 5M end-users with <10ms flag evaluation.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Central admin UI + evaluation SDK per service (JS/Go/Python)", "weight": 2},
+        {"criterion": "Flag configs pushed to edges (S3/CDN + polling OR streaming SSE)", "weight": 3},
+        {"criterion": "Evaluation happens LOCALLY (in-process) using cached config — never remote-per-call", "weight": 3},
+        {"criterion": "User targeting rules: percentage rollout via stable hash, attribute rules", "weight": 3},
+        {"criterion": "Audit log every flag change; PR-review workflow for prod changes", "weight": 2},
+        {"criterion": "Kill switch: single-flag disable in <30 sec globally", "weight": 3},
+        {"criterion": "Analytics: flag exposure events streamed to warehouse for experiment analysis", "weight": 2}
+      ],
+      "modelAnswer": "Config service publishes flag manifest to S3 + CDN + Redis pub/sub. SDK polls every 30s + subscribes to pub/sub for instant kill switches. Evaluation is pure in-process. Targeting: `hash(userId + flagId) < rolloutPercentage`. Admin UI writes to Postgres; changes flow through PR review for prod. Audit trail in append-only table. Exposure events posted async to Kafka → warehouse for experiment stats.",
+      "tags": ["feature-flags"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "sd-019",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "notifications",
+      "prompt": "Design a notification service: email + SMS + push, 10M users, at-least-once, per-user preferences, deliverability.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "API accepts logical notification → template renders per channel → provider adapter sends", "weight": 3},
+        {"criterion": "Per-user preference store filters channels before send", "weight": 3},
+        {"criterion": "Rate limits + digests to prevent spam", "weight": 2},
+        {"criterion": "Provider failover (SendGrid → SES; Twilio → MessageBird) with weighted routing", "weight": 3},
+        {"criterion": "Suppression list (bounces, complaints, unsubscribes) enforced on send", "weight": 3},
+        {"criterion": "Delivery tracking (webhooks from provider → status update)", "weight": 2},
+        {"criterion": "Observability: delivery rate, bounce rate, latency per channel + provider", "weight": 2}
+      ],
+      "modelAnswer": "Producers → Kafka topic per channel. Renderer service loads template + user prefs, renders per channel, checks suppression list, publishes to send queue. Sender workers per provider consume, apply per-provider rate limit (Redis token bucket), track message id. Provider webhooks land on webhook consumer that updates message status + suppression list. Preference UI writes to Postgres. Deliverability: SPF/DKIM/DMARC set up per sending domain; regular list hygiene.",
+      "tags": ["notifications"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "sd-020",
+      "type": "open-rubric",
+      "difficulty": "medium",
+      "topic": "chat",
+      "prompt": "Design a chat system with 1:1 + group chats, presence, typing indicators, and 100k concurrent users.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "WebSocket for real-time; REST for history; separate concerns", "weight": 2},
+        {"criterion": "Message storage: Cassandra/DynamoDB partitioned by conversation_id + timestamp", "weight": 3},
+        {"criterion": "Fan-out via Redis pub/sub across app nodes (per-conversation channel)", "weight": 3},
+        {"criterion": "Presence: TTL keys in Redis, heartbeat every 30s", "weight": 2},
+        {"criterion": "Typing: ephemeral events, NOT persisted", "weight": 2},
+        {"criterion": "Media: signed upload URLs to object storage, only URL flows through chat", "weight": 2},
+        {"criterion": "E2EE optional but designed for; keys never on server", "weight": 1}
+      ],
+      "modelAnswer": "WS server behind LB with sticky-by-user or Redis-backed connection registry. Per-conversation pub/sub channel; server node subscribes on behalf of connected clients. Cassandra table: `messages(conversation_id, sent_at, message_id, sender_id, body)`. Presence: `HSET presence user_id ts`, TTL 90s. Typing broadcasts through pub/sub but never stored. Client uploads media directly to S3 via pre-signed URLs.",
+      "tags": ["chat", "realtime"],
+      "sourcePlatforms": ["fde-loop"]
+    }
+  ]
+}

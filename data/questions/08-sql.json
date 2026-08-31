@@ -1,0 +1,730 @@
+{
+  "module": "sql",
+  "title": "SQL",
+  "description": "Joins, aggregates, window functions, CTEs, indexes, optimization. Heavy on Turing MCQ, Turing FDE, Andela technical.",
+  "platformCoverage": ["turing-mcq", "turing-coding", "andela-hr", "andela-pair", "fde-loop"],
+  "estimatedHours": 4,
+  "questions": [
+    {
+      "id": "sq-001",
+      "type": "mcq-single",
+      "difficulty": "easy",
+      "topic": "joins",
+      "prompt": "INNER JOIN returns:",
+      "options": [
+        {"id": "a", "text": "All rows from both tables, filling nulls where no match"},
+        {"id": "b", "text": "Only rows with matches in both tables"},
+        {"id": "c", "text": "All rows from left, matching from right"},
+        {"id": "d", "text": "Rows without matches"}
+      ],
+      "correct": ["b"],
+      "explanation": "INNER = intersection. LEFT = left + matched right. FULL OUTER = union. NULLs fill unmatched sides in outer joins.",
+      "tags": ["joins"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "sq-002",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "aggregates",
+      "prompt": "In `SELECT dept, COUNT(*) FROM employees GROUP BY dept HAVING COUNT(*) > 5`, why HAVING instead of WHERE?",
+      "options": [
+        {"id": "a", "text": "WHERE runs on groups; HAVING on rows"},
+        {"id": "b", "text": "WHERE runs before GROUP BY on rows; HAVING runs after on groups (allows aggregates)"},
+        {"id": "c", "text": "They are aliases"},
+        {"id": "d", "text": "HAVING is deprecated"}
+      ],
+      "correct": ["b"],
+      "explanation": "WHERE filters rows first, GROUP BY buckets, HAVING filters groups. Aggregate functions can only appear in SELECT/HAVING/ORDER BY.",
+      "tags": ["aggregates", "group-by"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "sq-003",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "window",
+      "prompt": "What does `ROW_NUMBER() OVER (PARTITION BY dept ORDER BY salary DESC)` produce?",
+      "options": [
+        {"id": "a", "text": "Global row number ordered by salary"},
+        {"id": "b", "text": "Per-department 1..N ranking, no ties collapsed"},
+        {"id": "c", "text": "Same rank for ties"},
+        {"id": "d", "text": "Cumulative sum"}
+      ],
+      "correct": ["b"],
+      "explanation": "ROW_NUMBER always distinct. RANK gives same rank to ties (with gaps). DENSE_RANK gives same rank without gaps.",
+      "tags": ["window-functions"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "sq-004",
+      "type": "short-code",
+      "difficulty": "medium",
+      "topic": "window",
+      "prompt": "Return the 2nd-highest salary per department (handle ties → still one row per dept).",
+      "options": [],
+      "correct": [],
+      "explanation": "```sql\nWITH ranked AS (\n  SELECT dept, salary,\n    DENSE_RANK() OVER (PARTITION BY dept ORDER BY salary DESC) rk\n  FROM employees\n)\nSELECT dept, salary FROM ranked WHERE rk = 2;\n```\nUse DENSE_RANK to define \"2nd\" ignoring duplicate top values as one rank.",
+      "tags": ["window-functions", "dense-rank"],
+      "sourcePlatforms": ["turing-coding", "fde-loop"]
+    },
+    {
+      "id": "sq-005",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "indexes",
+      "prompt": "A B-tree index on `(user_id, created_at)` speeds which query BEST?",
+      "options": [
+        {"id": "a", "text": "WHERE created_at = '...'"},
+        {"id": "b", "text": "WHERE user_id = 1 ORDER BY created_at DESC LIMIT 10"},
+        {"id": "c", "text": "WHERE email = 'x'"},
+        {"id": "d", "text": "SELECT COUNT(*) FROM users"}
+      ],
+      "correct": ["b"],
+      "explanation": "Composite index leftmost-prefix rule. Query filters on user_id and orders by the second column → index seek + ordered scan.",
+      "tags": ["indexes", "b-tree"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "sq-006",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "null",
+      "prompt": "`WHERE col = NULL` returns:",
+      "options": [
+        {"id": "a", "text": "Rows where col is NULL"},
+        {"id": "b", "text": "Always empty — must use IS NULL"},
+        {"id": "c", "text": "Rows where col is not set"},
+        {"id": "d", "text": "Error"}
+      ],
+      "correct": ["b"],
+      "explanation": "NULL = NULL is UNKNOWN, not TRUE. Use `IS NULL` / `IS NOT NULL`.",
+      "tags": ["null"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "sq-007",
+      "type": "short-code",
+      "difficulty": "medium",
+      "topic": "cte",
+      "prompt": "Return customers with 30%+ return rate in the last quarter (returns / orders ≥ 0.30).",
+      "options": [],
+      "correct": [],
+      "explanation": "```sql\nWITH q AS (\n  SELECT customer_id,\n    COUNT(*) FILTER (WHERE type = 'order') AS orders,\n    COUNT(*) FILTER (WHERE type = 'return') AS returns\n  FROM transactions\n  WHERE date >= DATE_TRUNC('quarter', CURRENT_DATE) - INTERVAL '3 months'\n    AND date <  DATE_TRUNC('quarter', CURRENT_DATE)\n  GROUP BY customer_id\n)\nSELECT customer_id FROM q\nWHERE orders > 0 AND returns::float / orders >= 0.30;\n```\nGuard divide-by-zero. Use FILTER for conditional counts (Postgres).",
+      "tags": ["cte", "aggregates"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "sq-008",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "transactions",
+      "prompt": "Which isolation level prevents phantom reads?",
+      "options": [
+        {"id": "a", "text": "READ COMMITTED"},
+        {"id": "b", "text": "REPEATABLE READ"},
+        {"id": "c", "text": "SERIALIZABLE"},
+        {"id": "d", "text": "READ UNCOMMITTED"}
+      ],
+      "correct": ["c"],
+      "explanation": "Serializable prevents dirty, non-repeatable, and phantom reads. Postgres's REPEATABLE READ (snapshot iso) also prevents phantoms; strict SQL definition doesn't.",
+      "tags": ["transactions", "isolation"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "sq-009",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "joins",
+      "prompt": "`SELECT * FROM a LEFT JOIN b ON a.id = b.a_id WHERE b.x IS NULL` finds:",
+      "options": [
+        {"id": "a", "text": "All rows from a"},
+        {"id": "b", "text": "Rows in a with no matching b (anti-join pattern)"},
+        {"id": "c", "text": "Rows where both a and b have nulls"},
+        {"id": "d", "text": "Error"}
+      ],
+      "correct": ["b"],
+      "explanation": "Classic anti-join. LEFT JOIN + IS NULL on the right = 'in a but not in b'.",
+      "tags": ["joins", "anti-join"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "sq-010",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "performance",
+      "prompt": "EXPLAIN shows Seq Scan on a 10M-row table for `WHERE email = 'x'`. First thing to try?",
+      "options": [
+        {"id": "a", "text": "Rewrite as JOIN"},
+        {"id": "b", "text": "Add an index on email"},
+        {"id": "c", "text": "Increase work_mem"},
+        {"id": "d", "text": "Vacuum full"}
+      ],
+      "correct": ["b"],
+      "explanation": "Missing index → seq scan. Add one, then re-check plan and stats (ANALYZE).",
+      "tags": ["performance", "explain"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "sq-011",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "orm",
+      "prompt": "N+1 query problem is:",
+      "options": [
+        {"id": "a", "text": "One query fetches N rows then N separate queries fetch related rows for each"},
+        {"id": "b", "text": "N queries all fail"},
+        {"id": "c", "text": "A UNION with N branches"},
+        {"id": "d", "text": "A query hitting >N indexes"}
+      ],
+      "correct": ["a"],
+      "explanation": "Fix with eager-loading, JOINs, or in-clauses. Every ORM has a version (includes, populate, join, prefetch_related).",
+      "tags": ["orm", "n+1"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "sq-012",
+      "type": "short-code",
+      "difficulty": "medium",
+      "topic": "aggregates",
+      "prompt": "Given `orders(id, customer_id, total, ordered_at)`, return top 3 customers by total spend in 2026.",
+      "options": [],
+      "correct": [],
+      "explanation": "```sql\nSELECT customer_id, SUM(total) AS spend\nFROM orders\nWHERE ordered_at >= '2026-01-01' AND ordered_at < '2027-01-01'\nGROUP BY customer_id\nORDER BY spend DESC\nLIMIT 3;\n```",
+      "tags": ["aggregates"],
+      "sourcePlatforms": ["turing-coding", "andela-hr"]
+    },
+    {
+      "id": "sq-013",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "concurrency",
+      "prompt": "You must prevent two concurrent transactions from both booking the last seat. Best strategy in Postgres:",
+      "options": [
+        {"id": "a", "text": "SELECT + UPDATE without lock"},
+        {"id": "b", "text": "SELECT ... FOR UPDATE inside the txn, then UPDATE"},
+        {"id": "c", "text": "Use REPEATABLE READ and hope"},
+        {"id": "d", "text": "Add UNIQUE constraint on seat"}
+      ],
+      "correct": ["b"],
+      "explanation": "SELECT FOR UPDATE takes a row-level lock. Second txn blocks (or fails under NOWAIT / SKIP LOCKED).",
+      "tags": ["concurrency", "locking"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "sq-014",
+      "type": "short-code",
+      "difficulty": "hard",
+      "topic": "window",
+      "prompt": "Compute running total of `amount` per user, ordered by date.",
+      "options": [],
+      "correct": [],
+      "explanation": "```sql\nSELECT user_id, date, amount,\n  SUM(amount) OVER (PARTITION BY user_id ORDER BY date\n    ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS running_total\nFROM txns;\n```",
+      "tags": ["window-functions"],
+      "sourcePlatforms": ["turing-coding", "fde-loop"]
+    },
+    {
+      "id": "sq-015",
+      "type": "short-code",
+      "difficulty": "hard",
+      "topic": "gap-and-island",
+      "prompt": "Given a stream of login timestamps per user, group consecutive days into 'sessions' — return user + first & last day of each session.",
+      "options": [],
+      "correct": [],
+      "explanation": "Gap-and-island trick.\n```sql\nWITH d AS (\n  SELECT user_id, login_date::date AS d,\n    login_date::date - INTERVAL '1 day' * ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY login_date) AS grp\n  FROM logins\n)\nSELECT user_id, MIN(d) AS start, MAX(d) AS end\nFROM d\nGROUP BY user_id, grp\nORDER BY user_id, start;\n```",
+      "tags": ["window-functions", "gap-and-island"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "sq-016",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "indexes",
+      "prompt": "Which is a downside of adding indexes?",
+      "options": [
+        {"id": "a", "text": "Slower reads"},
+        {"id": "b", "text": "Slower writes (each insert/update maintains the index) + storage cost"},
+        {"id": "c", "text": "They break FKs"},
+        {"id": "d", "text": "They cause deadlocks by default"}
+      ],
+      "correct": ["b"],
+      "explanation": "Read-heavy tables benefit; write-heavy pay a cost. Also more storage + slower backups. Choose indexes intentionally.",
+      "tags": ["indexes"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "sq-017",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "schema",
+      "prompt": "Normalization to 3NF reduces:",
+      "options": [
+        {"id": "a", "text": "Query complexity"},
+        {"id": "b", "text": "Redundancy and update anomalies"},
+        {"id": "c", "text": "Storage always"},
+        {"id": "d", "text": "Read latency"}
+      ],
+      "correct": ["b"],
+      "explanation": "Splitting into 3NF removes dependencies on non-keys. May slow reads (more joins) — accept trade-off, denormalize for analytics.",
+      "tags": ["normalization"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "sq-018",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "query-plan",
+      "prompt": "You see a `Nested Loop` in EXPLAIN for two 1M-row tables. Likely bad because:",
+      "options": [
+        {"id": "a", "text": "Nested Loop is O(m*n) — Hash Join or Merge Join is far better at scale"},
+        {"id": "b", "text": "Nested Loop always deadlocks"},
+        {"id": "c", "text": "It uses too much RAM"},
+        {"id": "d", "text": "It disables indexes"}
+      ],
+      "correct": ["a"],
+      "explanation": "Nested Loop is fine for small drives with indexed lookup on the inner. For large scans, planner should pick Hash or Merge Join — if it doesn't, run ANALYZE.",
+      "tags": ["query-plan"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "sq-019",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "sql-injection",
+      "prompt": "Preventing SQL injection in Node/Postgres:",
+      "options": [
+        {"id": "a", "text": "Escape strings with backticks"},
+        {"id": "b", "text": "Use parameterized/prepared statements — never concatenate user input into SQL"},
+        {"id": "c", "text": "Trust ORM defaults"},
+        {"id": "d", "text": "Sanitize with regex"}
+      ],
+      "correct": ["b"],
+      "explanation": "Parameters are treated as values, not SQL. ORMs mostly do this, but raw queries need explicit parameter placeholders.",
+      "tags": ["security", "sql-injection"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "sq-020",
+      "type": "short-code",
+      "difficulty": "hard",
+      "topic": "pivot",
+      "prompt": "Given `events(user_id, event_name, ts)`, produce one row per user with counts of 'view', 'click', 'buy'.",
+      "options": [],
+      "correct": [],
+      "explanation": "```sql\nSELECT user_id,\n  COUNT(*) FILTER (WHERE event_name = 'view')  AS views,\n  COUNT(*) FILTER (WHERE event_name = 'click') AS clicks,\n  COUNT(*) FILTER (WHERE event_name = 'buy')   AS buys\nFROM events\nGROUP BY user_id;\n```\nAlt: `SUM(CASE WHEN … THEN 1 ELSE 0 END)` for non-Postgres.",
+      "tags": ["pivot", "aggregates"],
+      "sourcePlatforms": ["turing-coding", "fde-loop"]
+    },
+    {
+      "id": "sq-021",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "index-types",
+      "prompt": "In Postgres, GIN vs B-tree — GIN is preferred for:",
+      "options": [
+        {"id": "a", "text": "Range queries on numbers"},
+        {"id": "b", "text": "Full-text search (tsvector), JSONB containment (@>), arrays (&&), trigram search"},
+        {"id": "c", "text": "Primary keys"},
+        {"id": "d", "text": "Unique indexes"}
+      ],
+      "correct": ["b"],
+      "explanation": "GIN = Generalized Inverted Index. B-tree for ordered/equality on scalars. GiST for spatial/geometric.",
+      "tags": ["indexes", "gin"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "sq-022",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "index-types",
+      "prompt": "A HASH index in Postgres is used when:",
+      "options": [
+        {"id": "a", "text": "You need range queries"},
+        {"id": "b", "text": "You only need equality lookups and want smaller size than B-tree — rarely necessary now that B-tree handles equality well"},
+        {"id": "c", "text": "Full-text search"},
+        {"id": "d", "text": "Ordering"}
+      ],
+      "correct": ["b"],
+      "explanation": "Hash indexes are WAL-logged since PG10 but still niche. B-tree is the safe default for most cases.",
+      "tags": ["indexes", "hash"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "sq-023",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "partial-index",
+      "prompt": "A partial index like `CREATE INDEX ON orders(customer_id) WHERE status='pending'` is useful when:",
+      "options": [
+        {"id": "a", "text": "You need to index everything"},
+        {"id": "b", "text": "Only a small subset is queried, keeping the index small + fast — hot queries filter on that subset"},
+        {"id": "c", "text": "Always"},
+        {"id": "d", "text": "For UNIQUE constraints only"}
+      ],
+      "correct": ["b"],
+      "explanation": "Partial + covering + expression indexes are Postgres power tools. Cost only what you use.",
+      "tags": ["indexes", "partial"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "sq-024",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "covering-index",
+      "prompt": "A covering index (INCLUDE clause) allows:",
+      "options": [
+        {"id": "a", "text": "Index scan to satisfy the query without a heap lookup — 'Index Only Scan'"},
+        {"id": "b", "text": "Multiple indexes at once"},
+        {"id": "c", "text": "Encrypted indexes"},
+        {"id": "d", "text": "Nothing new"}
+      ],
+      "correct": ["a"],
+      "explanation": "`CREATE INDEX ON t(user_id) INCLUDE (email)` — planner reads columns straight from index. Massive wins on read-heavy queries.",
+      "tags": ["indexes", "covering"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "sq-025",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "mvcc",
+      "prompt": "Postgres MVCC creates dead tuples on UPDATE/DELETE. What reclaims them?",
+      "options": [
+        {"id": "a", "text": "Nothing"},
+        {"id": "b", "text": "VACUUM (autovacuum runs periodically); heavy write tables may need tuning"},
+        {"id": "c", "text": "REINDEX"},
+        {"id": "d", "text": "Backup"}
+      ],
+      "correct": ["b"],
+      "explanation": "Autovacuum: mark tuples reusable + update stats. VACUUM FULL rewrites (locks); pg_repack does online. Bloat monitoring is important.",
+      "tags": ["mvcc", "vacuum"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "sq-026",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "isolation",
+      "prompt": "Read Committed (Postgres default) can produce:",
+      "options": [
+        {"id": "a", "text": "Dirty reads"},
+        {"id": "b", "text": "Non-repeatable reads AND phantom reads — but not dirty reads"},
+        {"id": "c", "text": "Nothing weird"},
+        {"id": "d", "text": "Only phantom reads"}
+      ],
+      "correct": ["b"],
+      "explanation": "Each STATEMENT sees a fresh snapshot. Two SELECTs in one txn may return different rows if committed writes happen between them.",
+      "tags": ["isolation"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "sq-027",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "isolation",
+      "prompt": "Postgres REPEATABLE READ (aka Snapshot Isolation) is stronger than SQL-standard RR because:",
+      "options": [
+        {"id": "a", "text": "It uses locks"},
+        {"id": "b", "text": "Snapshot Isolation ALSO prevents phantom reads via MVCC snapshots — but is still vulnerable to write skew (fixed by SERIALIZABLE)"},
+        {"id": "c", "text": "Nothing"},
+        {"id": "d", "text": "Blocks writes"}
+      ],
+      "correct": ["b"],
+      "explanation": "SERIALIZABLE in Postgres adds Serializable Snapshot Isolation (SSI) — detects write skew and aborts one of the txns.",
+      "tags": ["isolation", "snapshot"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "sq-028",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "locks",
+      "prompt": "`SELECT ... FOR UPDATE SKIP LOCKED` in Postgres is useful for:",
+      "options": [
+        {"id": "a", "text": "Nothing special"},
+        {"id": "b", "text": "Concurrent workers pulling from a queue table — each worker skips rows another worker has locked, so N workers naturally split the batch"},
+        {"id": "c", "text": "Read replicas"},
+        {"id": "d", "text": "Analytics"}
+      ],
+      "correct": ["b"],
+      "explanation": "Poor-man's job queue right inside Postgres. Combined with LIMIT for fair sharing. NOWAIT is the alternative that errors instead of skipping.",
+      "tags": ["locks", "queue"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "sq-029",
+      "type": "short-code",
+      "difficulty": "hard",
+      "topic": "cte",
+      "prompt": "Given `employees(id, manager_id, name)`, return each employee with their full management chain up to CEO using a recursive CTE.",
+      "options": [],
+      "correct": [],
+      "explanation": "```sql\nWITH RECURSIVE chain AS (\n  SELECT id, manager_id, name, ARRAY[name] AS path, 1 AS depth\n  FROM employees\n  WHERE manager_id IS NULL\n  UNION ALL\n  SELECT e.id, e.manager_id, e.name, c.path || e.name, c.depth + 1\n  FROM employees e JOIN chain c ON e.manager_id = c.id\n)\nSELECT id, name, path, depth FROM chain ORDER BY depth, name;\n```",
+      "tags": ["cte", "recursive"],
+      "sourcePlatforms": ["turing-coding", "fde-loop"]
+    },
+    {
+      "id": "sq-030",
+      "type": "short-code",
+      "difficulty": "hard",
+      "topic": "window",
+      "prompt": "For each user, return their latest order and second-latest order in a single result set.",
+      "options": [],
+      "correct": [],
+      "explanation": "```sql\nWITH ranked AS (\n  SELECT user_id, order_id, ordered_at,\n    ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY ordered_at DESC) AS rn\n  FROM orders\n)\nSELECT user_id,\n  MAX(order_id) FILTER (WHERE rn = 1) AS latest,\n  MAX(order_id) FILTER (WHERE rn = 2) AS second_latest\nFROM ranked\nWHERE rn <= 2\nGROUP BY user_id;\n```",
+      "tags": ["window-functions"],
+      "sourcePlatforms": ["turing-coding", "fde-loop"]
+    },
+    {
+      "id": "sq-031",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "sharding",
+      "prompt": "Sharding by user_id hash gives:",
+      "options": [
+        {"id": "a", "text": "Even distribution + hard cross-user queries + scatter-gather for aggregates"},
+        {"id": "b", "text": "Total ordering by user_id"},
+        {"id": "c", "text": "Free full-text search"},
+        {"id": "d", "text": "Global unique constraints"}
+      ],
+      "correct": ["a"],
+      "explanation": "Hash sharding maximizes distribution but breaks range queries. Range sharding gives ordered scans but risks hotspots.",
+      "tags": ["sharding"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "sq-032",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "replication",
+      "prompt": "Read replicas in Postgres — reading from a replica can return:",
+      "options": [
+        {"id": "a", "text": "Data slightly behind primary (replication lag)"},
+        {"id": "b", "text": "Data from the future"},
+        {"id": "c", "text": "Locked rows only"},
+        {"id": "d", "text": "Corrupted data"}
+      ],
+      "correct": ["a"],
+      "explanation": "Route read-your-writes to primary, or use `pg_wal_replay_lsn` to wait for a specific write to land. Otherwise a user may write and then not see it on refresh.",
+      "tags": ["replication"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "sq-033",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "connection-pool",
+      "prompt": "Connection pool sizing for Postgres backend:",
+      "options": [
+        {"id": "a", "text": "As many as possible"},
+        {"id": "b", "text": "Bounded (usually <= (cores × 2) or PgBouncer in front); too many connections = context switching + memory hit; PgBouncer for high fan-out"},
+        {"id": "c", "text": "One"},
+        {"id": "d", "text": "1000+"}
+      ],
+      "correct": ["b"],
+      "explanation": "Postgres is process-per-connection. PgBouncer in transaction mode multiplexes app connections onto few backend connections.",
+      "tags": ["connection-pool"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "sq-034",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "cache",
+      "prompt": "Materialized view vs regular view:",
+      "options": [
+        {"id": "a", "text": "Same"},
+        {"id": "b", "text": "Materialized view stores the query result physically → fast reads, needs REFRESH; regular view is just a saved query"},
+        {"id": "c", "text": "Regular view is faster"},
+        {"id": "d", "text": "Only in MySQL"}
+      ],
+      "correct": ["b"],
+      "explanation": "REFRESH CONCURRENTLY allows readers during refresh (requires unique index). Good for expensive analytics rolled up hourly.",
+      "tags": ["materialized-view"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "sq-035",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "json",
+      "prompt": "JSONB vs JSON in Postgres — pick JSONB when:",
+      "options": [
+        {"id": "a", "text": "You need to preserve original whitespace + key order"},
+        {"id": "b", "text": "You need indexed lookups (@>, ?), which require binary format; more storage but much faster queries"},
+        {"id": "c", "text": "Always JSON"},
+        {"id": "d", "text": "Only for numeric data"}
+      ],
+      "correct": ["b"],
+      "explanation": "JSON = text-preserving. JSONB = parsed binary + can index via GIN. Almost always JSONB.",
+      "tags": ["json", "jsonb"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "sq-036",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "explain",
+      "prompt": "In EXPLAIN ANALYZE, a large gap between 'planned rows' and 'actual rows' usually means:",
+      "options": [
+        {"id": "a", "text": "Nothing important"},
+        {"id": "b", "text": "Stale statistics — run ANALYZE; consider auto-analyze tuning or extended statistics for correlated columns"},
+        {"id": "c", "text": "Disk failure"},
+        {"id": "d", "text": "Network problem"}
+      ],
+      "correct": ["b"],
+      "explanation": "Planner uses stats to pick joins. Stale stats → wrong plan (nested loop when hash should win, etc.).",
+      "tags": ["explain", "statistics"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "sq-037",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "migration",
+      "prompt": "Adding a NOT NULL column with DEFAULT on a huge table in Postgres:",
+      "options": [
+        {"id": "a", "text": "Locks the whole table for hours"},
+        {"id": "b", "text": "Fast in modern PG (11+) — metadata-only for constant defaults; large tables OK. Non-constant defaults still rewrite"},
+        {"id": "c", "text": "Impossible"},
+        {"id": "d", "text": "Requires downtime always"}
+      ],
+      "correct": ["b"],
+      "explanation": "Volatile defaults (now(), random()) still rewrite. Best pattern: add nullable, backfill in batches, then ADD NOT NULL as separate step.",
+      "tags": ["migration", "ddl"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "sq-038",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "migration",
+      "prompt": "Zero-downtime online index creation in Postgres:",
+      "options": [
+        {"id": "a", "text": "CREATE INDEX (default locks writes)"},
+        {"id": "b", "text": "CREATE INDEX CONCURRENTLY — allows writes but takes longer + can leave invalid on failure"},
+        {"id": "c", "text": "CREATE UNIQUE"},
+        {"id": "d", "text": "REINDEX"},
+        {"id": "e", "text": "Impossible"}
+      ],
+      "correct": ["b"],
+      "explanation": "CONCURRENTLY is the online pattern. Check `pg_index.indisvalid` after; if invalid, drop and retry.",
+      "tags": ["migration", "index"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "sq-039",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "audit",
+      "prompt": "Add an audit trail for every UPDATE on a table without changing app code:",
+      "options": [
+        {"id": "a", "text": "Impossible"},
+        {"id": "b", "text": "TRIGGER writing old + new row into an audit table on UPDATE"},
+        {"id": "c", "text": "CHECK constraint"},
+        {"id": "d", "text": "View"}
+      ],
+      "correct": ["b"],
+      "explanation": "Trigger + audit table is the classic pattern. Alternatives: logical decoding (Debezium) into Kafka.",
+      "tags": ["audit", "trigger"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "sq-040",
+      "type": "short-code",
+      "difficulty": "hard",
+      "topic": "practical",
+      "prompt": "Find users who never placed an order (given users(id) and orders(id, user_id, ordered_at)).",
+      "options": [],
+      "correct": [],
+      "explanation": "Three equivalent patterns:\n```sql\n-- LEFT JOIN + IS NULL (anti-join)\nSELECT u.id FROM users u LEFT JOIN orders o ON o.user_id = u.id WHERE o.id IS NULL;\n\n-- NOT EXISTS (usually best plan)\nSELECT u.id FROM users u WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.user_id = u.id);\n\n-- NOT IN (careful with NULLs in orders.user_id)\nSELECT id FROM users WHERE id NOT IN (SELECT user_id FROM orders WHERE user_id IS NOT NULL);\n```",
+      "tags": ["anti-join"],
+      "sourcePlatforms": ["turing-coding", "fde-loop"]
+    },
+    {
+      "id": "sq-041",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "partitioning",
+      "prompt": "Native table partitioning by RANGE (e.g., monthly) helps because:",
+      "options": [
+        {"id": "a", "text": "It's just cosmetic"},
+        {"id": "b", "text": "Queries with a WHERE on the partition key prune to relevant partitions only; DROP old month is instant vs DELETE"},
+        {"id": "c", "text": "Adds indexes automatically"},
+        {"id": "d", "text": "Prevents deletes"}
+      ],
+      "correct": ["b"],
+      "explanation": "Great for time-series. Must include partition-key predicate for pruning. Constraint-exclusion in older PG.",
+      "tags": ["partitioning"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "sq-042",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "vector",
+      "prompt": "pgvector's IVFFlat vs HNSW index — key trade-off:",
+      "options": [
+        {"id": "a", "text": "HNSW: faster + higher recall + more memory + slower build; IVFFlat: less memory, needs training, faster build"},
+        {"id": "b", "text": "They're identical"},
+        {"id": "c", "text": "Only HNSW supports L2"},
+        {"id": "d", "text": "IVFFlat needs GPU"}
+      ],
+      "correct": ["a"],
+      "explanation": "HNSW became default for pgvector 0.5+. IVFFlat requires ANALYZE with samples for lists parameter.",
+      "tags": ["pgvector"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "sq-043",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "trigger",
+      "prompt": "Cascade DELETE via FK vs handling in app — best practice:",
+      "options": [
+        {"id": "a", "text": "Always CASCADE in DB"},
+        {"id": "b", "text": "Explicit ON DELETE CASCADE where semantically intended (child truly belongs to parent); RESTRICT for reference tables you don't want silently deleted"},
+        {"id": "c", "text": "Never use FK"},
+        {"id": "d", "text": "App only"}
+      ],
+      "correct": ["b"],
+      "explanation": "CASCADE is powerful and dangerous. Silent mass-delete is a common footgun.",
+      "tags": ["foreign-keys"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "sq-044",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "uuid",
+      "prompt": "UUID v4 as primary key vs auto-increment integer:",
+      "options": [
+        {"id": "a", "text": "UUID always better"},
+        {"id": "b", "text": "UUIDs enable client-side ID generation, no sequence bottleneck across nodes, but hurt index locality — consider UUID v7 (time-ordered)"},
+        {"id": "c", "text": "Integer always better"},
+        {"id": "d", "text": "Same performance"}
+      ],
+      "correct": ["b"],
+      "explanation": "UUID v7 (2024 draft) has time-prefix → recovers B-tree locality. ULID/KSUID similar.",
+      "tags": ["primary-key"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "sq-045",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "backup",
+      "prompt": "Postgres PITR (Point-in-Time Recovery) requires:",
+      "options": [
+        {"id": "a", "text": "Full snapshot only"},
+        {"id": "b", "text": "Base backup + continuous WAL archiving; recovery replays WAL up to a chosen timestamp/txn"},
+        {"id": "c", "text": "Cloud provider"},
+        {"id": "d", "text": "Nothing special"}
+      ],
+      "correct": ["b"],
+      "explanation": "pgBackRest / WAL-G handle this. RPO ≈ WAL archive interval. Test restores are the only proof it works.",
+      "tags": ["backup", "pitr"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    }
+  ]
+}

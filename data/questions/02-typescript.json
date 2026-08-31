@@ -1,0 +1,430 @@
+{
+  "module": "typescript",
+  "title": "TypeScript",
+  "description": "Generics, utility types, discriminated unions, narrowing, module resolution. Heavy on Turing MCQ, medium on FDE loop.",
+  "platformCoverage": ["turing-mcq", "turing-coding", "andela-pair", "toptal-live", "fde-loop"],
+  "estimatedHours": 4,
+  "questions": [
+    {
+      "id": "ts-001",
+      "type": "mcq-single",
+      "difficulty": "easy",
+      "topic": "basics",
+      "prompt": "Which is NOT a TypeScript primitive type keyword?",
+      "options": [
+        {"id": "a", "text": "number"},
+        {"id": "b", "text": "string"},
+        {"id": "c", "text": "float"},
+        {"id": "d", "text": "bigint"}
+      ],
+      "correct": ["c"],
+      "explanation": "TS uses `number` for all numeric values. `float` doesn't exist.",
+      "tags": ["primitives"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "ts-002",
+      "type": "mcq-single",
+      "difficulty": "easy",
+      "topic": "any-unknown",
+      "prompt": "What is the key difference between `any` and `unknown`?",
+      "options": [
+        {"id": "a", "text": "No difference — aliases"},
+        {"id": "b", "text": "`any` disables type checking; `unknown` requires narrowing before use"},
+        {"id": "c", "text": "`unknown` is faster at runtime"},
+        {"id": "d", "text": "`any` cannot hold null"}
+      ],
+      "correct": ["b"],
+      "explanation": "`unknown` is the type-safe counterpart to `any`. You must narrow (typeof, instanceof) before using it.",
+      "tags": ["any", "unknown"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "ts-003",
+      "type": "code-output",
+      "difficulty": "medium",
+      "topic": "generics",
+      "prompt": "Which type is inferred?",
+      "code": "function first<T>(arr: T[]): T | undefined {\n  return arr[0];\n}\nconst r = first([1, 2, 3]);\n// hover type of r",
+      "options": [
+        {"id": "a", "text": "number"},
+        {"id": "b", "text": "number | undefined"},
+        {"id": "c", "text": "T | undefined"},
+        {"id": "d", "text": "any"}
+      ],
+      "correct": ["b"],
+      "explanation": "T is inferred as `number`, so return type becomes `number | undefined`.",
+      "tags": ["generics", "inference"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "ts-004",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "utility-types",
+      "prompt": "`Partial<T>` produces:",
+      "options": [
+        {"id": "a", "text": "A type with all properties of T made optional"},
+        {"id": "b", "text": "A type with all properties readonly"},
+        {"id": "c", "text": "A subset picked by union"},
+        {"id": "d", "text": "A type with properties removed"}
+      ],
+      "correct": ["a"],
+      "explanation": "`Partial<T>` maps each key to optional. `Readonly<T>` freezes, `Pick<T,K>` selects, `Omit<T,K>` removes.",
+      "tags": ["utility-types", "partial"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "ts-005",
+      "type": "mcq-multi",
+      "difficulty": "medium",
+      "topic": "utility-types",
+      "prompt": "Given `type User = { id: string; name: string; email: string }`, which produce `{ name: string; email: string }`? (select all)",
+      "options": [
+        {"id": "a", "text": "Pick<User, 'name' | 'email'>"},
+        {"id": "b", "text": "Omit<User, 'id'>"},
+        {"id": "c", "text": "Exclude<User, 'id'>"},
+        {"id": "d", "text": "Partial<User>"}
+      ],
+      "correct": ["a", "b"],
+      "explanation": "Pick selects keys; Omit removes keys. Exclude operates on unions of types, not object keys.",
+      "tags": ["utility-types", "pick", "omit"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "ts-006",
+      "type": "code-output",
+      "difficulty": "medium",
+      "topic": "narrowing",
+      "prompt": "Does this compile?",
+      "code": "function f(x: string | number) {\n  if (typeof x === 'string') {\n    return x.toUpperCase();\n  }\n  return x.toFixed(2);\n}",
+      "options": [
+        {"id": "a", "text": "Yes"},
+        {"id": "b", "text": "No — toFixed doesn't exist on `string | number`"},
+        {"id": "c", "text": "No — typeof unavailable"},
+        {"id": "d", "text": "Only with `as number` cast"}
+      ],
+      "correct": ["a"],
+      "explanation": "TypeScript narrows `x` to `number` after the `typeof === 'string'` branch returns.",
+      "tags": ["narrowing", "typeof"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "ts-007",
+      "type": "code-output",
+      "difficulty": "medium",
+      "topic": "discriminated-union",
+      "prompt": "What lets TS narrow `s`?",
+      "code": "type Shape =\n  | { kind: 'circle'; r: number }\n  | { kind: 'square'; side: number };\nfunction area(s: Shape) {\n  if (s.kind === 'circle') return Math.PI * s.r ** 2;\n  return s.side ** 2;\n}",
+      "options": [
+        {"id": "a", "text": "The `kind` literal-type discriminator"},
+        {"id": "b", "text": "The order of union members"},
+        {"id": "c", "text": "The type of `r`"},
+        {"id": "d", "text": "It doesn't narrow — needs a cast"}
+      ],
+      "correct": ["a"],
+      "explanation": "Discriminated (tagged) unions rely on a shared literal-type property; TS narrows on that check.",
+      "tags": ["discriminated-union", "narrowing"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "ts-008",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "conditional-types",
+      "prompt": "`type X = string extends string | number ? 'a' : 'b'` is:",
+      "options": [
+        {"id": "a", "text": "'a'"},
+        {"id": "b", "text": "'b'"},
+        {"id": "c", "text": "'a' | 'b'"},
+        {"id": "d", "text": "never"}
+      ],
+      "correct": ["a"],
+      "explanation": "`string` is assignable to `string | number`, so the check succeeds → 'a'.",
+      "tags": ["conditional-types"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "ts-009",
+      "type": "code-output",
+      "difficulty": "hard",
+      "topic": "conditional-types",
+      "prompt": "Given `type NonNull<T> = T extends null | undefined ? never : T`, what is `NonNull<string | null | number>`?",
+      "options": [
+        {"id": "a", "text": "string | number"},
+        {"id": "b", "text": "never"},
+        {"id": "c", "text": "string | number | null"},
+        {"id": "d", "text": "any"}
+      ],
+      "correct": ["a"],
+      "explanation": "Conditional types distribute over unions. Each member is tested; null → never → dropped from union.",
+      "tags": ["conditional-types", "distribution"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "ts-010",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "interface-vs-type",
+      "prompt": "Which is TRUE about `interface` vs `type`?",
+      "options": [
+        {"id": "a", "text": "Only `interface` can be extended"},
+        {"id": "b", "text": "Only `type` can define unions"},
+        {"id": "c", "text": "`interface` merges duplicate declarations; `type` does not"},
+        {"id": "d", "text": "They compile differently at runtime"}
+      ],
+      "correct": ["c"],
+      "explanation": "Declaration merging is interface-only. Both compile to nothing at runtime. Both can be extended (interface extends, type via intersection).",
+      "tags": ["interface", "type-alias"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "ts-011",
+      "type": "code-output",
+      "difficulty": "medium",
+      "topic": "generics",
+      "prompt": "Does this compile?",
+      "code": "function longest<T extends { length: number }>(a: T, b: T): T {\n  return a.length >= b.length ? a : b;\n}\nconst r = longest('hi', [1, 2, 3]);",
+      "options": [
+        {"id": "a", "text": "Yes, r is string | number[]"},
+        {"id": "b", "text": "No, T must be the same for both args"},
+        {"id": "c", "text": "Yes, r is any"},
+        {"id": "d", "text": "Yes, r is { length: number }"}
+      ],
+      "correct": ["b"],
+      "explanation": "Both a and b are `T`, so TS tries to find one T that fits both string and number[]. Constraint doesn't help — error unless you use two generics.",
+      "tags": ["generics", "constraints"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "ts-012",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "mapped-types",
+      "prompt": "What does `type ReadOnly<T> = { readonly [K in keyof T]: T[K] }` do?",
+      "options": [
+        {"id": "a", "text": "Marks every property of T as readonly"},
+        {"id": "b", "text": "Deletes every property"},
+        {"id": "c", "text": "Marks every property as optional"},
+        {"id": "d", "text": "Adds a `readonly` field"}
+      ],
+      "correct": ["a"],
+      "explanation": "Mapped type iterates keys of T, keeps original value types, adds `readonly`. This is the built-in `Readonly<T>`.",
+      "tags": ["mapped-types"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "ts-013",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "as-const",
+      "prompt": "What is the inferred type of `const x = { role: 'admin' } as const`?",
+      "options": [
+        {"id": "a", "text": "{ role: string }"},
+        {"id": "b", "text": "{ readonly role: 'admin' }"},
+        {"id": "c", "text": "{ role: 'admin' }"},
+        {"id": "d", "text": "any"}
+      ],
+      "correct": ["b"],
+      "explanation": "`as const` narrows to literal types AND makes properties readonly.",
+      "tags": ["as-const", "literal-types"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "ts-014",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "enums",
+      "prompt": "Which is TRUE about numeric enums?",
+      "options": [
+        {"id": "a", "text": "They compile away completely"},
+        {"id": "b", "text": "They create a reverse-map object at runtime"},
+        {"id": "c", "text": "They can only hold strings"},
+        {"id": "d", "text": "They are treeshakable by default"}
+      ],
+      "correct": ["b"],
+      "explanation": "Numeric enums emit runtime code with two-way mapping. `const enum` inlines and disappears. String enums also emit but no reverse map.",
+      "tags": ["enum"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "ts-015",
+      "type": "code-output",
+      "difficulty": "hard",
+      "topic": "keyof",
+      "prompt": "What is `type K = keyof { a: 1; b: 2; c: 3 }`?",
+      "options": [
+        {"id": "a", "text": "'a' | 'b' | 'c'"},
+        {"id": "b", "text": "1 | 2 | 3"},
+        {"id": "c", "text": "string"},
+        {"id": "d", "text": "'a' & 'b' & 'c'"}
+      ],
+      "correct": ["a"],
+      "explanation": "`keyof` produces a union of the object type's keys as string literal types.",
+      "tags": ["keyof"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "ts-016",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "utility-types",
+      "prompt": "`ReturnType<T>` where `T = () => Promise<string>` is:",
+      "options": [
+        {"id": "a", "text": "string"},
+        {"id": "b", "text": "Promise<string>"},
+        {"id": "c", "text": "Awaited<Promise<string>>"},
+        {"id": "d", "text": "never"}
+      ],
+      "correct": ["b"],
+      "explanation": "ReturnType extracts the return of the function type as-is. To unwrap the Promise use `Awaited<ReturnType<T>>`.",
+      "tags": ["utility-types", "return-type"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "ts-017",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "infer",
+      "prompt": "Given `type Elem<T> = T extends (infer U)[] ? U : never`, what is `Elem<string[]>`?",
+      "options": [
+        {"id": "a", "text": "string"},
+        {"id": "b", "text": "string[]"},
+        {"id": "c", "text": "never"},
+        {"id": "d", "text": "any"}
+      ],
+      "correct": ["a"],
+      "explanation": "`infer` captures the array element type inside a conditional. Works like unification.",
+      "tags": ["infer", "conditional-types"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "ts-018",
+      "type": "mcq-multi",
+      "difficulty": "medium",
+      "topic": "type-guards",
+      "prompt": "Which are valid TS type guards? (select all)",
+      "options": [
+        {"id": "a", "text": "typeof x === 'string'"},
+        {"id": "b", "text": "x instanceof Error"},
+        {"id": "c", "text": "'foo' in x"},
+        {"id": "d", "text": "function isCat(x: any): x is Cat { return x.meow !== undefined }"},
+        {"id": "e", "text": "x === null"}
+      ],
+      "correct": ["a", "b", "c", "d", "e"],
+      "explanation": "All narrow. User-defined type predicates use `x is T` return type.",
+      "tags": ["type-guards", "narrowing"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "ts-019",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "never",
+      "prompt": "When is `never` useful?",
+      "options": [
+        {"id": "a", "text": "As a placeholder in generics"},
+        {"id": "b", "text": "For exhaustiveness checks in switch statements"},
+        {"id": "c", "text": "As default for optional args"},
+        {"id": "d", "text": "To type mutable arrays"}
+      ],
+      "correct": ["b"],
+      "explanation": "Assigning to `never` in a `default:` branch causes a compile error if the union isn't exhausted.",
+      "tags": ["never", "exhaustiveness"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "ts-020",
+      "type": "code-output",
+      "difficulty": "hard",
+      "topic": "template-literal",
+      "prompt": "What is `type E = `${\"user\" | \"admin\"}_${\"read\" | \"write\"}``?",
+      "options": [
+        {"id": "a", "text": "'user_read' | 'user_write' | 'admin_read' | 'admin_write'"},
+        {"id": "b", "text": "string"},
+        {"id": "c", "text": "'user' | 'admin' | 'read' | 'write'"},
+        {"id": "d", "text": "never"}
+      ],
+      "correct": ["a"],
+      "explanation": "Template literal types distribute across union parts.",
+      "tags": ["template-literal-types"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "ts-021",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "strict-mode",
+      "prompt": "With `strictNullChecks` ON, this fails to compile — why?",
+      "code": "function greet(n: string) { return `Hi ${n.toUpperCase()}` }\ngreet(null);",
+      "options": [
+        {"id": "a", "text": "toUpperCase doesn't exist"},
+        {"id": "b", "text": "null is not assignable to `string`"},
+        {"id": "c", "text": "Template literals disallowed"},
+        {"id": "d", "text": "Compiles fine"}
+      ],
+      "correct": ["b"],
+      "explanation": "With strict null checks, `null` and `undefined` are only assignable to their own types (or explicit unions like `string | null`).",
+      "tags": ["strict", "null"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "ts-022",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "declaration",
+      "prompt": "You import a JS lib with no types. What's the minimal fix?",
+      "options": [
+        {"id": "a", "text": "Downgrade to JavaScript"},
+        {"id": "b", "text": "Create `myLib.d.ts` with `declare module 'myLib'`"},
+        {"id": "c", "text": "Use `// @ts-nocheck` on every file"},
+        {"id": "d", "text": "Rewrite the library"}
+      ],
+      "correct": ["b"],
+      "explanation": "A minimal ambient module declaration silences the compile error. Ideal: install @types/mylib if it exists.",
+      "tags": ["ambient-declarations"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "ts-023",
+      "type": "short-code",
+      "difficulty": "medium",
+      "topic": "practical",
+      "prompt": "Write a generic `pluck` function: given `T[]` and a key `K extends keyof T`, return `T[K][]`.",
+      "options": [],
+      "correct": [],
+      "explanation": "Reference:\n```ts\nfunction pluck<T, K extends keyof T>(items: T[], key: K): T[K][] {\n  return items.map(item => item[key]);\n}\n```\nUsage: `pluck([{ id: 1 }], 'id')` → `number[]`.",
+      "tags": ["generics", "practical"],
+      "sourcePlatforms": ["turing-coding", "toptal-live", "fde-loop"]
+    },
+    {
+      "id": "ts-024",
+      "type": "short-code",
+      "difficulty": "hard",
+      "topic": "practical",
+      "prompt": "Write a `DeepPartial<T>` type that recursively makes every property optional.",
+      "options": [],
+      "correct": [],
+      "explanation": "```ts\ntype DeepPartial<T> = {\n  [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K];\n};\n```\nHandles nested objects. For arrays, may want a specialized variant.",
+      "tags": ["utility-types", "recursive"],
+      "sourcePlatforms": ["turing-coding", "fde-loop"]
+    },
+    {
+      "id": "ts-025",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "variance",
+      "prompt": "Given `Cat extends Animal`, is `Cat[]` assignable to `Animal[]` in TS?",
+      "options": [
+        {"id": "a", "text": "Yes — arrays are covariant"},
+        {"id": "b", "text": "No — arrays are invariant"},
+        {"id": "c", "text": "Only with `readonly`"},
+        {"id": "d", "text": "Only with cast"}
+      ],
+      "correct": ["a"],
+      "explanation": "TS treats arrays covariantly (unsound but pragmatic). Function parameter positions are bivariant unless `strictFunctionTypes` is on (then contravariant).",
+      "tags": ["variance"],
+      "sourcePlatforms": ["turing-mcq"]
+    }
+  ]
+}

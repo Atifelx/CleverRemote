@@ -1,0 +1,241 @@
+{
+  "module": "refactoring-debugging",
+  "title": "Refactoring, Debugging & Think-Aloud",
+  "description": "Turing Stage 3 alternative format: refactor/debug a dirty 500-line codebase in 35 min. Also: Andela pair-programming narration + SOLID refactor. Each drill is open-rubric — pull the linked snippet locally, work aloud, then self-score.",
+  "platformCoverage": ["turing-coding", "andela-pair", "toptal-live", "fde-loop"],
+  "estimatedHours": 4,
+  "questions": [
+    {
+      "id": "rd-001",
+      "type": "open-rubric",
+      "difficulty": "medium",
+      "topic": "think-aloud",
+      "prompt": "Rehearsal drill: describe how you'd approach a live coding round for the first 3 minutes BEFORE writing any code. Say it aloud.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Restate the problem in your own words", "weight": 3},
+        {"criterion": "Ask 2-3 clarifying questions about input shape, constraints, edge cases", "weight": 3},
+        {"criterion": "State assumptions explicitly", "weight": 2},
+        {"criterion": "Sketch approach + BigO + trade-offs before typing", "weight": 3},
+        {"criterion": "Confirm the plan with the interviewer before coding", "weight": 2}
+      ],
+      "modelAnswer": "Say: 'Let me repeat back — I need to X given Y with constraints Z. A few clarifications: (1) is input always sorted? (2) any duplicates? (3) what's N? Assuming N up to 1M and unsorted with duplicates, my first approach would be a hash-map based two-pass solution: O(n) time, O(n) space. There's a two-pointer solution that's O(1) extra space but O(n log n) if we can sort. Given the constraints, hash-map is simpler — should I go with that or would you prefer the space-optimal version?'",
+      "tags": ["think-aloud", "communication"],
+      "sourcePlatforms": ["turing-coding", "toptal-live", "andela-pair"]
+    },
+    {
+      "id": "rd-002",
+      "type": "open-rubric",
+      "difficulty": "medium",
+      "topic": "refactor-solid",
+      "prompt": "Given this handler doing everything (parse, validate, persist, notify, log), refactor to SOLID principles. Narrate.\n\n```js\n// 200-line monolithic Express handler\napp.post('/orders', async (req, res) => {\n  // parse body\n  // validate SKU exists, quantity > 0, user has enough balance\n  // insert order + line items in DB\n  // decrement inventory\n  // send email via SES\n  // publish to Kafka\n  // audit log\n  // return response\n});\n```",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Names each responsibility: input parsing, validation, persistence, side-effects (email, event), audit", "weight": 3},
+        {"criterion": "Proposes layered structure: controller (thin) → service (business logic) → repository (DB) → notifier/publisher", "weight": 3},
+        {"criterion": "Domain logic (validation, price/balance math) lives in a pure/testable function without I/O", "weight": 3},
+        {"criterion": "Uses dependency injection for external services (SES, Kafka) so unit tests can mock them", "weight": 2},
+        {"criterion": "Handles transaction boundary + outbox pattern for the email + Kafka publish", "weight": 3},
+        {"criterion": "Doesn't over-engineer — pragmatic split, not 20 files for a small handler", "weight": 2}
+      ],
+      "modelAnswer": "Split into: 1) OrderController (thin, HTTP → DTO → calls service). 2) OrderService (business logic, orchestrates repo + events, pure where possible). 3) OrderRepository (DB reads/writes). 4) InventoryService (side-effectful DB dec). 5) NotificationOutbox (write to outbox table in same txn; separate worker sends email + Kafka). 6) AuditLogger (interface, injected). Tests: unit-test OrderService with mocks; integration-test with real DB + testcontainers. Controller shrinks to ~10 lines.",
+      "tags": ["refactor", "solid"],
+      "sourcePlatforms": ["turing-coding", "andela-pair", "fde-loop"]
+    },
+    {
+      "id": "rd-003",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "debug-flaky",
+      "prompt": "A test fails intermittently in CI (~1 in 20 runs) but always passes locally. Walk through your debug approach.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Doesn't 'just add a retry' as the first move", "weight": 3},
+        {"criterion": "Considers common causes: shared mutable state between tests, timing/race, non-deterministic order, external I/O, clock", "weight": 3},
+        {"criterion": "Reproduces via loop + parallelism + CI-like environment", "weight": 3},
+        {"criterion": "Isolates by running the flaky test in different orderings / alone", "weight": 2},
+        {"criterion": "Fixes root cause (not the symptom); adds regression assertion", "weight": 3}
+      ],
+      "modelAnswer": "Reproduce first: `for i in {1..100}; do npm test -- --testNamePattern='X' || break; done`, then with `--runInBand` vs parallel. Common culprits: (a) tests share global state (module-level cache, DB row not cleaned), (b) timezone/locale between local and CI, (c) time-based assertion (`Date.now()`), (d) network to real service (should be mocked), (e) filesystem race (parallel tests using same tmp dir). Fix the underlying nondeterminism; add a comment tying it to the incident.",
+      "tags": ["debug", "flaky-test"],
+      "sourcePlatforms": ["fde-loop", "andela-pair"]
+    },
+    {
+      "id": "rd-004",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "debug-perf",
+      "prompt": "An API endpoint that was P95 = 80ms now takes 800ms after last week's deploy. No error rate change. Diagnose in 15 minutes.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Diff the deploy first (commits since last known good, config, feature flags)", "weight": 3},
+        {"criterion": "Trace one slow request end-to-end (distributed trace or request log with span timings)", "weight": 3},
+        {"criterion": "Consider N+1 introduced by an ORM include change or missing index", "weight": 3},
+        {"criterion": "Check external dependency: cache eviction rate, upstream latency, retry storm", "weight": 2},
+        {"criterion": "Considers cold-cache after deploy vs warm baseline", "weight": 2}
+      ],
+      "modelAnswer": "Step 1: git log since deploy. Step 2: open a slow trace — where is the 720ms spent? DB, external HTTP, in-process? Step 3: if DB, EXPLAIN a slow query; check if a new .include('...') added an N+1 or a new column with no index. Step 4: if cache — is hit rate down? An eviction change or key change? Step 5: if external HTTP — retry policy change, timeout change, downstream latency spike? Rollback candidate identified within the window if root cause matches deploy diff.",
+      "tags": ["debug", "performance"],
+      "sourcePlatforms": ["fde-loop", "turing-coding"]
+    },
+    {
+      "id": "rd-005",
+      "type": "open-rubric",
+      "difficulty": "medium",
+      "topic": "refactor-extract",
+      "prompt": "You inherit a 400-line React component. What's your refactor sequence?",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Don't refactor blindly — first read/write tests to lock behavior", "weight": 3},
+        {"criterion": "Extract data-fetching into a custom hook (useX)", "weight": 3},
+        {"criterion": "Extract form state / validation into another hook or a reducer", "weight": 2},
+        {"criterion": "Split render into subcomponents by section, each with its own props", "weight": 3},
+        {"criterion": "Memoize expensive derivations only after measuring", "weight": 2},
+        {"criterion": "Commit in small reviewable chunks (avoid one giant PR)", "weight": 2}
+      ],
+      "modelAnswer": "Order: (1) capture behavior in tests (React Testing Library — user-facing assertions), (2) pull data-fetching + caching into useX hook, (3) pull form state / mutations into useReducer or react-hook-form, (4) split the JSX into subcomponents by visual section, (5) profile with React DevTools before adding memoization, (6) each step = its own commit + PR-sized chunk. Behavior unchanged; complexity local.",
+      "tags": ["refactor", "react"],
+      "sourcePlatforms": ["turing-coding", "toptal-live", "fde-loop"]
+    },
+    {
+      "id": "rd-006",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "debug-memory",
+      "prompt": "Node.js API OOMs (out of memory) after ~48h of steady traffic. Debug approach.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Distinguishes memory-leak (grows unbounded) vs high-baseline (fits but tight)", "weight": 2},
+        {"criterion": "Takes heap snapshots at intervals with --inspect / clinic.js / heapdump", "weight": 3},
+        {"criterion": "Compares snapshots to find retained-size growth by object type", "weight": 3},
+        {"criterion": "Common suspects: closures capturing large scope, growing Map/Array without eviction, event listeners never removed, per-request cache keyed by user", "weight": 3},
+        {"criterion": "Fix + verify by running load test with leak reproduction pre-fix", "weight": 2}
+      ],
+      "modelAnswer": "Enable --inspect. Take heap snapshot at hour 1, 6, 24. Diff. Look for objects with growing retained size. Common: a module-level Map used as a cache without eviction; event listeners added per request but not removed; setInterval closures keeping references. Fix, deploy with a canary, monitor RSS/heapUsed for 24h before full rollout.",
+      "tags": ["debug", "memory", "nodejs"],
+      "sourcePlatforms": ["fde-loop", "turing-coding"]
+    },
+    {
+      "id": "rd-007",
+      "type": "open-rubric",
+      "difficulty": "medium",
+      "topic": "code-review",
+      "prompt": "A junior submits a PR adding a global `axios.defaults.timeout = 60000` and a new retry wrapper `async function retry(fn) { for (let i = 0; i < 5; i++) try { return await fn(); } catch {} }`. Give the review.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Doesn't just say 'no' — explains WHY", "weight": 2},
+        {"criterion": "Global mutation is a footgun; scope timeout per request or per client instance", "weight": 3},
+        {"criterion": "Silent catch swallows real bugs; must at least log + re-throw on final attempt", "weight": 3},
+        {"criterion": "No backoff → retry storm on upstream failure", "weight": 3},
+        {"criterion": "Retrying non-idempotent operations (POST) causes duplicates", "weight": 3},
+        {"criterion": "Positive framing / suggests concrete fix", "weight": 1}
+      ],
+      "modelAnswer": "Comments: (1) mutating axios global affects every other caller — instantiate a scoped axios client instead. (2) the empty catch will hide real bugs and mask the last-attempt failure — at minimum, log with attempt number and rethrow after the loop. (3) no backoff → thundering herd on transient failures; add exp backoff + jitter. (4) applying retry to POST without idempotency key can create duplicates — either restrict retry to safe methods or require an idempotency key. Suggested rewrite with these fixes included so it's constructive.",
+      "tags": ["code-review"],
+      "sourcePlatforms": ["andela-pair", "fde-loop"]
+    },
+    {
+      "id": "rd-008",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "refactor-legacy",
+      "prompt": "You must add a new feature to a 3000-line file with no tests, and you have 2 weeks. How do you proceed?",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Doesn't propose a rewrite up front — that's 6 months of yak-shaving", "weight": 3},
+        {"criterion": "Adds characterization tests around the affected paths BEFORE touching code", "weight": 3},
+        {"criterion": "Uses the 'seam' pattern (Michael Feathers) — introduce dependency injection at the change point", "weight": 3},
+        {"criterion": "Applies strangler-fig for new code: new feature in a small isolated module, called from the legacy file", "weight": 2},
+        {"criterion": "Ships in small PRs; each one green in CI; doesn't block on giant refactor", "weight": 3}
+      ],
+      "modelAnswer": "Read the file top-to-bottom, take notes on responsibilities. Write characterization tests (assert current behavior, warts and all) around the two functions the feature touches. Introduce a seam — pass in the new dependency as a parameter. Build the new module in isolation, unit-test it fully, wire it in behind a feature flag. Ship. Cleanup can come later.",
+      "tags": ["refactor", "legacy"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "rd-009",
+      "type": "open-rubric",
+      "difficulty": "medium",
+      "topic": "debug-prod",
+      "prompt": "A production incident just fired: 500 error rate spiked to 30% two minutes ago. First 10 minutes of your response.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Acknowledge the alert, join the incident channel", "weight": 1},
+        {"criterion": "Check deploy timeline — was anything shipped in the last hour?", "weight": 3},
+        {"criterion": "Check dashboards: which endpoint, which error, upstream health, DB health", "weight": 3},
+        {"criterion": "Rollback OR feature-flag disable is the fastest recovery — don't try to fix forward under pressure", "weight": 3},
+        {"criterion": "Communicate to stakeholders (status page, exec channel) with what you know + ETA", "weight": 2}
+      ],
+      "modelAnswer": "Ack alert, jump in call, page anyone missing. Ask: what changed in last hour? Look at first 5xx sample — same endpoint? Same error message? Upstream dep down? If a deploy happened, rollback FIRST, investigate SECOND. If a feature flag can turn off the broken path, flip it. Post status update: 'Investigating elevated 5xx errors; rolled back deploy X; will update in 10 min.' Stay in the channel.",
+      "tags": ["incident", "prod-debug"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "rd-010",
+      "type": "open-rubric",
+      "difficulty": "medium",
+      "topic": "refactor-perf",
+      "prompt": "A function is called 10k times per request and profiles to 40% of request CPU. It's 30 lines of pure logic. How do you approach optimization?",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Measure with a real profile — don't guess", "weight": 3},
+        {"criterion": "Ask if we can call it fewer times first (memoize / hoist / batch)", "weight": 3},
+        {"criterion": "Look for accidental O(n²) / allocations inside a hot loop", "weight": 3},
+        {"criterion": "Consider caching / precomputation if inputs repeat", "weight": 2},
+        {"criterion": "Only reach for lower-level optimizations after algorithmic + call-graph fixes", "weight": 2},
+        {"criterion": "Add a benchmark to lock the improvement so it doesn't regress", "weight": 1}
+      ],
+      "modelAnswer": "Profile first — confirm 40%. Ask: can we call it 100 times instead of 10k (memoize, hoist out of the loop, batch)? If not, look for hidden quadratics — `Array.includes` inside a loop → convert to Set; string concatenation → array + join; JSON parse/stringify per call → pass parsed object. If still hot, cache by input hash. Add a benchmark to CI to prevent regression.",
+      "tags": ["performance", "profiling"],
+      "sourcePlatforms": ["fde-loop", "turing-coding"]
+    },
+    {
+      "id": "rd-011",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "debug-race",
+      "prompt": "Two users report seeing each other's data one time each. Debug approach.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Treats as a security incident — audit + freeze if scope is unclear", "weight": 3},
+        {"criterion": "Common causes: shared module-level state on the server, cache key missing user_id, JWT/session confusion", "weight": 3},
+        {"criterion": "Check for stateful things at module scope (variables outside handlers), especially after auth", "weight": 3},
+        {"criterion": "Audit log query to find scope of the leak — how many users, which endpoints?", "weight": 2},
+        {"criterion": "Fix + notify affected users + post-mortem", "weight": 2}
+      ],
+      "modelAnswer": "Treat as critical. Freeze deploys, page security. Common: (1) module-level cache keyed only on resource id, not user id — user A hits endpoint, user B's request lands on same node and gets A's cached data. (2) shared axios interceptor mutating req headers. (3) global user context leaking between requests (rare in Node's per-request model but possible with async_hooks misuse). Audit logs to bound the blast radius. Fix + write post-mortem + notify affected users per compliance.",
+      "tags": ["debug", "race", "security"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "rd-012",
+      "type": "open-rubric",
+      "difficulty": "medium",
+      "topic": "code-defense",
+      "prompt": "You just solved a LeetCode-medium in the interview. The interviewer says 'walk me through complexity and edge cases.' Do it now aloud for the 3Sum problem you solved.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "States time complexity with derivation (sort O(n log n) + outer loop × two-pointer inner = O(n²))", "weight": 3},
+        {"criterion": "States space complexity (O(1) extra, or O(n) if considering sort in JS)", "weight": 2},
+        {"criterion": "Enumerates edge cases: empty, one, two elements, all same value, no triplet sums to 0, all negatives, duplicates", "weight": 3},
+        {"criterion": "Names one improvement you'd make with more time (early termination, dedup on i-index)", "weight": 2},
+        {"criterion": "Confident but honest — acknowledges limits", "weight": 2}
+      ],
+      "modelAnswer": "Time: O(n²) — sort is O(n log n), then for each of n elements a two-pointer inner scan is O(n). Space: O(1) extra, ignoring the output. Edge cases: empty and length<3 return []; all zeros should return one triplet; duplicates require skipping same values at i, l, and r positions after finding a triplet; all negatives (or all positives) means we can early-terminate. If I had more time I'd add early termination when nums[i] > 0. One thing to watch: sort is destructive in JS if we don't want side effects — should confirm with the interviewer whether input can be mutated.",
+      "tags": ["complexity", "code-defense"],
+      "sourcePlatforms": ["turing-coding", "toptal-live", "fde-loop"]
+    }
+  ]
+}

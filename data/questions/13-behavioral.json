@@ -1,0 +1,190 @@
+{
+  "module": "behavioral",
+  "title": "Behavioral / STAR Stories",
+  "description": "Prepare 8 core STAR stories (60-90 sec each). Each covers a slot recruiters + hiring managers ask about. Andela's EPIC values also fit into these slots. Rubric = a STAR checklist.",
+  "platformCoverage": ["turing-mcq", "andela-pair", "toptal-live", "fde-loop"],
+  "estimatedHours": 4,
+  "questions": [
+    {
+      "id": "bh-001",
+      "type": "open-rubric",
+      "difficulty": "medium",
+      "topic": "ownership",
+      "prompt": "Tell me about a project you owned end-to-end.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "S: crisp Situation — 1-2 sentences", "weight": 1},
+        {"criterion": "T: clear Task with your specific ownership (not the team's)", "weight": 2},
+        {"criterion": "A: 3-4 concrete Actions YOU took (I not we)", "weight": 3},
+        {"criterion": "R: measurable Result with a number", "weight": 3},
+        {"criterion": "Reflection: what you learned / would repeat", "weight": 1}
+      ],
+      "modelAnswer": "S: Our customer's onboarding flow was dropping 40% of users at step 3. T: I was responsible for reducing that drop-off. A: I ran a session-replay analysis, found the top three friction points, prototyped fixes over one week, A/B tested one at a time, and shipped the winner. R: Drop-off went from 40% to 18% in 6 weeks; ~$300k additional ARR annualized. Reflection: I now run session replays as the first step on any funnel problem — the fastest signal for what's actually broken.",
+      "tags": ["star", "ownership"],
+      "sourcePlatforms": ["fde-loop", "andela-pair"]
+    },
+    {
+      "id": "bh-002",
+      "type": "open-rubric",
+      "difficulty": "medium",
+      "topic": "difficult-stakeholder",
+      "prompt": "Describe a time you handled a difficult or demanding stakeholder.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Doesn't villainize the stakeholder", "weight": 2},
+        {"criterion": "Names the underlying need they had", "weight": 3},
+        {"criterion": "Concrete action you took to close the gap", "weight": 3},
+        {"criterion": "Result: shipped outcome + repaired working relationship", "weight": 3},
+        {"criterion": "What you'd do earlier next time", "weight": 1}
+      ],
+      "modelAnswer": "S: A senior PM kept escalating that our team was 'unresponsive'. T: I owned turning that around within a quarter. A: One-on-one with them to hear what they actually needed — turned out it wasn't speed, it was predictability. I introduced a weekly written status + a decision log. R: Zero escalations that quarter; the format got adopted by two other teams. Reflection: 'difficult stakeholder' usually means an unmet expectation nobody named.",
+      "tags": ["star", "stakeholders"],
+      "sourcePlatforms": ["fde-loop", "andela-pair"]
+    },
+    {
+      "id": "bh-003",
+      "type": "open-rubric",
+      "difficulty": "medium",
+      "topic": "reversed-decision",
+      "prompt": "Tell me about a technical decision you reversed. Why?",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Intellectual honesty — no spin", "weight": 3},
+        {"criterion": "The new evidence that changed your mind", "weight": 3},
+        {"criterion": "How you unwound the prior decision without breaking users/team", "weight": 3},
+        {"criterion": "What you learned about your original bias", "weight": 2}
+      ],
+      "modelAnswer": "S: I chose Kafka for a low-throughput event bus. T: Two months later usage was 10 events/sec, ops burden was disproportionate. A: I proposed switching to SQS. Migrated writers behind a feature flag, drained Kafka, decommissioned. R: 60% infra cost drop, on-call load fell. Reflection: I now insist on 90-day cost/ops review on any 'default' infrastructure pick.",
+      "tags": ["star", "decisions"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "bh-004",
+      "type": "open-rubric",
+      "difficulty": "medium",
+      "topic": "no-authority",
+      "prompt": "Describe cross-team alignment you drove without formal authority.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Names the outcome that required alignment (not just 'we had meetings')", "weight": 3},
+        {"criterion": "Concrete tactics — writing, one-on-ones, a proposal doc", "weight": 3},
+        {"criterion": "Handled disagreement without escalation-as-hammer", "weight": 2},
+        {"criterion": "Result — did something actually change?", "weight": 3}
+      ],
+      "modelAnswer": "S: Three teams owned different pieces of our billing pipeline and had incompatible retry semantics. T: I wanted a single strategy but couldn't mandate it. A: I wrote a 2-page proposal + ran a review with all three leads; agreed on shared idempotency key + backoff library. R: End-to-end retry bugs dropped from ~5/mo to 0 for two quarters running. Reflection: written proposal beats meetings for cross-team alignment.",
+      "tags": ["star", "influence"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "bh-005",
+      "type": "open-rubric",
+      "difficulty": "medium",
+      "topic": "tight-deadline",
+      "prompt": "Tell me about shipping under a tight deadline with imperfect information.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "What tradeoffs were made explicitly", "weight": 3},
+        {"criterion": "Communicated uncertainty to stakeholders during, not after", "weight": 3},
+        {"criterion": "Followed up on the shortcuts you took", "weight": 3}
+      ],
+      "modelAnswer": "S: Investor demo in 5 days with a broken data pipeline. T: I owned getting a credible-looking end-to-end story ready. A: Scoped the demo to the two accounts we knew were clean; documented the shortcut; ran the pipeline nightly (not real-time) for the demo. Told my lead + the CEO explicitly what we had shipped. R: Demo landed the round; we filled in the real-time piece the following sprint. Reflection: naming shortcuts publicly makes them repayable; hiding them ships tech debt into prod.",
+      "tags": ["star", "shipping"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "bh-006",
+      "type": "open-rubric",
+      "difficulty": "medium",
+      "topic": "failure",
+      "prompt": "Describe a project or deployment that failed. What did you learn?",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Actual failure, not a humble brag", "weight": 3},
+        {"criterion": "Owned share of it — 'I' not 'we/they'", "weight": 3},
+        {"criterion": "Concrete process change since", "weight": 3},
+        {"criterion": "Evidence the lesson stuck (subsequent situation handled differently)", "weight": 2}
+      ],
+      "modelAnswer": "S: I led a migration that took the API down for 40 min in prod. T: I owned the cutover plan. A: I had a rollback but hadn't rehearsed it; when we needed it, the rollback also failed. R: Recovered by manually reverting DNS, ~40 min outage. Since then, every migration I run rehearses the rollback in staging before green-lighting cutover. Last quarter's migration to Postgres 16 had a rehearsed rollback we actually used cleanly — 3-min hiccup instead of 40.",
+      "tags": ["star", "failure"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "bh-007",
+      "type": "open-rubric",
+      "difficulty": "medium",
+      "topic": "customer-no",
+      "prompt": "Tell me about a time you told a customer 'no' and held the line.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "The 'no' had a real principle behind it (security, quality, scope)", "weight": 3},
+        {"criterion": "Acknowledged their valid underlying need", "weight": 3},
+        {"criterion": "Offered alternatives", "weight": 3},
+        {"criterion": "Relationship survived (evidence)", "weight": 2}
+      ],
+      "modelAnswer": "S: Customer asked us to disable audit logging for a specific report because it was 'noisy'. T: I owned the answer. A: I acknowledged their pain — noise makes real signals invisible — but disabling audit was a compliance risk to their own regulator. I offered log filtering + a cleaner UI instead. R: They accepted; their compliance team later thanked me directly when the regulator asked for that log.",
+      "tags": ["star", "customer"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "bh-008",
+      "type": "open-rubric",
+      "difficulty": "medium",
+      "topic": "why-fde",
+      "prompt": "Why FDE specifically, not a regular SWE role?",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Connects to specific past customer-facing technical work", "weight": 3},
+        {"criterion": "Names what you value about FDE: ambiguity, ownership, direct impact", "weight": 3},
+        {"criterion": "Avoids generic answers ('hard problems', 'AI is cool')", "weight": 3},
+        {"criterion": "Ties to why THIS company/role in particular", "weight": 2}
+      ],
+      "modelAnswer": "The last three years I've spent time either sitting with customers or building for internal teams that had the same feedback loop. What I like is that the problem starts messy — real data, real politics, real deadlines — and you have to end with something that actually works in their environment, not just in mine. FDE turns that into the whole job. I'm looking specifically at [company] because [specific reason tied to their actual work / product / customers].",
+      "tags": ["star", "motivation"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "bh-009",
+      "type": "open-rubric",
+      "difficulty": "medium",
+      "topic": "pattern-spotting",
+      "prompt": "Describe a pattern you spotted across multiple customers or projects.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Concrete pattern — not 'customers want speed'", "weight": 3},
+        {"criterion": "How you validated the pattern (data or repeated observations)", "weight": 3},
+        {"criterion": "What you changed as a result (product, process, template)", "weight": 3},
+        {"criterion": "Impact of that change", "weight": 2}
+      ],
+      "modelAnswer": "S: Across five different customers deploying our webhook integration, the same failure mode appeared in month 2: their receiving system started dropping traffic under load. T: I owned pattern reports back to our product team. A: I documented the pattern with logs from all five, proposed a client-side rate-limiter as an opt-in library. R: Shipped in v2.3; new customer implementations stopped hitting that failure in month 2. Reflection: FDEs are the earliest signal source for product; that role only works if we bring the pattern back inside, not just handle each instance.",
+      "tags": ["star", "product-sense"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "bh-010",
+      "type": "open-rubric",
+      "difficulty": "medium",
+      "topic": "remote-collab",
+      "prompt": "Describe a project done fully remote across time zones. How did you make it work? (Andela EPIC-relevant)",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Named specific async practices you used", "weight": 3},
+        {"criterion": "Wrote things down that would normally be verbal", "weight": 3},
+        {"criterion": "Preserved trust despite low overlap hours", "weight": 2},
+        {"criterion": "Result: something shipped that would have failed with poor async", "weight": 3}
+      ],
+      "modelAnswer": "S: Four engineers across three timezones building a data ingest connector on a 6-week deadline. T: I was tech lead, no shared meeting time longer than 2 hours/day. A: Every task had a written design doc reviewed async; daily standup was a written thread; decisions were logged in a single doc; I overlapped 1 hour with each timezone daily. R: Shipped on time with zero re-work from misalignment. Reflection: async-by-default is faster than sync-by-default once the team accepts writing over meetings.",
+      "tags": ["star", "remote"],
+      "sourcePlatforms": ["andela-pair", "fde-loop"]
+    }
+  ]
+}

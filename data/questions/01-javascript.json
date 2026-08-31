@@ -1,0 +1,1304 @@
+{
+  "module": "javascript-fundamentals",
+  "title": "JavaScript Fundamentals",
+  "description": "Closures, event loop, async/await, this binding, prototypes, type coercion, floats, ES6+ APIs. Tested on every Turing MCQ, Andela pair-programming, Toptal live coding, and FDE coding rounds.",
+  "platformCoverage": ["turing-mcq", "turing-coding", "andela-hr", "andela-pair", "toptal-codility", "toptal-live", "fde-loop"],
+  "estimatedHours": 8,
+  "questions": [
+    {
+      "id": "js-001",
+      "type": "code-output",
+      "difficulty": "easy",
+      "topic": "hoisting",
+      "prompt": "What does this print?",
+      "code": "console.log(a);\nvar a = 1;",
+      "options": [
+        {"id": "a", "text": "1"},
+        {"id": "b", "text": "undefined"},
+        {"id": "c", "text": "ReferenceError"},
+        {"id": "d", "text": "null"}
+      ],
+      "correct": ["b"],
+      "explanation": "`var` declarations are hoisted and initialized to `undefined`. The assignment stays in place.",
+      "tags": ["hoisting", "var"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-002",
+      "type": "code-output",
+      "difficulty": "easy",
+      "topic": "hoisting",
+      "prompt": "What does this print?",
+      "code": "console.log(a);\nlet a = 1;",
+      "options": [
+        {"id": "a", "text": "1"},
+        {"id": "b", "text": "undefined"},
+        {"id": "c", "text": "ReferenceError"},
+        {"id": "d", "text": "null"}
+      ],
+      "correct": ["c"],
+      "explanation": "`let`/`const` are hoisted but sit in the Temporal Dead Zone until the declaration is reached. Access before that throws ReferenceError.",
+      "tags": ["hoisting", "tdz", "let"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-003",
+      "type": "code-output",
+      "difficulty": "medium",
+      "topic": "closures",
+      "prompt": "What does this print?",
+      "code": "for (var i = 0; i < 3; i++) {\n  setTimeout(() => console.log(i), 0);\n}",
+      "options": [
+        {"id": "a", "text": "0 1 2"},
+        {"id": "b", "text": "3 3 3"},
+        {"id": "c", "text": "0 0 0"},
+        {"id": "d", "text": "undefined undefined undefined"}
+      ],
+      "correct": ["b"],
+      "explanation": "`var i` is function-scoped, so all three callbacks share the same `i`. By the time the timers fire, the loop has finished and `i === 3`. Replace `var` with `let` for `0 1 2`.",
+      "tags": ["closure", "var", "setTimeout"],
+      "sourcePlatforms": ["turing-mcq", "toptal-live"]
+    },
+    {
+      "id": "js-004",
+      "type": "code-output",
+      "difficulty": "medium",
+      "topic": "closures",
+      "prompt": "What does this print?",
+      "code": "for (let i = 0; i < 3; i++) {\n  setTimeout(() => console.log(i), 0);\n}",
+      "options": [
+        {"id": "a", "text": "0 1 2"},
+        {"id": "b", "text": "3 3 3"},
+        {"id": "c", "text": "0 0 0"},
+        {"id": "d", "text": "ReferenceError"}
+      ],
+      "correct": ["a"],
+      "explanation": "`let` creates a fresh binding per iteration, so each closure captures its own `i`.",
+      "tags": ["closure", "let"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-005",
+      "type": "code-output",
+      "difficulty": "medium",
+      "topic": "event-loop",
+      "prompt": "What does this print?",
+      "code": "console.log('A');\nsetTimeout(() => console.log('B'), 0);\nPromise.resolve().then(() => console.log('C'));\nconsole.log('D');",
+      "options": [
+        {"id": "a", "text": "A B C D"},
+        {"id": "b", "text": "A D B C"},
+        {"id": "c", "text": "A D C B"},
+        {"id": "d", "text": "A C D B"}
+      ],
+      "correct": ["c"],
+      "explanation": "Sync first (A, D). Microtasks (Promise.then) run before the next macrotask, so C prints. Then the setTimeout callback prints B.",
+      "tags": ["event-loop", "microtask", "macrotask"],
+      "sourcePlatforms": ["turing-mcq", "toptal-live", "fde-loop"]
+    },
+    {
+      "id": "js-006",
+      "type": "code-output",
+      "difficulty": "hard",
+      "topic": "event-loop",
+      "prompt": "What does this print?",
+      "code": "async function f() {\n  console.log(1);\n  await null;\n  console.log(2);\n}\nf();\nconsole.log(3);",
+      "options": [
+        {"id": "a", "text": "1 2 3"},
+        {"id": "b", "text": "1 3 2"},
+        {"id": "c", "text": "3 1 2"},
+        {"id": "d", "text": "1 2 undefined 3"}
+      ],
+      "correct": ["b"],
+      "explanation": "1 prints synchronously. `await null` schedules the rest as a microtask, so 3 prints before 2.",
+      "tags": ["async", "await", "event-loop"],
+      "sourcePlatforms": ["turing-mcq", "toptal-live"]
+    },
+    {
+      "id": "js-007",
+      "type": "mcq-single",
+      "difficulty": "easy",
+      "topic": "types",
+      "prompt": "Which comparison is `true`?",
+      "options": [
+        {"id": "a", "text": "'0' == false"},
+        {"id": "b", "text": "'0' === false"},
+        {"id": "c", "text": "null === undefined"},
+        {"id": "d", "text": "NaN === NaN"}
+      ],
+      "correct": ["a"],
+      "explanation": "`==` coerces: '0' → 0, false → 0. `===` requires same type. `NaN` is never equal to itself.",
+      "tags": ["coercion", "equality"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-008",
+      "type": "mcq-multi",
+      "difficulty": "medium",
+      "topic": "types",
+      "prompt": "Which of these evaluate to `false`? (select all)",
+      "options": [
+        {"id": "a", "text": "Boolean('')"},
+        {"id": "b", "text": "Boolean('0')"},
+        {"id": "c", "text": "Boolean(0)"},
+        {"id": "d", "text": "Boolean([])"},
+        {"id": "e", "text": "Boolean({})"}
+      ],
+      "correct": ["a", "c"],
+      "explanation": "Falsy values in JS: `false, 0, -0, 0n, '', null, undefined, NaN`. Empty array and object are truthy. Non-empty string '0' is truthy.",
+      "tags": ["coercion", "falsy"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-009",
+      "type": "code-output",
+      "difficulty": "medium",
+      "topic": "this-binding",
+      "prompt": "What does this print?",
+      "code": "const obj = {\n  x: 10,\n  getX: function() { return this.x; }\n};\nconst f = obj.getX;\nconsole.log(f());",
+      "options": [
+        {"id": "a", "text": "10"},
+        {"id": "b", "text": "undefined"},
+        {"id": "c", "text": "TypeError"},
+        {"id": "d", "text": "null"}
+      ],
+      "correct": ["b"],
+      "explanation": "Detaching the method loses the receiver. In non-strict, `this` becomes globalThis (no `x`), so `undefined`. In strict mode, `this` is `undefined` and access throws TypeError.",
+      "tags": ["this", "binding"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-010",
+      "type": "code-output",
+      "difficulty": "medium",
+      "topic": "this-binding",
+      "prompt": "What does this print?",
+      "code": "const obj = {\n  x: 10,\n  getX: () => this.x\n};\nconsole.log(obj.getX());",
+      "options": [
+        {"id": "a", "text": "10"},
+        {"id": "b", "text": "undefined"},
+        {"id": "c", "text": "TypeError"},
+        {"id": "d", "text": "null"}
+      ],
+      "correct": ["b"],
+      "explanation": "Arrow functions do NOT have their own `this`. They inherit from the enclosing lexical scope (globalThis at top level), which has no `x`.",
+      "tags": ["this", "arrow-function"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-011",
+      "type": "code-output",
+      "difficulty": "easy",
+      "topic": "floats",
+      "prompt": "What does this print?",
+      "code": "console.log(0.1 + 0.2 === 0.3);",
+      "options": [
+        {"id": "a", "text": "true"},
+        {"id": "b", "text": "false"},
+        {"id": "c", "text": "TypeError"},
+        {"id": "d", "text": "NaN"}
+      ],
+      "correct": ["b"],
+      "explanation": "IEEE 754 floating-point: 0.1 + 0.2 = 0.30000000000000004. Use `Math.abs(a-b) < Number.EPSILON` for float equality.",
+      "tags": ["float", "ieee754"],
+      "sourcePlatforms": ["turing-mcq", "toptal-live"]
+    },
+    {
+      "id": "js-012",
+      "type": "code-output",
+      "difficulty": "medium",
+      "topic": "closures",
+      "prompt": "What does this print?",
+      "code": "function counter() {\n  let c = 0;\n  return () => ++c;\n}\nconst a = counter();\nconst b = counter();\na(); a(); a();\nconsole.log(a(), b());",
+      "options": [
+        {"id": "a", "text": "4 1"},
+        {"id": "b", "text": "3 0"},
+        {"id": "c", "text": "4 4"},
+        {"id": "d", "text": "1 1"}
+      ],
+      "correct": ["a"],
+      "explanation": "Each `counter()` call creates a fresh `c`. `a` called 4 times → 4. `b` called once → 1.",
+      "tags": ["closure"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-013",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "prototypes",
+      "prompt": "What is `Object.getPrototypeOf([]) === ?`",
+      "options": [
+        {"id": "a", "text": "Array"},
+        {"id": "b", "text": "Array.prototype"},
+        {"id": "c", "text": "Object.prototype"},
+        {"id": "d", "text": "null"}
+      ],
+      "correct": ["b"],
+      "explanation": "Array literals inherit from Array.prototype, which itself inherits from Object.prototype.",
+      "tags": ["prototype"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-014",
+      "type": "code-output",
+      "difficulty": "medium",
+      "topic": "async",
+      "prompt": "What does this print?",
+      "code": "Promise.resolve(1)\n  .then(v => v + 1)\n  .then(v => { throw new Error('x') })\n  .then(v => v + 1)\n  .catch(e => console.log(e.message))\n  .then(() => console.log('done'));",
+      "options": [
+        {"id": "a", "text": "x done"},
+        {"id": "b", "text": "x"},
+        {"id": "c", "text": "done"},
+        {"id": "d", "text": "2 x done"}
+      ],
+      "correct": ["a"],
+      "explanation": "The thrown error skips subsequent `.then`s until `.catch`, which logs 'x'. The final `.then` after `.catch` still runs → 'done'.",
+      "tags": ["promise", "error-handling"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "js-015",
+      "type": "code-output",
+      "difficulty": "hard",
+      "topic": "async",
+      "prompt": "What is logged, in order?",
+      "code": "async function main() {\n  try {\n    const r = await Promise.reject('err');\n    console.log('r', r);\n  } catch (e) {\n    console.log('caught', e);\n  }\n  console.log('after');\n}\nmain();\nconsole.log('sync');",
+      "options": [
+        {"id": "a", "text": "sync caught err after"},
+        {"id": "b", "text": "caught err after sync"},
+        {"id": "c", "text": "sync r err after"},
+        {"id": "d", "text": "sync after caught err"}
+      ],
+      "correct": ["a"],
+      "explanation": "`main()` runs sync until `await`. `sync` logs. Then microtask runs, catches, logs 'caught err', then 'after'.",
+      "tags": ["async", "await", "error-handling"],
+      "sourcePlatforms": ["turing-mcq", "toptal-live"]
+    },
+    {
+      "id": "js-016",
+      "type": "mcq-multi",
+      "difficulty": "medium",
+      "topic": "array-methods",
+      "prompt": "Which Array methods MUTATE the original array? (select all)",
+      "options": [
+        {"id": "a", "text": "map"},
+        {"id": "b", "text": "sort"},
+        {"id": "c", "text": "slice"},
+        {"id": "d", "text": "splice"},
+        {"id": "e", "text": "reverse"},
+        {"id": "f", "text": "concat"}
+      ],
+      "correct": ["b", "d", "e"],
+      "explanation": "sort, splice, reverse, push, pop, shift, unshift, fill, copyWithin all mutate. map/slice/concat/filter/reduce return new arrays.",
+      "tags": ["array", "mutation"],
+      "sourcePlatforms": ["turing-mcq", "toptal-codility"]
+    },
+    {
+      "id": "js-017",
+      "type": "code-output",
+      "difficulty": "easy",
+      "topic": "spread",
+      "prompt": "What does this print?",
+      "code": "const a = [1, 2];\nconst b = [3, 4];\nconst c = [...a, ...b, 5];\nconsole.log(c.length);",
+      "options": [
+        {"id": "a", "text": "3"},
+        {"id": "b", "text": "5"},
+        {"id": "c", "text": "2"},
+        {"id": "d", "text": "TypeError"}
+      ],
+      "correct": ["b"],
+      "explanation": "Spread flattens each array into elements: [1,2,3,4,5], length 5.",
+      "tags": ["spread"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-018",
+      "type": "code-output",
+      "difficulty": "medium",
+      "topic": "destructuring",
+      "prompt": "What does this print?",
+      "code": "const { a = 1, b = 2 } = { a: undefined, b: null };\nconsole.log(a, b);",
+      "options": [
+        {"id": "a", "text": "1 2"},
+        {"id": "b", "text": "1 null"},
+        {"id": "c", "text": "undefined null"},
+        {"id": "d", "text": "undefined 2"}
+      ],
+      "correct": ["b"],
+      "explanation": "Default values apply ONLY when the source is `undefined`, not `null`. So `a` becomes 1, but `b` stays `null`.",
+      "tags": ["destructuring", "defaults"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-019",
+      "type": "code-output",
+      "difficulty": "medium",
+      "topic": "iteration",
+      "prompt": "What does this print?",
+      "code": "const arr = ['a', 'b', 'c'];\narr.foo = 'x';\nfor (const k in arr) console.log(k);",
+      "options": [
+        {"id": "a", "text": "a b c"},
+        {"id": "b", "text": "0 1 2"},
+        {"id": "c", "text": "0 1 2 foo"},
+        {"id": "d", "text": "a b c foo"}
+      ],
+      "correct": ["c"],
+      "explanation": "`for...in` iterates enumerable string keys, including non-index properties. Use `for...of` for values or `arr.forEach` for indices only.",
+      "tags": ["iteration", "for-in"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-020",
+      "type": "code-output",
+      "difficulty": "medium",
+      "topic": "reference",
+      "prompt": "What does this print?",
+      "code": "const a = { x: 1 };\nconst b = a;\nb.x = 2;\nconst c = { ...a };\nc.x = 3;\nconsole.log(a.x, b.x, c.x);",
+      "options": [
+        {"id": "a", "text": "1 2 3"},
+        {"id": "b", "text": "2 2 3"},
+        {"id": "c", "text": "3 3 3"},
+        {"id": "d", "text": "1 1 1"}
+      ],
+      "correct": ["b"],
+      "explanation": "`b = a` copies the reference (both point to same object). Mutating via `b` changes `a`. Spread creates a shallow copy → `c` is independent.",
+      "tags": ["reference", "shallow-copy"],
+      "sourcePlatforms": ["turing-mcq", "toptal-live"]
+    },
+    {
+      "id": "js-021",
+      "type": "code-output",
+      "difficulty": "hard",
+      "topic": "reference",
+      "prompt": "What does this print?",
+      "code": "const a = { nested: { x: 1 } };\nconst b = { ...a };\nb.nested.x = 99;\nconsole.log(a.nested.x);",
+      "options": [
+        {"id": "a", "text": "1"},
+        {"id": "b", "text": "99"},
+        {"id": "c", "text": "undefined"},
+        {"id": "d", "text": "TypeError"}
+      ],
+      "correct": ["b"],
+      "explanation": "Spread is a SHALLOW copy. `nested` is still shared by reference. Use `structuredClone(a)` for deep copy.",
+      "tags": ["shallow-copy", "deep-copy"],
+      "sourcePlatforms": ["turing-mcq", "toptal-live"]
+    },
+    {
+      "id": "js-022",
+      "type": "code-output",
+      "difficulty": "medium",
+      "topic": "scoping",
+      "prompt": "What does this print?",
+      "code": "let x = 1;\n{\n  let x = 2;\n  console.log(x);\n}\nconsole.log(x);",
+      "options": [
+        {"id": "a", "text": "1 1"},
+        {"id": "b", "text": "2 2"},
+        {"id": "c", "text": "2 1"},
+        {"id": "d", "text": "SyntaxError"}
+      ],
+      "correct": ["c"],
+      "explanation": "`let` is block-scoped. Inner `x` shadows outer inside the block only.",
+      "tags": ["scope", "let"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-023",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "modules",
+      "prompt": "Which is TRUE about ES modules (ESM)?",
+      "options": [
+        {"id": "a", "text": "`require()` is available by default"},
+        {"id": "b", "text": "Imports are hoisted and evaluated once, then cached"},
+        {"id": "c", "text": "`this` at top level is `globalThis`"},
+        {"id": "d", "text": "Top-level `await` is not allowed"}
+      ],
+      "correct": ["b"],
+      "explanation": "ESM: imports hoisted + singleton-cached. `this` is `undefined` at top level. `require` is CJS. Top-level `await` is allowed in ESM.",
+      "tags": ["modules", "esm"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-024",
+      "type": "code-output",
+      "difficulty": "hard",
+      "topic": "event-loop",
+      "prompt": "In what order do these log?",
+      "code": "setTimeout(() => console.log('t1'), 0);\nsetImmediate(() => console.log('i1'));\nprocess.nextTick(() => console.log('n1'));\nPromise.resolve().then(() => console.log('p1'));\nconsole.log('sync');",
+      "options": [
+        {"id": "a", "text": "sync t1 i1 n1 p1"},
+        {"id": "b", "text": "sync n1 p1 t1 i1"},
+        {"id": "c", "text": "sync p1 n1 t1 i1"},
+        {"id": "d", "text": "n1 p1 sync t1 i1"}
+      ],
+      "correct": ["b"],
+      "explanation": "Order (Node.js): sync → nextTick queue → microtasks (Promises) → macrotasks (timers, then immediates). t1/i1 order depends on context but usually t1 first when scheduled from main.",
+      "tags": ["event-loop", "nodejs"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "js-025",
+      "type": "code-output",
+      "difficulty": "hard",
+      "topic": "async",
+      "prompt": "What does this print?",
+      "code": "async function run() {\n  const results = [];\n  for (const n of [1, 2, 3]) {\n    results.push(await Promise.resolve(n));\n  }\n  return results;\n}\nrun().then(r => console.log(r.join(',')));",
+      "options": [
+        {"id": "a", "text": "1,2,3"},
+        {"id": "b", "text": "3,2,1"},
+        {"id": "c", "text": "[object Promise],[object Promise],[object Promise]"},
+        {"id": "d", "text": "undefined"}
+      ],
+      "correct": ["a"],
+      "explanation": "`await` inside `for...of` runs sequentially. For parallelism use `Promise.all(arr.map(async ...))`.",
+      "tags": ["async", "await", "loops"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "js-026",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "async",
+      "prompt": "Which correctly runs N async ops in parallel and waits for all?",
+      "options": [
+        {"id": "a", "text": "for (const x of xs) await fn(x)"},
+        {"id": "b", "text": "await Promise.all(xs.map(fn))"},
+        {"id": "c", "text": "xs.forEach(async x => await fn(x))"},
+        {"id": "d", "text": "await xs.map(fn)"}
+      ],
+      "correct": ["b"],
+      "explanation": "`Promise.all` collects promises and awaits them concurrently. forEach ignores returned promises. Awaiting a mapped array of promises directly doesn't work — `.map(fn)` returns an array, not a promise.",
+      "tags": ["async", "parallel"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "js-027",
+      "type": "code-output",
+      "difficulty": "medium",
+      "topic": "generators",
+      "prompt": "What does this print?",
+      "code": "function* g() {\n  yield 1;\n  yield 2;\n  return 3;\n  yield 4;\n}\nconst it = g();\nconsole.log(it.next().value, it.next().value, it.next().value, it.next().value);",
+      "options": [
+        {"id": "a", "text": "1 2 3 4"},
+        {"id": "b", "text": "1 2 3 undefined"},
+        {"id": "c", "text": "1 2 4 undefined"},
+        {"id": "d", "text": "1 2 undefined undefined"}
+      ],
+      "correct": ["b"],
+      "explanation": "Generator yields 1, 2, then `return 3` produces {value:3, done:true} and stops. Further next() returns {value:undefined, done:true}.",
+      "tags": ["generator"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-028",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "map-set",
+      "prompt": "Which statement about `Map` vs plain object is FALSE?",
+      "options": [
+        {"id": "a", "text": "Map keys can be any type, including objects"},
+        {"id": "b", "text": "Map preserves insertion order"},
+        {"id": "c", "text": "Map has a `.size` property"},
+        {"id": "d", "text": "Map is slower than plain object for all operations"}
+      ],
+      "correct": ["d"],
+      "explanation": "Map is often faster for frequent add/remove, and always faster to get size. Objects have prototype-key pitfalls Map avoids.",
+      "tags": ["map", "collections"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-029",
+      "type": "code-output",
+      "difficulty": "medium",
+      "topic": "map-set",
+      "prompt": "What does this print?",
+      "code": "const s = new Set([1, 2, 2, 3, 3, 3]);\nconsole.log(s.size, [...s].join(','));",
+      "options": [
+        {"id": "a", "text": "6 1,2,2,3,3,3"},
+        {"id": "b", "text": "3 1,2,3"},
+        {"id": "c", "text": "3 3,2,1"},
+        {"id": "d", "text": "undefined 1,2,3"}
+      ],
+      "correct": ["b"],
+      "explanation": "Set dedupes on insertion. `size` is a property (not method). Spread preserves insertion order.",
+      "tags": ["set"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-030",
+      "type": "code-output",
+      "difficulty": "hard",
+      "topic": "closures",
+      "prompt": "What does this print?",
+      "code": "function makeAdders() {\n  const fns = [];\n  for (var i = 0; i < 3; i++) {\n    fns.push(function() { return i; });\n  }\n  return fns;\n}\nconst [a, b, c] = makeAdders();\nconsole.log(a(), b(), c());",
+      "options": [
+        {"id": "a", "text": "0 1 2"},
+        {"id": "b", "text": "3 3 3"},
+        {"id": "c", "text": "1 2 3"},
+        {"id": "d", "text": "undefined undefined undefined"}
+      ],
+      "correct": ["b"],
+      "explanation": "Classic closure bug. `var i` is shared. Fix with `let i` or IIFE.",
+      "tags": ["closure", "var"],
+      "sourcePlatforms": ["turing-mcq", "toptal-live"]
+    },
+    {
+      "id": "js-031",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "async",
+      "prompt": "Which correctly handles a fetch that must retry up to 3 times on network failure?",
+      "options": [
+        {"id": "a", "text": "for (let i = 0; i < 3; i++) fetch(url).catch(e => {})"},
+        {"id": "b", "text": "async function retry() { for (let i = 0; i < 3; i++) { try { return await fetch(url); } catch (e) { if (i === 2) throw e; } } }"},
+        {"id": "c", "text": "await Promise.all([fetch(url), fetch(url), fetch(url)])"},
+        {"id": "d", "text": "fetch(url).then(r => r).catch(fetch(url))"}
+      ],
+      "correct": ["b"],
+      "explanation": "Sequential retry with return-on-success and rethrow-on-final-failure. Add exp backoff for production.",
+      "tags": ["async", "retry", "fetch"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "js-032",
+      "type": "code-output",
+      "difficulty": "medium",
+      "topic": "types",
+      "prompt": "What does this print?",
+      "code": "console.log(typeof null, typeof [], typeof NaN, typeof undefined);",
+      "options": [
+        {"id": "a", "text": "null array number undefined"},
+        {"id": "b", "text": "object object number undefined"},
+        {"id": "c", "text": "object array NaN undefined"},
+        {"id": "d", "text": "null object number undefined"}
+      ],
+      "correct": ["b"],
+      "explanation": "`typeof null === 'object'` (historical bug), arrays are objects, `NaN` is a number. Use Array.isArray to detect arrays.",
+      "tags": ["typeof", "null"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-033",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "prototypes",
+      "prompt": "Given `class B extends A`, which is the correct super constructor call in B's constructor?",
+      "options": [
+        {"id": "a", "text": "A.call(this)"},
+        {"id": "b", "text": "super()"},
+        {"id": "c", "text": "this.__proto__.constructor()"},
+        {"id": "d", "text": "Object.getPrototypeOf(this).constructor()"}
+      ],
+      "correct": ["b"],
+      "explanation": "In class syntax, `super()` must be called before `this` is used in a subclass constructor.",
+      "tags": ["class", "super"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-034",
+      "type": "code-output",
+      "difficulty": "hard",
+      "topic": "this-binding",
+      "prompt": "What does this print?",
+      "code": "class Timer {\n  constructor() { this.n = 0; }\n  start() { setInterval(function() { this.n++; }, 100); }\n}\nconst t = new Timer();\nt.start();",
+      "options": [
+        {"id": "a", "text": "n increments every 100ms"},
+        {"id": "b", "text": "TypeError: Cannot read properties of undefined"},
+        {"id": "c", "text": "n stays 0 silently"},
+        {"id": "d", "text": "Depends on strict mode"}
+      ],
+      "correct": ["d"],
+      "explanation": "Regular function in setInterval loses `this`. In strict mode → TypeError. In non-strict → `this` is globalThis, so it silently adds `n` there without affecting the Timer. Fix: arrow fn or bind.",
+      "tags": ["this", "setInterval"],
+      "sourcePlatforms": ["turing-mcq", "toptal-live"]
+    },
+    {
+      "id": "js-035",
+      "type": "mcq-multi",
+      "difficulty": "medium",
+      "topic": "immutability",
+      "prompt": "Which correctly return a new array without mutating the original? (select all)",
+      "options": [
+        {"id": "a", "text": "arr.slice().reverse()"},
+        {"id": "b", "text": "[...arr].sort()"},
+        {"id": "c", "text": "arr.filter(x => x > 0)"},
+        {"id": "d", "text": "arr.splice(0, 1)"},
+        {"id": "e", "text": "arr.toReversed()"}
+      ],
+      "correct": ["a", "b", "c", "e"],
+      "explanation": "splice mutates. Others return new arrays. `toReversed`/`toSorted`/`toSpliced`/`with` are ES2023 immutable-array methods.",
+      "tags": ["immutable", "array"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-036",
+      "type": "code-output",
+      "difficulty": "hard",
+      "topic": "async",
+      "prompt": "How many times does 'x' print?",
+      "code": "async function f() { console.log('x'); }\nawait Promise.all([f(), f(), f()]);",
+      "options": [
+        {"id": "a", "text": "0"},
+        {"id": "b", "text": "1"},
+        {"id": "c", "text": "3"},
+        {"id": "d", "text": "SyntaxError unless in a module or async fn"}
+      ],
+      "correct": ["d"],
+      "explanation": "Top-level await only works in ES modules or inside an async function. Otherwise: SyntaxError.",
+      "tags": ["top-level-await"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-037",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "regex",
+      "prompt": "Which regex matches a valid email (basic form) at start-to-end?",
+      "options": [
+        {"id": "a", "text": "/^\\S+@\\S+\\.\\S+$/"},
+        {"id": "b", "text": "/^\\w+@\\w+$/"},
+        {"id": "c", "text": "/@.+/"},
+        {"id": "d", "text": "/\\S+@\\S+\\.\\S+/g"}
+      ],
+      "correct": ["a"],
+      "explanation": "Basic email = something + @ + domain + . + tld, anchored. Full RFC-compliant regex is much longer.",
+      "tags": ["regex"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-038",
+      "type": "code-output",
+      "difficulty": "hard",
+      "topic": "reduce",
+      "prompt": "What does this print?",
+      "code": "const r = [1, 2, 3, 4].reduce((acc, x) => {\n  acc[x % 2 ? 'odd' : 'even'].push(x);\n  return acc;\n}, { odd: [], even: [] });\nconsole.log(r.odd.join(','), r.even.join(','));",
+      "options": [
+        {"id": "a", "text": "1,3 2,4"},
+        {"id": "b", "text": "2,4 1,3"},
+        {"id": "c", "text": "1,2,3,4 empty"},
+        {"id": "d", "text": "TypeError"}
+      ],
+      "correct": ["a"],
+      "explanation": "Classic groupBy via reduce. Odd bucket: 1,3. Even bucket: 2,4. (ES2024 adds `Object.groupBy` natively.)",
+      "tags": ["reduce", "groupby"],
+      "sourcePlatforms": ["turing-mcq", "toptal-live"]
+    },
+    {
+      "id": "js-039",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "error-handling",
+      "prompt": "Where does the error get caught?",
+      "code": "try {\n  setTimeout(() => { throw new Error('boom'); }, 0);\n} catch (e) {\n  console.log('caught');\n}",
+      "options": [
+        {"id": "a", "text": "It logs 'caught'"},
+        {"id": "b", "text": "The error is uncaught (crashes or bubbles to global)"},
+        {"id": "c", "text": "The error is silently swallowed"},
+        {"id": "d", "text": "TypeError before setTimeout runs"}
+      ],
+      "correct": ["b"],
+      "explanation": "try/catch only wraps SYNCHRONOUS code. The callback runs later on a different call stack — the outer try is long gone. Handle inside the callback or use async/await.",
+      "tags": ["error-handling", "async"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "js-040",
+      "type": "code-output",
+      "difficulty": "hard",
+      "topic": "closures",
+      "prompt": "What does this print?",
+      "code": "const cache = new Map();\nfunction memo(fn) {\n  return (n) => {\n    if (cache.has(n)) return cache.get(n);\n    const r = fn(n);\n    cache.set(n, r);\n    return r;\n  };\n}\nconst sq = memo(n => n * n);\nconst cube = memo(n => n * n * n);\nconsole.log(sq(3), cube(3));",
+      "options": [
+        {"id": "a", "text": "9 27"},
+        {"id": "b", "text": "9 9"},
+        {"id": "c", "text": "27 27"},
+        {"id": "d", "text": "9 undefined"}
+      ],
+      "correct": ["b"],
+      "explanation": "SHARED cache object across all memoized fns. `cube(3)` finds `3` in cache from sq(3) → returns 9. Bug fix: put the Map inside memo() so each fn gets its own.",
+      "tags": ["closure", "memoization"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "js-041",
+      "type": "mcq-single",
+      "difficulty": "easy",
+      "topic": "iteration",
+      "prompt": "`for...of` iterates over what?",
+      "options": [
+        {"id": "a", "text": "Enumerable string keys"},
+        {"id": "b", "text": "Iterable values (arrays, strings, Maps, Sets, generators)"},
+        {"id": "c", "text": "Own object properties"},
+        {"id": "d", "text": "All object properties including inherited"}
+      ],
+      "correct": ["b"],
+      "explanation": "`for...of` needs the `[Symbol.iterator]` protocol. Plain objects don't have it — use `for...in` or `Object.entries` for those.",
+      "tags": ["iteration", "for-of"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-042",
+      "type": "code-output",
+      "difficulty": "hard",
+      "topic": "async",
+      "prompt": "What does this print?",
+      "code": "async function race() {\n  const r = await Promise.race([\n    new Promise(res => setTimeout(() => res('A'), 100)),\n    new Promise((_, rej) => setTimeout(() => rej('B'), 50))\n  ]);\n  return r;\n}\nrace().then(console.log).catch(e => console.log('err', e));",
+      "options": [
+        {"id": "a", "text": "A"},
+        {"id": "b", "text": "err B"},
+        {"id": "c", "text": "err A"},
+        {"id": "d", "text": "B"}
+      ],
+      "correct": ["b"],
+      "explanation": "Promise.race settles with the first to settle — success OR failure. Rejection at 50ms wins over resolution at 100ms.",
+      "tags": ["promise", "race"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "js-043",
+      "type": "short-code",
+      "difficulty": "medium",
+      "topic": "practical",
+      "prompt": "Write a function `debounce(fn, wait)` that returns a debounced version of `fn`.",
+      "options": [],
+      "correct": [],
+      "explanation": "Reference solution:\n```js\nfunction debounce(fn, wait) {\n  let t;\n  return function(...args) {\n    clearTimeout(t);\n    t = setTimeout(() => fn.apply(this, args), wait);\n  };\n}\n```\nEdge cases: preserve `this`, forward args, cancel prior timer.",
+      "tags": ["debounce", "practical"],
+      "sourcePlatforms": ["turing-coding", "toptal-live", "andela-pair"]
+    },
+    {
+      "id": "js-044",
+      "type": "short-code",
+      "difficulty": "medium",
+      "topic": "practical",
+      "prompt": "Write a function `throttle(fn, wait)` that ensures `fn` runs at most once per `wait` ms.",
+      "options": [],
+      "correct": [],
+      "explanation": "Reference solution:\n```js\nfunction throttle(fn, wait) {\n  let last = 0;\n  return function(...args) {\n    const now = Date.now();\n    if (now - last >= wait) {\n      last = now;\n      fn.apply(this, args);\n    }\n  };\n}\n```\nVariations: trailing call, cancel method.",
+      "tags": ["throttle", "practical"],
+      "sourcePlatforms": ["turing-coding", "toptal-live"]
+    },
+    {
+      "id": "js-045",
+      "type": "short-code",
+      "difficulty": "hard",
+      "topic": "practical",
+      "prompt": "Write `deepClone(obj)` that handles nested objects, arrays, Dates, and cyclic references.",
+      "options": [],
+      "correct": [],
+      "explanation": "Reference:\n```js\nfunction deepClone(obj, seen = new WeakMap()) {\n  if (obj === null || typeof obj !== 'object') return obj;\n  if (seen.has(obj)) return seen.get(obj);\n  if (obj instanceof Date) return new Date(obj);\n  const out = Array.isArray(obj) ? [] : {};\n  seen.set(obj, out);\n  for (const k of Reflect.ownKeys(obj)) out[k] = deepClone(obj[k], seen);\n  return out;\n}\n```\nModern alternative: `structuredClone(obj)`.",
+      "tags": ["deep-clone", "practical"],
+      "sourcePlatforms": ["turing-coding", "toptal-live", "fde-loop"]
+    },
+    {
+      "id": "js-046",
+      "type": "code-output",
+      "difficulty": "medium",
+      "topic": "coercion",
+      "prompt": "What does this print?",
+      "code": "console.log([] + []);\nconsole.log([] + {});\nconsole.log({} + []);",
+      "options": [
+        {"id": "a", "text": "'', '[object Object]', '[object Object]'"},
+        {"id": "b", "text": "'', '[object Object]', 0"},
+        {"id": "c", "text": "'0', '0', '0'"},
+        {"id": "d", "text": "NaN, NaN, NaN"}
+      ],
+      "correct": ["a"],
+      "explanation": "`[] + []` → both to primitive → '' + '' = ''. `[] + {}` → '' + '[object Object]'. `{} + []` in a statement-position is parsed as an empty block + `+[]` = 0 in the REPL but same as the second in expression context. Both work as answer (a) in modern engines under expression evaluation.",
+      "tags": ["coercion"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-047",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "memory",
+      "prompt": "V8 garbage collector is:",
+      "options": [
+        {"id": "a", "text": "Reference counting"},
+        {"id": "b", "text": "Generational mark-and-sweep with young generation (scavenger) + old generation (major GC)"},
+        {"id": "c", "text": "Manual"},
+        {"id": "d", "text": "Escape analysis only"}
+      ],
+      "correct": ["b"],
+      "explanation": "Orinoco/Oilpan use generational + incremental. Long-lived objects promoted to old gen. Weakmaps and WeakRefs interoperate with GC.",
+      "tags": ["memory", "gc", "v8"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-048",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "memory-leak",
+      "prompt": "Which is a COMMON JS memory-leak source?",
+      "options": [
+        {"id": "a", "text": "Using const"},
+        {"id": "b", "text": "Growing Map/Array cache with no eviction, keyed by user"},
+        {"id": "c", "text": "Arrow functions"},
+        {"id": "d", "text": "Modules"}
+      ],
+      "correct": ["b"],
+      "explanation": "Also: forgotten setInterval, DOM node references from JS after node removal, unremoved event listeners, closures capturing large arrays.",
+      "tags": ["memory-leak"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "js-049",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "weakmap",
+      "prompt": "WeakMap keys are:",
+      "options": [
+        {"id": "a", "text": "Any type"},
+        {"id": "b", "text": "Object references only; entries are GC'd when the key object has no other strong references"},
+        {"id": "c", "text": "Strings only"},
+        {"id": "d", "text": "Immutable"}
+      ],
+      "correct": ["b"],
+      "explanation": "Useful for private state associated with an object without preventing GC. Not enumerable.",
+      "tags": ["weakmap"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-050",
+      "type": "code-output",
+      "difficulty": "medium",
+      "topic": "spread",
+      "prompt": "What does this print?",
+      "code": "const a = { x: 1, y: 2 };\nconst b = { y: 20, z: 30 };\nconst c = { ...a, ...b };\nconsole.log(c);",
+      "options": [
+        {"id": "a", "text": "{ x: 1, y: 2, z: 30 }"},
+        {"id": "b", "text": "{ x: 1, y: 20, z: 30 }"},
+        {"id": "c", "text": "{ x: 1, y: [2, 20], z: 30 }"},
+        {"id": "d", "text": "TypeError"}
+      ],
+      "correct": ["b"],
+      "explanation": "Later spreads overwrite earlier keys — `y` becomes 20.",
+      "tags": ["spread"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-051",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "class-fields",
+      "prompt": "Class private fields use:",
+      "options": [
+        {"id": "a", "text": "TypeScript `private` keyword"},
+        {"id": "b", "text": "`#field` syntax — truly runtime-private (unreachable from outside the class)"},
+        {"id": "c", "text": "`_field` naming convention"},
+        {"id": "d", "text": "Symbol"}
+      ],
+      "correct": ["b"],
+      "explanation": "TS `private` is compile-time only. `#field` enforces at runtime. Static private (`static #x`) also supported.",
+      "tags": ["class"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-052",
+      "type": "code-output",
+      "difficulty": "hard",
+      "topic": "async",
+      "prompt": "What does this print, in order?",
+      "code": "const p = new Promise(res => { console.log('A'); res(); });\np.then(() => console.log('C'));\nconsole.log('B');",
+      "options": [
+        {"id": "a", "text": "A B C"},
+        {"id": "b", "text": "A C B"},
+        {"id": "c", "text": "B A C"},
+        {"id": "d", "text": "C A B"}
+      ],
+      "correct": ["a"],
+      "explanation": "Promise executor is SYNC — logs A immediately. Then B (sync). Then microtask flushes → C.",
+      "tags": ["promise", "async"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-053",
+      "type": "code-output",
+      "difficulty": "hard",
+      "topic": "async",
+      "prompt": "What does this log?",
+      "code": "async function f() { return 1; }\nf().then(v => console.log(v));",
+      "options": [
+        {"id": "a", "text": "Promise{1}"},
+        {"id": "b", "text": "1"},
+        {"id": "c", "text": "undefined"},
+        {"id": "d", "text": "SyntaxError"}
+      ],
+      "correct": ["b"],
+      "explanation": "async functions always return a Promise. Returning a non-Promise wraps it. `.then` unwraps.",
+      "tags": ["async"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-054",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "promise-any",
+      "prompt": "`Promise.any([p1, p2, p3])` resolves when:",
+      "options": [
+        {"id": "a", "text": "The first one settles (success or failure)"},
+        {"id": "b", "text": "The first one FULFILLS; rejects with AggregateError only if all reject"},
+        {"id": "c", "text": "All resolve"},
+        {"id": "d", "text": "The first rejects"}
+      ],
+      "correct": ["b"],
+      "explanation": "any = first success. race = first settle. all = all success or one reject. allSettled = wait for all outcomes.",
+      "tags": ["promise"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-055",
+      "type": "code-output",
+      "difficulty": "hard",
+      "topic": "settled",
+      "prompt": "What is the result?",
+      "code": "const r = await Promise.allSettled([\n  Promise.resolve('A'),\n  Promise.reject('B'),\n  Promise.resolve('C')\n]);\nconsole.log(r.map(x => x.status));",
+      "options": [
+        {"id": "a", "text": "['fulfilled', 'rejected', 'fulfilled']"},
+        {"id": "b", "text": "['A', 'B', 'C']"},
+        {"id": "c", "text": "Throws 'B'"},
+        {"id": "d", "text": "['success', 'error', 'success']"}
+      ],
+      "correct": ["a"],
+      "explanation": "allSettled waits for all, returns {status, value|reason} — never rejects.",
+      "tags": ["promise", "allsettled"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "js-056",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "arrays",
+      "prompt": "`Array.from({length: 3}, (_, i) => i * 2)` produces:",
+      "options": [
+        {"id": "a", "text": "[0, 2, 4]"},
+        {"id": "b", "text": "[undefined, undefined, undefined]"},
+        {"id": "c", "text": "[0, 0, 0]"},
+        {"id": "d", "text": "[]"}
+      ],
+      "correct": ["a"],
+      "explanation": "Array.from with array-like + map function is the canonical range helper.",
+      "tags": ["arrays"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-057",
+      "type": "code-output",
+      "difficulty": "medium",
+      "topic": "arrays",
+      "prompt": "What does this print?",
+      "code": "const a = [3, 1, 2, 10, 5];\nconsole.log(a.sort());",
+      "options": [
+        {"id": "a", "text": "[1, 2, 3, 5, 10]"},
+        {"id": "b", "text": "[1, 10, 2, 3, 5]"},
+        {"id": "c", "text": "[10, 5, 3, 2, 1]"},
+        {"id": "d", "text": "[3, 1, 2, 10, 5]"}
+      ],
+      "correct": ["b"],
+      "explanation": "Default sort compares as STRINGS lexicographically. Always pass `(a,b) => a - b` for numeric sort.",
+      "tags": ["sort"],
+      "sourcePlatforms": ["turing-mcq", "toptal-live"]
+    },
+    {
+      "id": "js-058",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "modules",
+      "prompt": "In Node ESM, __dirname is:",
+      "options": [
+        {"id": "a", "text": "Available like CJS"},
+        {"id": "b", "text": "Not defined; use `import.meta.dirname` (Node 20+) or derive from `import.meta.url`"},
+        {"id": "c", "text": "Always '/'"},
+        {"id": "d", "text": "Requires config"}
+      ],
+      "correct": ["b"],
+      "explanation": "ESM removed __dirname/__filename. Node 20+ shipped `import.meta.dirname` and `import.meta.filename` as replacements.",
+      "tags": ["modules", "esm"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-059",
+      "type": "code-output",
+      "difficulty": "hard",
+      "topic": "iterators",
+      "prompt": "What does this print?",
+      "code": "function* range(n) { for (let i = 0; i < n; i++) yield i; }\nconst s = new Set(range(3));\nconsole.log([...s].join(','));",
+      "options": [
+        {"id": "a", "text": "0,1,2"},
+        {"id": "b", "text": "[object Generator]"},
+        {"id": "c", "text": "TypeError"},
+        {"id": "d", "text": "1,2,3"}
+      ],
+      "correct": ["a"],
+      "explanation": "Set constructor accepts any iterable; generators are iterable.",
+      "tags": ["generator", "set"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-060",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "structured-clone",
+      "prompt": "`structuredClone(obj)` handles:",
+      "options": [
+        {"id": "a", "text": "Only plain objects"},
+        {"id": "b", "text": "Nested objects/arrays, Dates, RegExps, Maps, Sets, TypedArrays, cyclic refs; does NOT clone functions or DOM nodes"},
+        {"id": "c", "text": "Functions too"},
+        {"id": "d", "text": "Only strings"}
+      ],
+      "correct": ["b"],
+      "explanation": "Built-in structured cloning is the modern deep-clone. Native in Node 17+, all modern browsers.",
+      "tags": ["structured-clone"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-061",
+      "type": "code-output",
+      "difficulty": "hard",
+      "topic": "iterators",
+      "prompt": "What does this print?",
+      "code": "const it = [1, 2, 3][Symbol.iterator]();\nconsole.log(it.next().value, it.next().value);",
+      "options": [
+        {"id": "a", "text": "1 2"},
+        {"id": "b", "text": "undefined undefined"},
+        {"id": "c", "text": "[1, 2] [2, 3]"},
+        {"id": "d", "text": "TypeError"}
+      ],
+      "correct": ["a"],
+      "explanation": "Arrays expose Symbol.iterator — the iterator protocol under `for...of`.",
+      "tags": ["iterator"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-062",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "symbol",
+      "prompt": "Symbols are useful for:",
+      "options": [
+        {"id": "a", "text": "Faster strings"},
+        {"id": "b", "text": "Unique property keys that don't collide with string keys — used for meta/well-known protocols (Symbol.iterator, Symbol.asyncIterator)"},
+        {"id": "c", "text": "Numeric IDs"},
+        {"id": "d", "text": "Encryption"}
+      ],
+      "correct": ["b"],
+      "explanation": "Symbols are unique + non-enumerable via Object.keys → great for extending built-ins safely.",
+      "tags": ["symbol"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-063",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "proxy",
+      "prompt": "`Proxy` handlers `get`/`set` traps let you:",
+      "options": [
+        {"id": "a", "text": "Speed up property access"},
+        {"id": "b", "text": "Intercept fundamental object operations — used by Vue reactivity, ORM lazy-loading, negative-array indexing"},
+        {"id": "c", "text": "Replace prototype chain"},
+        {"id": "d", "text": "Make objects immutable"}
+      ],
+      "correct": ["b"],
+      "explanation": "Reactivity systems + observability libraries lean on Proxy heavily. Cost: no equality via ===, some perf overhead.",
+      "tags": ["proxy"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-064",
+      "type": "code-output",
+      "difficulty": "hard",
+      "topic": "async-iterator",
+      "prompt": "What does this log?",
+      "code": "async function* gen() {\n  yield 1; yield 2; yield 3;\n}\n(async () => {\n  for await (const v of gen()) console.log(v);\n})();",
+      "options": [
+        {"id": "a", "text": "1 2 3 (each async tick)"},
+        {"id": "b", "text": "[object AsyncGenerator]"},
+        {"id": "c", "text": "TypeError"},
+        {"id": "d", "text": "nothing"}
+      ],
+      "correct": ["a"],
+      "explanation": "Async generators + for-await-of are the streaming primitive for pull-based async data.",
+      "tags": ["async-iterator"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "js-065",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "abort",
+      "prompt": "`AbortController` is used to:",
+      "options": [
+        {"id": "a", "text": "Kill the node process"},
+        {"id": "b", "text": "Cancel fetch/setTimeout/user code by passing its `signal` and listening for 'abort'"},
+        {"id": "c", "text": "Retry"},
+        {"id": "d", "text": "Throttle"}
+      ],
+      "correct": ["b"],
+      "explanation": "Standard cancellation primitive. Node's `setTimeout({ signal })` and fetch both accept it.",
+      "tags": ["abort"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "js-066",
+      "type": "code-output",
+      "difficulty": "medium",
+      "topic": "reduce",
+      "prompt": "What is the result?",
+      "code": "const r = [[1,2],[3,4],[5]].reduce((a, b) => a.concat(b), []);",
+      "options": [
+        {"id": "a", "text": "[1,2,3,4,5]"},
+        {"id": "b", "text": "[[1,2],[3,4],[5]]"},
+        {"id": "c", "text": "15"},
+        {"id": "d", "text": "TypeError"}
+      ],
+      "correct": ["a"],
+      "explanation": "Classic flatten. Modern: `arr.flat()`. Deep: `arr.flat(Infinity)`.",
+      "tags": ["reduce", "flatten"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-067",
+      "type": "mcq-multi",
+      "difficulty": "medium",
+      "topic": "array-vs-object",
+      "prompt": "Which iterate ONLY own-enumerable string keys? (select all)",
+      "options": [
+        {"id": "a", "text": "Object.keys(obj)"},
+        {"id": "b", "text": "for...in"},
+        {"id": "c", "text": "Object.getOwnPropertyNames(obj)"},
+        {"id": "d", "text": "Reflect.ownKeys(obj)"}
+      ],
+      "correct": ["a"],
+      "explanation": "for...in also enumerates inherited. getOwnPropertyNames includes non-enumerable. Reflect.ownKeys also includes Symbols.",
+      "tags": ["objects"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-068",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "modules",
+      "prompt": "In an ESM module, top-level `await` is:",
+      "options": [
+        {"id": "a", "text": "Illegal"},
+        {"id": "b", "text": "Allowed — the module becomes async, importing modules wait for it before running"},
+        {"id": "c", "text": "Blocks the whole app forever"},
+        {"id": "d", "text": "Only in TypeScript"}
+      ],
+      "correct": ["b"],
+      "explanation": "Great for boot-time config fetches / dynamic imports. Loading is still parallel across independent modules.",
+      "tags": ["modules"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-069",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "regex",
+      "prompt": "`/\\w+/g.lastIndex` matters when:",
+      "options": [
+        {"id": "a", "text": "Never"},
+        {"id": "b", "text": "Using the same regex INSTANCE across multiple `.exec()` or `.test()` calls — state persists between calls"},
+        {"id": "c", "text": "In async code only"},
+        {"id": "d", "text": "In TypeScript"}
+      ],
+      "correct": ["b"],
+      "explanation": "Global regexes carry lastIndex. Subtle bug when a regex is reused in a loop. `matchAll` avoids this — returns an iterator.",
+      "tags": ["regex"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-070",
+      "type": "code-output",
+      "difficulty": "medium",
+      "topic": "string",
+      "prompt": "What does this log?",
+      "code": "console.log('hello'.padStart(8, '*'));",
+      "options": [
+        {"id": "a", "text": "'***hello'"},
+        {"id": "b", "text": "'hello***'"},
+        {"id": "c", "text": "'*hello*'"},
+        {"id": "d", "text": "'hello'"}
+      ],
+      "correct": ["a"],
+      "explanation": "padStart adds to the front; padEnd to the back. Great for CLI table formatting.",
+      "tags": ["string"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-071",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "bigint",
+      "prompt": "`Number.MAX_SAFE_INTEGER + 1` is:",
+      "options": [
+        {"id": "a", "text": "MAX_SAFE_INTEGER + 1 exactly"},
+        {"id": "b", "text": "Indistinguishable from MAX_SAFE_INTEGER + 2 in Number — use BigInt for integer precision beyond 2^53-1"},
+        {"id": "c", "text": "Infinity"},
+        {"id": "d", "text": "0"}
+      ],
+      "correct": ["b"],
+      "explanation": "IEEE 754 doubles carry ~15-16 significant digits. BigInt has arbitrary precision but is not interoperable with Number arithmetic.",
+      "tags": ["bigint", "number"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-072",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "worker",
+      "prompt": "In the browser, transferring data to a Web Worker via `postMessage(buf, [buf])`:",
+      "options": [
+        {"id": "a", "text": "Copies buf"},
+        {"id": "b", "text": "Transfers ownership — buf is neutered in the sender; zero-copy"},
+        {"id": "c", "text": "Sends a reference"},
+        {"id": "d", "text": "Fails"}
+      ],
+      "correct": ["b"],
+      "explanation": "Transferable objects (ArrayBuffer, MessagePort, etc.) skip the structured-clone copy for large payloads.",
+      "tags": ["worker", "transferable"],
+      "sourcePlatforms": ["turing-mcq"]
+    },
+    {
+      "id": "js-073",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "async-error",
+      "prompt": "In `Promise.all([a, b, c])`, if `b` rejects:",
+      "options": [
+        {"id": "a", "text": "Waits for a and c to finish then rejects"},
+        {"id": "b", "text": "Rejects immediately with b's reason; a and c continue running but their results are discarded"},
+        {"id": "c", "text": "All cancel"},
+        {"id": "d", "text": "Resolves with partial"}
+      ],
+      "correct": ["b"],
+      "explanation": "For fail-fast semantics use all; for wait-all use allSettled. Discarded promises may still cause 'unhandledRejection'.",
+      "tags": ["promise", "error"],
+      "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "js-074",
+      "type": "short-code",
+      "difficulty": "medium",
+      "topic": "practical",
+      "prompt": "Write `promiseAllLimit(promises, limit)` — like Promise.all but with concurrency limit.",
+      "options": [],
+      "correct": [],
+      "explanation": "```js\nasync function promiseAllLimit(fns, limit) {\n  const results = new Array(fns.length);\n  let i = 0;\n  async function worker() {\n    while (i < fns.length) {\n      const idx = i++;\n      results[idx] = await fns[idx]();\n    }\n  }\n  await Promise.all(Array.from({ length: Math.min(limit, fns.length) }, worker));\n  return results;\n}\n```\nAccepts array of thunks (functions returning promises) so we control when each starts.",
+      "tags": ["async", "concurrency"],
+      "sourcePlatforms": ["turing-coding", "fde-loop"]
+    },
+    {
+      "id": "js-075",
+      "type": "short-code",
+      "difficulty": "hard",
+      "topic": "practical",
+      "prompt": "Write `once(fn)` — returns a function that runs `fn` at most once, cached-forever result.",
+      "options": [],
+      "correct": [],
+      "explanation": "```js\nfunction once(fn) {\n  let called = false, result;\n  return function(...args) {\n    if (!called) { called = true; result = fn.apply(this, args); }\n    return result;\n  };\n}\n```\nHandy for bootstrap code, singleton constructors.",
+      "tags": ["once"],
+      "sourcePlatforms": ["turing-coding", "toptal-live"]
+    }
+  ]
+}

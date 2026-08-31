@@ -1,0 +1,800 @@
+{
+  "module": "ai-llm",
+  "title": "AI / LLM Systems (FDE-specific)",
+  "description": "RAG, evaluation, guardrails, prompt engineering, LangChain/LangGraph, latency optimization. Critical for Turing FDE (LangChain/LangGraph is listed in the job req).",
+  "platformCoverage": ["fde-loop", "turing-mcq"],
+  "estimatedHours": 6,
+  "questions": [
+    {
+      "id": "ai-001",
+      "type": "mcq-single",
+      "difficulty": "easy",
+      "topic": "rag-basics",
+      "prompt": "In RAG, the 'retrieval' step returns:",
+      "options": [
+        {"id": "a", "text": "Fine-tuned model weights"},
+        {"id": "b", "text": "Top-k semantically similar documents to include in the prompt"},
+        {"id": "c", "text": "A cached previous response"},
+        {"id": "d", "text": "A vector of the query"}
+      ],
+      "correct": ["b"],
+      "explanation": "RAG = Retrieval-Augmented Generation. Retrieve, then include in the LLM prompt as grounding context.",
+      "tags": ["rag"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-002",
+      "type": "mcq-multi",
+      "difficulty": "medium",
+      "topic": "chunking",
+      "prompt": "Which chunking strategies are commonly used in RAG? (select all)",
+      "options": [
+        {"id": "a", "text": "Fixed-size (e.g., 512 tokens with 50-token overlap)"},
+        {"id": "b", "text": "Semantic (split on sentence embeddings similarity drops)"},
+        {"id": "c", "text": "Structural (headings, sections)"},
+        {"id": "d", "text": "Sentence per chunk always"},
+        {"id": "e", "text": "One chunk per document"}
+      ],
+      "correct": ["a", "b", "c"],
+      "explanation": "Fixed w/ overlap = baseline. Semantic = context-aware. Structural respects document layout. Very small or very large chunks perform poorly.",
+      "tags": ["chunking"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-003",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "fine-tune-vs-rag",
+      "prompt": "Which favors RAG over fine-tuning?",
+      "options": [
+        {"id": "a", "text": "Data changes daily and you need answers grounded in the latest state"},
+        {"id": "b", "text": "You need the model to adopt a fixed style"},
+        {"id": "c", "text": "You need fastest inference at any cost"},
+        {"id": "d", "text": "Small budget for annotations"}
+      ],
+      "correct": ["a"],
+      "explanation": "RAG = knowledge freshness + traceability + no retraining. Fine-tuning = style, structure, or domain reasoning where prompts alone don't reach. Prompt-engineer for one-off adjustments.",
+      "tags": ["rag", "fine-tuning"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-004",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "evaluation",
+      "prompt": "'LLM-as-judge' evaluation means:",
+      "options": [
+        {"id": "a", "text": "Using another LLM to score outputs against a rubric or ground truth"},
+        {"id": "b", "text": "Model chains only"},
+        {"id": "c", "text": "Fine-tuning by RLHF"},
+        {"id": "d", "text": "Prompt injection detection"}
+      ],
+      "correct": ["a"],
+      "explanation": "Judge-model produces score/preference. Watch for judge bias (position, verbosity, self-preference). Complement with human eval on stratified samples.",
+      "tags": ["evaluation"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-005",
+      "type": "mcq-multi",
+      "difficulty": "medium",
+      "topic": "guardrails",
+      "prompt": "Which are guardrail techniques for production LLMs? (select all)",
+      "options": [
+        {"id": "a", "text": "Input allowlist / regex for known injection patterns"},
+        {"id": "b", "text": "Output validation against a JSON schema"},
+        {"id": "c", "text": "PII redaction before storage"},
+        {"id": "d", "text": "Constitutional filtering / classifier on outputs"},
+        {"id": "e", "text": "Trusting the system prompt to fully constrain behavior"}
+      ],
+      "correct": ["a", "b", "c", "d"],
+      "explanation": "Layered defenses. Never trust the system prompt as sole enforcement — adversarial users bypass it.",
+      "tags": ["guardrails", "security"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-006",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "prompt-injection",
+      "prompt": "Defense-in-depth against prompt injection includes:",
+      "options": [
+        {"id": "a", "text": "Trusting user input"},
+        {"id": "b", "text": "Isolating untrusted content in delimited sections + treating retrieved docs as data, not instructions"},
+        {"id": "c", "text": "Longer system prompts"},
+        {"id": "d", "text": "Only using premium models"}
+      ],
+      "correct": ["b"],
+      "explanation": "Structured prompts, tool-use policies, least-privilege function calls, and output filtering. Injection is unsolved — assume some will get through.",
+      "tags": ["prompt-injection", "security"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-007",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "langchain",
+      "prompt": "LangGraph differs from vanilla LangChain in that it:",
+      "options": [
+        {"id": "a", "text": "Only supports OpenAI"},
+        {"id": "b", "text": "Models agents as explicit state graphs with typed nodes/edges + persistence"},
+        {"id": "c", "text": "Is a competitor with no interop"},
+        {"id": "d", "text": "Is only for RAG"}
+      ],
+      "correct": ["b"],
+      "explanation": "LangGraph adds structured, resumable, observable graph execution — useful for real agent workflows Turing FDE listing calls out.",
+      "tags": ["langchain", "langgraph"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-008",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "rag-design",
+      "prompt": "Design a chunking strategy for a customer with mixed content (technical PDFs + Confluence pages + Slack export). Defend to a skeptical customer.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Different strategies per source type — no one-size-fits-all", "weight": 3},
+        {"criterion": "Preserves structural boundaries (headings, code blocks, thread parents)", "weight": 2},
+        {"criterion": "Keeps chunk-level metadata (source, path, timestamp, author) for filtering and citations", "weight": 2},
+        {"criterion": "Overlap size chosen to preserve context without exploding index size", "weight": 1},
+        {"criterion": "Plans an eval to compare strategies (recall@k against ground-truth Qs)", "weight": 2},
+        {"criterion": "Frames the choice as testable, not dogmatic; commits to iteration", "weight": 1}
+      ],
+      "modelAnswer": "PDFs → structural chunk by heading, subchunk if > 800 tokens, 100-token overlap, keep page number metadata. Confluence → per-section with parent-title in metadata. Slack → one thread = one chunk, with thread parent + participant list as metadata. Every chunk carries {source_type, doc_id, path, updated_at, author}. Build a 50-question eval set from real user questions; measure recall@5 for each strategy; iterate.",
+      "tags": ["rag", "chunking"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-009",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "eval",
+      "prompt": "The customer says the model 'is getting worse.' No metrics exist. Plan the first 48 hours.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Clarifies: since when? Which task? Any recent changes (model version, prompt, data)?", "weight": 3},
+        {"criterion": "Collects 20-50 concrete failing examples from the customer immediately", "weight": 2},
+        {"criterion": "Establishes ground-truth eval set + baseline metric today (even simple exact match / thumbs)", "weight": 2},
+        {"criterion": "Diffs: model version, prompt version, retrieval corpus deltas, upstream data drift", "weight": 3},
+        {"criterion": "Interim mitigation (rollback prompt/model) while investigating", "weight": 2},
+        {"criterion": "Written summary to customer within 24h with hypothesis + plan", "weight": 1}
+      ],
+      "modelAnswer": "Hour 0-4: get failing examples, timeline, changelogs. Hour 4-12: label eval set, run against current + previous model/prompt versions. Hour 12-24: identify regression source. Options — rollback prompt or model, patch retrieval, add filter. Hour 24-48: deploy fix + continuous eval, share written RCA outline with the customer.",
+      "tags": ["evaluation", "incident"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-010",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "hosted-vs-self",
+      "prompt": "Which pushes you toward self-hosted LLMs vs a hosted API?",
+      "options": [
+        {"id": "a", "text": "You are latency-tolerant and cost-tolerant"},
+        {"id": "b", "text": "Data cannot leave the client VPC (compliance) OR very high sustained QPS"},
+        {"id": "c", "text": "Small team, want to move fast"},
+        {"id": "d", "text": "Prototype-only"}
+      ],
+      "correct": ["b"],
+      "explanation": "Self-host is heavy — GPUs, ops, model updates. Choose when compliance or steady-state economics demand it.",
+      "tags": ["hosted", "self-hosted"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-011",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "agent-arch",
+      "prompt": "Design an end-to-end AI agent with tool use, memory, and evaluation, targeting 500 warehouse managers rerouting shipments with 99% delivery target.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Explicit tool definitions with typed schemas + auth per tool", "weight": 3},
+        {"criterion": "Memory: short-term (conversation) + long-term (per-warehouse policies, previous decisions)", "weight": 2},
+        {"criterion": "Human-in-the-loop for actions above impact threshold (dollar / customer)", "weight": 3},
+        {"criterion": "Eval harness: replay decisions offline, compare to ground truth, track delivery rate KPI", "weight": 3},
+        {"criterion": "Rollback / kill switch per warehouse", "weight": 2},
+        {"criterion": "Observability: cost per decision, latency, tool failure rate", "weight": 1}
+      ],
+      "modelAnswer": "LangGraph agent: nodes = plan, retrieve context, propose reroute, get human approval if $ > $X, execute via SAP/WMS API. Short-term memory = message history. Long-term = per-warehouse Redis of {policies, priors}. Actions log to eventstore for replay. Nightly eval harness re-runs recent decisions against actual outcomes; compares proposed vs actual delivery rate. Rollout: shadow mode → 5 warehouses → 25 → all, with a per-warehouse toggle for instant kill.",
+      "tags": ["agent", "langgraph"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-012",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "vector-db",
+      "prompt": "For a 50M-vector index with strict cost + on-prem needs, which is a reasonable default?",
+      "options": [
+        {"id": "a", "text": "Pinecone hosted"},
+        {"id": "b", "text": "pgvector on Postgres with HNSW index"},
+        {"id": "c", "text": "Elasticsearch keyword-only"},
+        {"id": "d", "text": "SQLite"}
+      ],
+      "correct": ["b"],
+      "explanation": "pgvector with HNSW handles 10s of M vectors on beefy Postgres; Postgres already in the stack means less new infra. Above 100M, look at dedicated vector DBs (Qdrant, Milvus, Weaviate).",
+      "tags": ["vector-db"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-013",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "eval",
+      "prompt": "For a classification-style LLM task (extract-then-check), the strongest eval metric is:",
+      "options": [
+        {"id": "a", "text": "BLEU"},
+        {"id": "b", "text": "Exact match / F1 against ground truth"},
+        {"id": "c", "text": "Perplexity"},
+        {"id": "d", "text": "Vibes"}
+      ],
+      "correct": ["b"],
+      "explanation": "Match target format precisely — deterministic metrics before subjective ones. BLEU is for translation; perplexity for LM quality.",
+      "tags": ["evaluation"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-014",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "cost",
+      "prompt": "First lever to cut LLM inference cost 5x without model swap?",
+      "options": [
+        {"id": "a", "text": "Cache identical + semantically-similar prompts"},
+        {"id": "b", "text": "Enable streaming"},
+        {"id": "c", "text": "Increase temperature"},
+        {"id": "d", "text": "Add more retries"}
+      ],
+      "correct": ["a"],
+      "explanation": "Exact-match cache is free. Semantic cache with an embedding lookup catches variants. After that: shorter prompts, smaller model for cheap tasks, prompt-caching APIs (Anthropic).",
+      "tags": ["cost", "caching"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-015",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "explain",
+      "prompt": "Explain to a non-technical CFO why an LLM might produce different answers to the same input on different runs.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Uses a lay analogy without patronizing", "weight": 2},
+        {"criterion": "Explains sampling / temperature in plain terms", "weight": 2},
+        {"criterion": "States what CAN be made deterministic (temp=0, seed) and what can't (nondeterminism at hardware level)", "weight": 3},
+        {"criterion": "Connects to business impact: report generation, audit, compliance", "weight": 2},
+        {"criterion": "Offers a mitigation: guardrail + human review + logging every response", "weight": 2}
+      ],
+      "modelAnswer": "It's like asking a very fast writer to draft the same memo twice — same instructions, but a fresh draft with slightly different phrasing each time. We can turn 'creativity' down to nearly zero, so answers become very consistent, but two runs may still differ in small ways because the underlying math is nondeterministic on GPU hardware. For anything auditable, we log inputs and outputs, add automated checks on the output, and have a human sign off on critical decisions.",
+      "tags": ["communication", "client"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-016",
+      "type": "mcq-single",
+      "difficulty": "easy",
+      "topic": "embeddings",
+      "prompt": "An embedding for a piece of text is:",
+      "options": [
+        {"id": "a", "text": "A hash of the text"},
+        {"id": "b", "text": "A fixed-length float vector positioned so that semantically similar texts are geometrically close"},
+        {"id": "c", "text": "A tokenized array"},
+        {"id": "d", "text": "A compressed image"}
+      ],
+      "correct": ["b"],
+      "explanation": "Cosine or dot-product similarity in that vector space approximates semantic similarity.",
+      "tags": ["embeddings"],
+      "sourcePlatforms": ["fde-loop", "turing-mcq"]
+    },
+    {
+      "id": "ai-017",
+      "type": "mcq-multi",
+      "difficulty": "medium",
+      "topic": "embeddings",
+      "prompt": "Which are common embedding model choices in 2026? (select all)",
+      "options": [
+        {"id": "a", "text": "OpenAI text-embedding-3-large / small"},
+        {"id": "b", "text": "Cohere embed-english-v3"},
+        {"id": "c", "text": "BGE-large-en (self-hostable)"},
+        {"id": "d", "text": "GPT-4 raw output"},
+        {"id": "e", "text": "sentence-transformers/all-MiniLM-L6-v2"}
+      ],
+      "correct": ["a", "b", "c", "e"],
+      "explanation": "LLMs like GPT-4 are generation models, not embedding models — different endpoints. Voyage, Mistral, Nomic are also popular.",
+      "tags": ["embeddings", "models"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-018",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "vector-db",
+      "prompt": "Choose pgvector over a dedicated vector DB when:",
+      "options": [
+        {"id": "a", "text": "You already run Postgres, corpus is <10M vectors, and you want relational filtering next to embeddings without a separate service"},
+        {"id": "b", "text": "You need >100M vectors and sub-10ms P99"},
+        {"id": "c", "text": "You want free hosted service"},
+        {"id": "d", "text": "You need cross-region replication for vectors"}
+      ],
+      "correct": ["a"],
+      "explanation": "pgvector = simplicity + JOIN with your relational data + one operational surface. Beyond ~10-50M, look at Qdrant, Milvus, Weaviate, or hosted Pinecone.",
+      "tags": ["vector-db", "pgvector"],
+      "sourcePlatforms": ["fde-loop", "turing-mcq"]
+    },
+    {
+      "id": "ai-019",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "vector-index",
+      "prompt": "HNSW vs IVF vector indexes — HNSW's trade-off:",
+      "options": [
+        {"id": "a", "text": "Fastest at query time with great recall, higher memory footprint and slower build"},
+        {"id": "b", "text": "Always faster than IVF at everything"},
+        {"id": "c", "text": "No memory cost"},
+        {"id": "d", "text": "Only works with cosine distance"}
+      ],
+      "correct": ["a"],
+      "explanation": "HNSW = graph-based, high recall, in-memory. IVF = clustering, less memory, needs training. pgvector supports both.",
+      "tags": ["vector-index", "hnsw"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-020",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "retrieval",
+      "prompt": "Hybrid search means:",
+      "options": [
+        {"id": "a", "text": "Vector search only, twice"},
+        {"id": "b", "text": "Combining dense (vector) + sparse (BM25/keyword) retrieval and fusing the ranks (e.g., Reciprocal Rank Fusion)"},
+        {"id": "c", "text": "Two LLM calls"},
+        {"id": "d", "text": "GraphQL + REST"}
+      ],
+      "correct": ["b"],
+      "explanation": "Vector catches semantics; BM25 catches exact terms + rare vocab. RRF fuses lists without needing calibrated scores.",
+      "tags": ["retrieval", "hybrid-search"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-021",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "retrieval",
+      "prompt": "HyDE (Hypothetical Document Embeddings) improves retrieval by:",
+      "options": [
+        {"id": "a", "text": "Fine-tuning the embedder"},
+        {"id": "b", "text": "Asking the LLM to generate a hypothetical answer, embedding IT, and searching against that — often closer to real doc vectors than the raw question"},
+        {"id": "c", "text": "Doubling the vector dimension"},
+        {"id": "d", "text": "Removing stopwords"}
+      ],
+      "correct": ["b"],
+      "explanation": "Trade-off: extra LLM call adds latency and cost; wins when questions are short/vague and docs are long/explicit.",
+      "tags": ["retrieval", "hyde"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-022",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "reranking",
+      "prompt": "Cross-encoder reranker (Cohere Rerank, BGE-reranker) in a RAG pipeline:",
+      "options": [
+        {"id": "a", "text": "Replaces the retriever"},
+        {"id": "b", "text": "Retriever fetches top-k (e.g., 50); reranker scores each (query,doc) pair with more accuracy and picks top-n (e.g., 5) for the LLM"},
+        {"id": "c", "text": "Adds nothing"},
+        {"id": "d", "text": "Only runs offline"}
+      ],
+      "correct": ["b"],
+      "explanation": "Retriever = fast/approximate; reranker = slow/precise. Two-stage boosts relevance without exploding index cost.",
+      "tags": ["reranking"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-023",
+      "type": "mcq-multi",
+      "difficulty": "medium",
+      "topic": "ragas",
+      "prompt": "Which are RAGAS-style evaluation metrics? (select all)",
+      "options": [
+        {"id": "a", "text": "Faithfulness (answer supported by retrieved docs)"},
+        {"id": "b", "text": "Answer relevancy (does the answer address the question?)"},
+        {"id": "c", "text": "Context precision (are retrieved docs relevant?)"},
+        {"id": "d", "text": "Context recall (did we retrieve all needed docs?)"},
+        {"id": "e", "text": "BLEU"}
+      ],
+      "correct": ["a", "b", "c", "d"],
+      "explanation": "RAGAS = 4 canonical metrics separating retrieval quality from generation quality. BLEU is a translation metric, not RAG-appropriate.",
+      "tags": ["evaluation", "ragas"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-024",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "cot",
+      "prompt": "Chain-of-Thought prompting:",
+      "options": [
+        {"id": "a", "text": "Trains the model further"},
+        {"id": "b", "text": "Adds 'think step by step' or few-shot reasoning examples, encouraging the model to produce intermediate reasoning that improves final answers on math/logic tasks"},
+        {"id": "c", "text": "Splits into two API calls"},
+        {"id": "d", "text": "Requires GPT-4 only"}
+      ],
+      "correct": ["b"],
+      "explanation": "Newer 'thinking' models do this internally. For older/smaller models, explicit CoT still helps.",
+      "tags": ["prompting", "cot"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-025",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "tool-use",
+      "prompt": "Tool-calling (function-calling) requires the LLM to output:",
+      "options": [
+        {"id": "a", "text": "Freeform text"},
+        {"id": "b", "text": "Structured JSON matching a declared schema; the app parses + dispatches to the actual function; result is fed back for the next turn"},
+        {"id": "c", "text": "Bash commands"},
+        {"id": "d", "text": "SQL"}
+      ],
+      "correct": ["b"],
+      "explanation": "Use Pydantic (Python) / Zod (TS) to describe schemas. Model-native structured-output modes are more reliable than prompt-only JSON.",
+      "tags": ["tool-use", "function-calling"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-026",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "agent",
+      "prompt": "The classic ReAct agent loop is:",
+      "options": [
+        {"id": "a", "text": "Compile → run → deploy"},
+        {"id": "b", "text": "Think (reason) → Act (call tool) → Observe (tool output) → repeat until answer or step limit"},
+        {"id": "c", "text": "Chain-of-thought only"},
+        {"id": "d", "text": "Prompt only"}
+      ],
+      "correct": ["b"],
+      "explanation": "LangGraph implements this as an explicit state graph with typed nodes/edges + persistence. Set max step count to bound cost.",
+      "tags": ["agent", "react"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-027",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "langgraph",
+      "prompt": "In LangGraph, checkpointing lets you:",
+      "options": [
+        {"id": "a", "text": "Save the model weights"},
+        {"id": "b", "text": "Persist agent state per thread — resume interrupted runs, add human-in-the-loop approval, and time-travel to any prior step"},
+        {"id": "c", "text": "Cache prompts"},
+        {"id": "d", "text": "Rate limit"}
+      ],
+      "correct": ["b"],
+      "explanation": "Checkpointers (Postgres, Redis, MemorySaver) enable durable multi-step agents. Essential for HITL.",
+      "tags": ["langgraph", "checkpointing"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-028",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "prompt-caching",
+      "prompt": "Anthropic/OpenAI prompt caching helps when:",
+      "options": [
+        {"id": "a", "text": "Prompts are always unique"},
+        {"id": "b", "text": "A large stable prefix (system prompt + tool defs + long context) is reused across many turns — cached tokens cost less"},
+        {"id": "c", "text": "You want to hide latency"},
+        {"id": "d", "text": "Never"}
+      ],
+      "correct": ["b"],
+      "explanation": "Design prompts so the stable part comes first, the variable part last. Big cost/latency win for RAG or long-conversation agents.",
+      "tags": ["cost", "caching"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-029",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "streaming",
+      "prompt": "Streaming tokens to a user improves:",
+      "options": [
+        {"id": "a", "text": "Total generation speed"},
+        {"id": "b", "text": "Perceived latency (time-to-first-token drops dramatically) even though total tokens/sec is unchanged"},
+        {"id": "c", "text": "Cost"},
+        {"id": "d", "text": "Nothing"}
+      ],
+      "correct": ["b"],
+      "explanation": "SSE from server → client. Also lets you display partial reasoning + stop early on user cancel.",
+      "tags": ["streaming", "ux"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-030",
+      "type": "mcq-multi",
+      "difficulty": "hard",
+      "topic": "hallucination",
+      "prompt": "Which reduce hallucinations in production? (select all)",
+      "options": [
+        {"id": "a", "text": "Ground with retrieved sources and require citations in the output"},
+        {"id": "b", "text": "Refuse-to-answer if retrieval returns nothing above a similarity threshold"},
+        {"id": "c", "text": "LLM-as-judge check for entailment against retrieved context"},
+        {"id": "d", "text": "Set temperature to 2.0"},
+        {"id": "e", "text": "Add adversarial red-team eval to the CI harness"}
+      ],
+      "correct": ["a", "b", "c", "e"],
+      "explanation": "Higher temperature INCREASES hallucination risk. Grounding + refusal + entailment checks + adversarial evals form the layered defense.",
+      "tags": ["hallucination"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-031",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "corrective-rag",
+      "prompt": "Corrective RAG (CRAG) adds:",
+      "options": [
+        {"id": "a", "text": "A larger LLM"},
+        {"id": "b", "text": "A retrieval evaluator that decides confidence in the docs; low-confidence triggers query rewrite or web search fallback"},
+        {"id": "c", "text": "More prompt tokens"},
+        {"id": "d", "text": "Automatic fine-tuning"}
+      ],
+      "correct": ["b"],
+      "explanation": "Adaptive routing based on retrieval quality. Wins for open-domain Q&A.",
+      "tags": ["crag", "adaptive-rag"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-032",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "graph-rag",
+      "prompt": "GraphRAG (Microsoft) differs from vector RAG in that it:",
+      "options": [
+        {"id": "a", "text": "Uses graph databases as the store"},
+        {"id": "b", "text": "Extracts entities and relationships into a knowledge graph, then does community summarization at query time — better for multi-hop, holistic questions"},
+        {"id": "c", "text": "Replaces embeddings entirely"},
+        {"id": "d", "text": "Is 10x cheaper"}
+      ],
+      "correct": ["b"],
+      "explanation": "Great when the answer needs to synthesize across many docs. Higher build cost. Hybrid graph+vector is common.",
+      "tags": ["graphrag"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-033",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "context-window",
+      "prompt": "Long-context models (1M+ tokens) don't fully replace RAG because:",
+      "options": [
+        {"id": "a", "text": "They don't exist yet"},
+        {"id": "b", "text": "Cost scales with tokens, attention degrades over very long inputs ('needle in haystack' failures), and retrieval offers auditability/citation"},
+        {"id": "c", "text": "They're too fast"},
+        {"id": "d", "text": "RAG is deprecated"}
+      ],
+      "correct": ["b"],
+      "explanation": "Long-context + RAG is often the best combo. Cost per token quickly dominates when you stuff full docs.",
+      "tags": ["context-window"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-034",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "multi-tenancy",
+      "prompt": "For multi-tenant RAG, per-tenant isolation is best enforced by:",
+      "options": [
+        {"id": "a", "text": "One shared index, trust the LLM to respect tenant boundaries"},
+        {"id": "b", "text": "Metadata filter on tenant_id at the vector-DB level applied BEFORE the LLM sees any doc"},
+        {"id": "c", "text": "Separate LLMs per tenant"},
+        {"id": "d", "text": "Client-side filter"}
+      ],
+      "correct": ["b"],
+      "explanation": "Never rely on the LLM to filter. Enforce at retrieval. For very sensitive tenants: per-tenant index (physical isolation).",
+      "tags": ["multi-tenancy"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-035",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "prompt-injection",
+      "prompt": "Indirect prompt injection is:",
+      "options": [
+        {"id": "a", "text": "Injecting the user prompt"},
+        {"id": "b", "text": "Malicious instructions hidden in RETRIEVED documents (or tool outputs) that the LLM then follows"},
+        {"id": "c", "text": "SQL injection"},
+        {"id": "d", "text": "A bug in Python"}
+      ],
+      "correct": ["b"],
+      "explanation": "Any content brought in from outside the system prompt is untrusted. Mitigations: mark data explicitly, output filtering, capability limits on tools.",
+      "tags": ["prompt-injection", "security"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-036",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "guardrails",
+      "prompt": "Best control against tool-call abuse in an agentic system:",
+      "options": [
+        {"id": "a", "text": "Ask the model nicely"},
+        {"id": "b", "text": "Least-privilege tools + policy layer that authorizes each tool call against the requesting user's permissions BEFORE execution"},
+        {"id": "c", "text": "Log after the fact"},
+        {"id": "d", "text": "Larger system prompt"}
+      ],
+      "correct": ["b"],
+      "explanation": "Treat tools like an API surface: authz, audit, rate limits, scoped credentials. Never trust the model to enforce authz.",
+      "tags": ["agent", "security"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-037",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "rag-eval-design",
+      "prompt": "Design a golden-eval + regression suite for a RAG system before you launch it to a customer.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Curates 50-200 real questions with expected answers + expected retrieved doc IDs", "weight": 3},
+        {"criterion": "Splits into categories: factual lookup, multi-hop, ambiguous, out-of-scope (refuse), adversarial (injection)", "weight": 3},
+        {"criterion": "Automates: retrieval metrics (recall@k, MRR) + generation metrics (faithfulness, answer relevancy, exact-match where possible)", "weight": 3},
+        {"criterion": "Runs on every prompt/model/chunking change; gates PRs on non-regression", "weight": 2},
+        {"criterion": "Includes cost + latency in the report", "weight": 2},
+        {"criterion": "Includes a human review pipeline for a random sample", "weight": 2}
+      ],
+      "modelAnswer": "Pair with 2 domain experts to draft 100 questions across the 5 categories. Store as YAML with (question, expected_answer, expected_doc_ids, category, difficulty). Nightly job runs retrieval + generation, computes RAGAS metrics + custom exact-match. Post to dashboard + Slack. CI blocks PRs with regressions >5% on any category. Sample 10 random runs to a human reviewer weekly for calibration.",
+      "tags": ["evaluation", "rag"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-038",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "agent-design",
+      "prompt": "Design a LangGraph agent that answers customer-support tickets by (a) classifying intent, (b) looking up account data, (c) drafting a reply, (d) requesting human approval for refunds > $100.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "State schema: ticket, intent, account, draft, needs_approval, decision", "weight": 3},
+        {"criterion": "Nodes for each step; edges include conditional routing on intent + needs_approval", "weight": 3},
+        {"criterion": "Tool definitions for account lookup (typed input/output)", "weight": 2},
+        {"criterion": "Human-in-the-loop via checkpointer interrupt; agent resumes after approval", "weight": 3},
+        {"criterion": "Guardrails: max step count, PII redaction on logging, refund cap enforced by policy layer not just prompt", "weight": 3},
+        {"criterion": "Observability + eval hook per node", "weight": 1}
+      ],
+      "modelAnswer": "State: `{ ticket, intent, account, draft, refund_amount, approval_needed, decision }`. Nodes: classify → lookup → draft → check_amount (conditional edge: if refund > $100 → interrupt for human else send). Checkpointer = Postgres. Tools: `get_account(user_id)` (typed via Zod). Policy layer wraps `send_refund(amount)` — throws if > $100 without approval token. Max 6 steps. All state logs redact PII. Langfuse traces every node.",
+      "tags": ["langgraph", "agent"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-039",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "fine-tuning",
+      "prompt": "LoRA (Low-Rank Adaptation) fine-tuning:",
+      "options": [
+        {"id": "a", "text": "Retrains all model weights"},
+        {"id": "b", "text": "Adds small rank-decomposition matrices to attention layers, training only those (millions of params vs billions) — cheap + composable"},
+        {"id": "c", "text": "Doesn't work with LLMs"},
+        {"id": "d", "text": "Requires TPU"}
+      ],
+      "correct": ["b"],
+      "explanation": "LoRA adapters can be swapped per task. QLoRA quantizes the base model to 4-bit for even lower cost.",
+      "tags": ["fine-tuning", "lora"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-040",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "self-hosted",
+      "prompt": "For self-hosted LLM inference, high-throughput stack is typically:",
+      "options": [
+        {"id": "a", "text": "Raw PyTorch model.forward()"},
+        {"id": "b", "text": "vLLM or TGI + continuous batching + KV-cache reuse + tensor parallelism on multi-GPU"},
+        {"id": "c", "text": "Serverless Lambda"},
+        {"id": "d", "text": "Bare Docker"}
+      ],
+      "correct": ["b"],
+      "explanation": "vLLM's PagedAttention manages KV-cache like virtual memory — dramatic throughput gains over naive serving.",
+      "tags": ["inference", "vllm"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-041",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "quantization",
+      "prompt": "4-bit quantization (GPTQ, AWQ) trades:",
+      "options": [
+        {"id": "a", "text": "Speed for accuracy"},
+        {"id": "b", "text": "~4x smaller memory + faster inference for a small accuracy drop (usually <1% on benchmarks) — enables big models on smaller GPUs"},
+        {"id": "c", "text": "Nothing"},
+        {"id": "d", "text": "Only helps training"}
+      ],
+      "correct": ["b"],
+      "explanation": "8-bit ≈ nearly lossless. 4-bit is the current sweet spot for serving 70B models on a single 48GB GPU.",
+      "tags": ["quantization"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-042",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "structured-output",
+      "prompt": "Getting reliable JSON output from an LLM: best pattern:",
+      "options": [
+        {"id": "a", "text": "Ask 'please output JSON'"},
+        {"id": "b", "text": "Use model-native structured-output / JSON mode with a Zod/Pydantic schema; retry on parse failure with the error message included in the retry prompt"},
+        {"id": "c", "text": "Regex the output"},
+        {"id": "d", "text": "Prompt engineering only"}
+      ],
+      "correct": ["b"],
+      "explanation": "Anthropic tool-use, OpenAI structured outputs, and Gemini schemas all enforce validity. Zod/Pydantic gives you client-side validation + TypeScript inference.",
+      "tags": ["structured-output"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-043",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "cost-monitoring",
+      "prompt": "In an LLM app, primary cost driver you should dashboard first:",
+      "options": [
+        {"id": "a", "text": "Number of unique users"},
+        {"id": "b", "text": "Input + output tokens per request, broken down by endpoint + user cohort — reveals runaway prompts / high-cost users"},
+        {"id": "c", "text": "GPU count"},
+        {"id": "d", "text": "SSL certs"}
+      ],
+      "correct": ["b"],
+      "explanation": "Log tokens_in / tokens_out / model / user_id / cost_estimate per call. Alert on outliers. This one dashboard prevents 80% of surprise-bill incidents.",
+      "tags": ["cost", "observability"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-044",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "rag-failure",
+      "prompt": "The most COMMON RAG failure mode in production is:",
+      "options": [
+        {"id": "a", "text": "Model refuses to answer"},
+        {"id": "b", "text": "Retrieval misses the right document (poor chunking / query mismatch) — retrieval quality is the ceiling on answer quality"},
+        {"id": "c", "text": "Model hallucinates from good context"},
+        {"id": "d", "text": "LLM is too slow"}
+      ],
+      "correct": ["b"],
+      "explanation": "If retrieval doesn't return the right passage, no LLM can save you. Invest in retrieval evaluation first, generation second.",
+      "tags": ["rag", "failure-modes"],
+      "sourcePlatforms": ["fde-loop"]
+    },
+    {
+      "id": "ai-045",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "topic": "rag-latency",
+      "prompt": "A RAG API's P95 latency is 3.2s. Target: 1s. Walk through your reduction plan.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Break down latency: embed + retrieve + rerank + LLM (with TTFT) + network", "weight": 3},
+        {"criterion": "Add semantic-cache on the full-question level (huge saving on FAQ traffic)", "weight": 3},
+        {"criterion": "Stream tokens to reduce perceived latency even if total unchanged", "weight": 2},
+        {"criterion": "Use a smaller/faster model for easy questions with a router", "weight": 2},
+        {"criterion": "Colocate services + use prompt-caching for the stable prefix", "weight": 2},
+        {"criterion": "Batch or parallelize embed + retrieve + rerank where possible", "weight": 2},
+        {"criterion": "Set explicit SLOs + regression alerts", "weight": 1}
+      ],
+      "modelAnswer": "Profile P95 breakdown. Add exact-match + semantic-cache first (biggest lever for FAQ). Route easy intents to a fast small model; hard to the big one. Enable prompt caching on the system prompt + tool defs. Stream tokens. If retrieval is 400ms, precompute embeddings + move vector DB into the same VPC/az. Parallelize the rerank with early-cut. Commit to per-endpoint SLOs and alert on burn.",
+      "tags": ["latency"],
+      "sourcePlatforms": ["fde-loop"]
+    }
+  ]
+}
