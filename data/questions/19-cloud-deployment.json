@@ -1,0 +1,836 @@
+{
+  "module": "cloud-deployment",
+  "title": "10. Cloud & Deployment",
+  "description": "Turing FDE core: AWS (EC2, S3, RDS, IAM, VPC, ALB, CloudFront, Secrets Manager, Lambda), deployment patterns (blue-green, canary, rolling), CI/CD, CDN, GCP/Azure basics.",
+  "tracks": ["turing"],
+  "testStages": ["turing-t4-fde"],
+  "platformCoverage": ["turing-t4-fde"],
+  "estimatedHours": 6,
+  "studyNotes": {
+    "10.1 AWS Core Compute & Storage": ["EC2: instance types (t3=burstable, c5=CPU, r5=memory, i3=NVMe). AMI = machine image. Security groups = stateful firewall.", "S3: object storage, 11-9s durability. Versioning, lifecycle, replication, presigned URLs, bucket policies vs ACLs.", "RDS: managed relational DB. Multi-AZ = synchronous standby + auto failover. Read Replicas = async, promote manually.", "Aurora: MySQL/Postgres-compatible, 6 copies across 3 AZs, storage auto-scales, Serverless v2 for spiky load.", "ECS (Fargate): serverless containers. EKS: managed Kubernetes."],
+    "10.2 Networking (VPC, ALB, Route53)": ["VPC: private network in AWS. Subnets: public (IGW route) vs private (NAT gateway for egress).", "Security Groups: instance-level, stateful. NACLs: subnet-level, stateless.", "ALB: Layer 7, host/path routing, TLS termination, sticky sessions, health checks. NLB: Layer 4, ultra-low latency.", "Route53: DNS + health checks + routing policies (latency, weighted, failover, geolocation).", "NAT Gateway: lets private subnet instances reach internet without being publicly reachable."],
+    "10.3 IAM & Secrets": ["IAM: users, groups, roles, policies (identity vs resource). Least privilege.", "Instance roles: EC2/Lambda assumes a role — no hardcoded credentials in code.", "Secrets Manager: stores DB passwords, API keys, rotates automatically. SecretsManager > SSM Parameter Store for secrets (rotation, audit).", "STS AssumeRole: cross-account access. Condition keys: aws:RequestedRegion, aws:SourceIp.", "Never commit AWS credentials to git. Use OIDC federation for CI/CD (GitHub Actions → assume role)."],
+    "10.4 CDN & Static Assets": ["CloudFront: CDN in front of S3/ALB. Edge caches reduce origin load. Cache-Control headers drive TTL.", "Invalidation: aws cloudfront create-invalidation --paths '/*' — clears edge cache.", "S3 + CloudFront: static hosting pattern. OAC (Origin Access Control) restricts S3 to CloudFront only.", "Cache-Control: public, max-age=31536000, immutable for versioned assets. no-cache for HTML entry points."],
+    "10.5 Deployment Patterns": ["Rolling: replace instances/containers gradually. Zero-downtime but mixed versions briefly coexist.", "Blue-green: full parallel environment. Instant cutover via DNS/ALB. Instant rollback. 2x cost during switch.", "Canary: route N% of traffic to new version. Observe metrics. Ramp or roll back.", "Feature flags: decouple deploy from release. Ship dark, enable per segment.", "Immutable infra: never patch running servers; replace with new AMI/image. Achieved with ASG + launch templates."]
+  },
+  "questions": [
+    {
+      "id": "cd-101",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "10.1 AWS Core",
+      "niche": "RDS Multi-AZ vs Read Replica",
+      "topic": "rds",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "What is the difference between RDS Multi-AZ and Read Replicas?",
+      "options": [
+        {"id": "a", "text": "Multi-AZ is for read scaling; Read Replicas are for HA"},
+        {"id": "b", "text": "Multi-AZ: synchronous standby in another AZ for automatic failover (HA). Read Replicas: asynchronous copies for read scaling — not automatically promoted."},
+        {"id": "c", "text": "They are the same feature with different names"},
+        {"id": "d", "text": "Multi-AZ supports cross-region; Read Replicas do not"}
+      ],
+      "correct": ["b"],
+      "explanation": "Multi-AZ keeps a synchronous standby — RDS automatically promotes it on primary failure (60-120s). Read Replicas are asynchronous and exist for read offloading; promotion is manual. Cross-region Read Replicas are supported; Multi-AZ is same-region only (though Aurora Global is cross-region HA).",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["rds", "ha"]
+    },
+    {
+      "id": "cd-102",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "10.1 AWS Core",
+      "niche": "S3 presigned URL",
+      "topic": "s3",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "A user needs to upload a file directly to S3 from their browser without exposing AWS credentials. What's the right approach?",
+      "options": [
+        {"id": "a", "text": "Embed AWS access key in the frontend JavaScript"},
+        {"id": "b", "text": "Generate a presigned PUT URL server-side; browser uploads directly to S3 using that URL"},
+        {"id": "c", "text": "Route the upload through your server to proxy to S3"},
+        {"id": "d", "text": "Make the S3 bucket public"}
+      ],
+      "correct": ["b"],
+      "explanation": "Presigned URL: server signs a time-limited S3 URL with its IAM credentials. Browser uploads directly to S3 — no credentials exposed, no server bottleneck. URL expires (e.g. 15 min). Set Content-Type and size limits in the signature conditions.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["s3", "presigned-url"]
+    },
+    {
+      "id": "cd-103",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "10.1 AWS Core",
+      "niche": "EC2 instance types",
+      "topic": "ec2",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "You're running a memory-intensive in-process cache (storing 200GB of data). Which EC2 instance family?",
+      "options": [
+        {"id": "a", "text": "t3 — general purpose burstable"},
+        {"id": "b", "text": "c5 — compute optimised"},
+        {"id": "c", "text": "r5 — memory optimised"},
+        {"id": "d", "text": "i3 — storage optimised"}
+      ],
+      "correct": ["c"],
+      "explanation": "r5 instances (memory optimised) offer up to 768GB RAM. t3 = burstable general purpose (small/medium workloads). c5 = high vCPU:memory ratio for CPU-bound. i3 = NVMe SSD for high I/O throughput (Kafka brokers, databases needing local disk).",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["ec2", "instance-types"]
+    },
+    {
+      "id": "cd-104",
+      "type": "mcq-multi",
+      "difficulty": "medium",
+      "subtopic": "10.1 AWS Core",
+      "niche": "S3 durability and features",
+      "topic": "s3",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "Which are TRUE about Amazon S3? (select all)",
+      "options": [
+        {"id": "a", "text": "11 nines (99.999999999%) durability — stores data across ≥3 AZs"},
+        {"id": "b", "text": "S3 is a block storage service"},
+        {"id": "c", "text": "Versioning allows recovery from accidental deletes"},
+        {"id": "d", "text": "Lifecycle rules can transition objects to Glacier automatically"},
+        {"id": "e", "text": "S3 guarantees strong consistency for all operations since 2020"}
+      ],
+      "correct": ["a", "c", "d", "e"],
+      "explanation": "S3 is object (not block) storage. 11-9s durability. Strong read-after-write consistency for all operations since Dec 2020. Versioning + lifecycle rules are standard features. Block storage = EBS.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["s3", "durability"]
+    },
+    {
+      "id": "cd-105",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "10.1 AWS Core",
+      "niche": "Aurora vs RDS",
+      "topic": "rds",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "When should you choose Aurora over standard RDS Postgres?",
+      "options": [
+        {"id": "a", "text": "Aurora is cheaper — always choose it"},
+        {"id": "b", "text": "Aurora for higher throughput, faster failover (<30s), auto-scaling storage, and up to 15 read replicas with minimal replication lag"},
+        {"id": "c", "text": "Aurora only supports MySQL, not Postgres"},
+        {"id": "d", "text": "RDS Postgres is always faster than Aurora"}
+      ],
+      "correct": ["b"],
+      "explanation": "Aurora: 6 copies across 3 AZs, storage auto-scales to 128TB, up to 15 read replicas with ~10ms replica lag, failover in <30s. ~3x throughput vs standard Postgres. Tradeoff: higher cost, proprietary storage engine. Use RDS for smaller workloads or when cost is the priority.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["aurora", "rds"]
+    },
+    {
+      "id": "cd-106",
+      "type": "mcq-single",
+      "difficulty": "easy",
+      "subtopic": "10.1 AWS Core",
+      "niche": "EBS vs S3",
+      "topic": "ec2",
+      "timeBudgetSec": 60,
+      "tracks": ["turing"],
+      "prompt": "Your app writes large log files that must persist across EC2 restarts and be accessible from multiple instances. Which storage?",
+      "options": [
+        {"id": "a", "text": "EBS — block storage attached to one EC2"},
+        {"id": "b", "text": "Instance store — ephemeral local disk"},
+        {"id": "c", "text": "S3 — object storage, accessible from any instance"},
+        {"id": "d", "text": "ElastiCache — in-memory"}
+      ],
+      "correct": ["c"],
+      "explanation": "S3 is the right choice for shared, durable, multi-instance accessible storage. EBS attaches to one EC2 at a time (multi-attach is limited). Instance store is lost on stop/terminate. EFS is another option for shared filesystem access if POSIX semantics are needed.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["s3", "ebs", "storage"]
+    },
+
+    {
+      "id": "cd-201",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "10.2 Networking",
+      "niche": "public vs private subnet",
+      "topic": "vpc",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "What makes a VPC subnet 'public' vs 'private'?",
+      "options": [
+        {"id": "a", "text": "Public subnets have public IP addresses; private subnets don't"},
+        {"id": "b", "text": "Public subnets have a route to an Internet Gateway; private subnets route outbound through a NAT Gateway"},
+        {"id": "c", "text": "Public subnets are in us-east-1; private subnets are in other regions"},
+        {"id": "d", "text": "Public subnets allow all inbound traffic; private subnets have Security Groups"}
+      ],
+      "correct": ["b"],
+      "explanation": "The route table determines public vs private. Public: 0.0.0.0/0 → Internet Gateway (IGW) — instances can receive inbound traffic from internet. Private: 0.0.0.0/0 → NAT Gateway — instances can initiate outbound connections but aren't directly reachable from internet.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["vpc", "networking"]
+    },
+    {
+      "id": "cd-202",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "10.2 Networking",
+      "niche": "Security Group vs NACL",
+      "topic": "vpc",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "What's the key difference between Security Groups and Network ACLs (NACLs) in AWS?",
+      "options": [
+        {"id": "a", "text": "Security Groups apply to subnets; NACLs apply to instances"},
+        {"id": "b", "text": "Security Groups are stateful (return traffic auto-allowed); NACLs are stateless (both directions must be explicitly allowed)"},
+        {"id": "c", "text": "NACLs support allow rules only; Security Groups support both allow and deny"},
+        {"id": "d", "text": "They are identical — AWS just uses different names"}
+      ],
+      "correct": ["b"],
+      "explanation": "Security Groups: instance-level, stateful (if inbound 443 allowed, reply traffic auto-allowed outbound). NACLs: subnet-level, stateless (must allow inbound AND outbound explicitly, including ephemeral ports 1024-65535 for responses). Security Groups: allow only. NACLs: allow + deny.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["security-groups", "nacl"]
+    },
+    {
+      "id": "cd-203",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "10.2 Networking",
+      "niche": "ALB vs NLB",
+      "topic": "load-balancing",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "When should you use NLB (Network Load Balancer) instead of ALB (Application Load Balancer)?",
+      "options": [
+        {"id": "a", "text": "NLB for HTTP/HTTPS APIs; ALB for TCP traffic"},
+        {"id": "b", "text": "NLB for ultra-low latency, static IP, Layer 4 (TCP/UDP/TLS); ALB for HTTP routing, host/path rules, WebSocket, gRPC"},
+        {"id": "c", "text": "NLB supports SSL termination; ALB does not"},
+        {"id": "d", "text": "ALB is cheaper — always prefer it"}
+      ],
+      "correct": ["b"],
+      "explanation": "ALB (Layer 7): host-based and path-based routing, HTTP/2, WebSocket, gRPC, WAF integration, sticky sessions. NLB (Layer 4): millions of requests/sec, sub-ms latency, static Elastic IP (useful for IP allowlisting), preserves client IP natively. Use NLB for gaming, IoT, TCP-heavy workloads.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["alb", "nlb", "load-balancing"]
+    },
+    {
+      "id": "cd-204",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "10.2 Networking",
+      "niche": "NAT Gateway",
+      "topic": "vpc",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "An EC2 instance in a private subnet needs to download software updates from the internet. What do you need?",
+      "options": [
+        {"id": "a", "text": "Attach an Elastic IP to the instance"},
+        {"id": "b", "text": "Move it to a public subnet"},
+        {"id": "c", "text": "A NAT Gateway in a public subnet; private subnet routes 0.0.0.0/0 to it"},
+        {"id": "d", "text": "Open all outbound Security Group rules"}
+      ],
+      "correct": ["c"],
+      "explanation": "NAT Gateway sits in a public subnet, has a public IP (Elastic IP), and translates outbound traffic from private instances. The private subnet's route table points 0.0.0.0/0 to the NAT Gateway. Instances remain unreachable from the internet while still able to initiate outbound connections.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["nat", "vpc"]
+    },
+    {
+      "id": "cd-205",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "subtopic": "10.2 Networking",
+      "niche": "VPC architecture for multi-tier app",
+      "topic": "vpc",
+      "timeBudgetSec": 2400,
+      "tracks": ["turing"],
+      "prompt": "Design the VPC architecture for a 3-tier web app (ALB → app servers → RDS) that must be secure and highly available across 2 AZs.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "2 public subnets (one per AZ) for ALB", "weight": 2},
+        {"criterion": "2 private subnets for app servers (EC2/ECS) — no direct internet access", "weight": 3},
+        {"criterion": "2 isolated/private subnets for RDS with no outbound internet route", "weight": 3},
+        {"criterion": "NAT Gateway in each public subnet (one per AZ) for app server egress", "weight": 2},
+        {"criterion": "Security Groups: ALB → app (port 8080), app → RDS (port 5432) only", "weight": 3},
+        {"criterion": "RDS Multi-AZ for failover; ALB spans both AZs for HA", "weight": 2}
+      ],
+      "modelAnswer": "VPC CIDR: 10.0.0.0/16. 6 subnets across 2 AZs: public-a/b (10.0.1.0/24, 10.0.2.0/24) host ALB — route 0.0.0.0/0 → IGW. Private-app-a/b (10.0.11.0/24, 10.0.12.0/24) host ECS tasks — route 0.0.0.0/0 → NAT Gateway in same AZ. Private-db-a/b (10.0.21.0/24, 10.0.22.0/24) host RDS Multi-AZ — no outbound internet route. Security Groups: sg-alb (inbound 443 from 0.0.0.0/0), sg-app (inbound 8080 from sg-alb only), sg-db (inbound 5432 from sg-app only). NAT Gateway per AZ to survive AZ failure. ALB with health checks routes to both app AZs. RDS Multi-AZ across db subnets — automatic failover.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["vpc", "design", "ha"]
+    },
+
+    {
+      "id": "cd-301",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "10.3 IAM & Secrets",
+      "niche": "IAM roles vs users",
+      "topic": "iam",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "Your EC2 instance needs to read from an S3 bucket. What's the correct credential approach?",
+      "options": [
+        {"id": "a", "text": "Hardcode AWS access key + secret in the app config"},
+        {"id": "b", "text": "Store credentials in an environment variable on the instance"},
+        {"id": "c", "text": "Attach an IAM Instance Role with the necessary S3 permissions — SDK auto-fetches temporary credentials via metadata service"},
+        {"id": "d", "text": "Make the S3 bucket public"}
+      ],
+      "correct": ["c"],
+      "explanation": "IAM Instance Roles: EC2 fetches short-lived credentials from the instance metadata service (169.254.169.254) automatically. No static credentials to rotate or leak. AWS SDK picks them up by default. Hardcoding credentials is a critical security risk and will fail credential rotation.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["iam", "roles"]
+    },
+    {
+      "id": "cd-302",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "10.3 IAM & Secrets",
+      "niche": "Secrets Manager vs SSM",
+      "topic": "iam",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "When should you use AWS Secrets Manager over SSM Parameter Store (SecureString)?",
+      "options": [
+        {"id": "a", "text": "Secrets Manager is always better — Parameter Store is deprecated"},
+        {"id": "b", "text": "Secrets Manager for automatic rotation, cross-account sharing, fine-grained audit, and DB credential lifecycle. Parameter Store for config values and non-rotated secrets (cheaper)."},
+        {"id": "c", "text": "Parameter Store supports automatic rotation; Secrets Manager does not"},
+        {"id": "d", "text": "Secrets Manager is only for RDS passwords"}
+      ],
+      "correct": ["b"],
+      "explanation": "Secrets Manager: built-in automatic rotation (Lambda-backed for RDS, Redshift, DocumentDB), versioning, cross-account access, per-secret resource policy. ~$0.40/secret/month. Parameter Store SecureString: cheaper ($0.05 for advanced), no auto-rotation, suitable for config. Use Secrets Manager for DB passwords, API keys requiring rotation.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["secrets-manager", "ssm"]
+    },
+    {
+      "id": "cd-303",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "10.3 IAM & Secrets",
+      "niche": "least privilege IAM policy",
+      "topic": "iam",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "Which IAM policy grants least-privilege access for a Lambda that only reads from one DynamoDB table?",
+      "options": [
+        {"id": "a", "text": "AdministratorAccess managed policy"},
+        {"id": "b", "text": "AmazonDynamoDBFullAccess managed policy"},
+        {"id": "c", "text": "Inline policy: {Effect: Allow, Action: [dynamodb:GetItem, dynamodb:Query, dynamodb:Scan], Resource: arn:aws:dynamodb:*:*:table/MyTable}"},
+        {"id": "d", "text": "AmazonDynamoDBReadOnlyAccess on all tables"}
+      ],
+      "correct": ["c"],
+      "explanation": "Least privilege: grant only what's needed — specific read actions (GetItem, Query, Scan) on the specific table ARN. AmazonDynamoDBReadOnlyAccess grants access to ALL tables and includes DescribeTable etc. Inline policy scoped to one table is most restrictive.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["iam", "least-privilege"]
+    },
+    {
+      "id": "cd-304",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "10.3 IAM & Secrets",
+      "niche": "OIDC for CI/CD",
+      "topic": "iam",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "Your GitHub Actions pipeline needs to deploy to AWS. What's the most secure way to provide AWS credentials?",
+      "options": [
+        {"id": "a", "text": "Store AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY as GitHub secrets"},
+        {"id": "b", "text": "Configure AWS OIDC identity provider; GitHub Actions assumes an IAM role via short-lived token — no long-lived keys"},
+        {"id": "c", "text": "Hardcode credentials in the workflow YAML"},
+        {"id": "d", "text": "Create an IAM user with AdministratorAccess for CI"}
+      ],
+      "correct": ["b"],
+      "explanation": "OIDC federation: GitHub Actions receives a JWT from GitHub's OIDC provider, exchanges it for short-lived AWS STS credentials via AssumeRoleWithWebIdentity. No long-lived credentials stored anywhere. Credentials expire after the job. Use aws-actions/configure-aws-credentials action with role-to-assume.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["iam", "oidc", "cicd"]
+    },
+    {
+      "id": "cd-305",
+      "type": "mcq-multi",
+      "difficulty": "medium",
+      "subtopic": "10.3 IAM & Secrets",
+      "niche": "IAM policy evaluation",
+      "topic": "iam",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "Which are TRUE about AWS IAM policy evaluation? (select all)",
+      "options": [
+        {"id": "a", "text": "An explicit Deny always overrides any Allow"},
+        {"id": "b", "text": "By default, all access is denied unless explicitly allowed"},
+        {"id": "c", "text": "Permissions boundaries limit the maximum permissions an IAM entity can have"},
+        {"id": "d", "text": "SCPs (Service Control Policies) in AWS Organizations override root account permissions"},
+        {"id": "e", "text": "Resource-based policies always override identity-based policies"}
+      ],
+      "correct": ["a", "b", "c", "d"],
+      "explanation": "E is wrong — resource and identity policies are evaluated together (union for same-account, intersection for cross-account). A, B, C, D are all correct IAM fundamentals. SCPs act as guardrails — even the root account can't exceed what the SCP allows (except for root-only actions).",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["iam", "policy-evaluation"]
+    },
+
+    {
+      "id": "cd-401",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "10.4 CDN & Static Assets",
+      "niche": "CloudFront cache headers",
+      "topic": "cdn",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "You deploy versioned JS bundles (e.g. app.a3f9b2.js) and an index.html that references them. What Cache-Control headers should each have?",
+      "options": [
+        {"id": "a", "text": "Both: Cache-Control: no-cache"},
+        {"id": "b", "text": "Versioned assets: Cache-Control: public, max-age=31536000, immutable. index.html: Cache-Control: no-cache, must-revalidate"},
+        {"id": "c", "text": "Versioned assets: Cache-Control: no-store. index.html: Cache-Control: max-age=86400"},
+        {"id": "d", "text": "Both: Cache-Control: max-age=3600"}
+      ],
+      "correct": ["b"],
+      "explanation": "Versioned assets have content-hash in filename — if the file changes, the URL changes, so cache forever (max-age=31536000, immutable). index.html references those versioned URLs — it must always be fresh so browsers discover new asset URLs (no-cache = must revalidate with server, but can serve from cache if 304).",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["cdn", "cache-control"]
+    },
+    {
+      "id": "cd-402",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "10.4 CDN & Static Assets",
+      "niche": "CloudFront invalidation",
+      "topic": "cdn",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "You deploy a new version of your SPA to S3. Users still see the old version from CloudFront. What do you do?",
+      "options": [
+        {"id": "a", "text": "Wait for TTL to expire"},
+        {"id": "b", "text": "Run a CloudFront cache invalidation for /* (or specific paths) — clears edge caches immediately"},
+        {"id": "c", "text": "Delete and recreate the CloudFront distribution"},
+        {"id": "d", "text": "Set CloudFront TTL to 0"}
+      ],
+      "correct": ["b"],
+      "explanation": "aws cloudfront create-invalidation --distribution-id XXXXX --paths '/*' — purges all cached objects at edge locations. For production: use versioned asset filenames (content hash) so only index.html needs invalidation. First 1000 invalidation paths/month are free.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["cloudfront", "invalidation"]
+    },
+    {
+      "id": "cd-403",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "10.4 CDN & Static Assets",
+      "niche": "OAC — restrict S3 to CloudFront",
+      "topic": "cdn",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "How do you ensure your S3 bucket files are only accessible via CloudFront and not directly via S3 URLs?",
+      "options": [
+        {"id": "a", "text": "Enable S3 Block Public Access and configure an Origin Access Control (OAC) policy on the distribution"},
+        {"id": "b", "text": "Set bucket ACL to private — CloudFront can still read it"},
+        {"id": "c", "text": "Enable S3 versioning"},
+        {"id": "d", "text": "Use signed CloudFront URLs for all objects"}
+      ],
+      "correct": ["a"],
+      "explanation": "OAC (Origin Access Control, successor to OAI): CloudFront signs requests to S3 using SigV4. S3 bucket policy allows GetObject only from the CloudFront distribution's service principal. Block Public Access ensures no other path works. Signed URLs are for per-user access control, not origin restriction.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["cloudfront", "s3", "oac"]
+    },
+
+    {
+      "id": "cd-501",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "10.5 Deployment Patterns",
+      "niche": "blue-green vs rolling",
+      "topic": "deployment",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "What's the main advantage of blue-green deployment over rolling deployment?",
+      "options": [
+        {"id": "a", "text": "Blue-green uses less infrastructure"},
+        {"id": "b", "text": "Blue-green allows instant rollback by switching traffic back to the old environment — no mixed versions in production"},
+        {"id": "c", "text": "Rolling deployment has zero downtime; blue-green does not"},
+        {"id": "d", "text": "Blue-green is faster to deploy"}
+      ],
+      "correct": ["b"],
+      "explanation": "Blue-green: full parallel environment — cut over instantly via DNS/ALB rule. Rollback = flip back in seconds. No mixed version state. Tradeoff: 2x infrastructure cost during cutover. Rolling: gradually replaces instances — lower cost but old+new versions coexist during rollout, rollback is slower (re-roll forward).",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["blue-green", "deployment"]
+    },
+    {
+      "id": "cd-502",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "10.5 Deployment Patterns",
+      "niche": "canary deployment",
+      "topic": "deployment",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "You want to release a risky feature to 5% of users first. What deployment pattern?",
+      "options": [
+        {"id": "a", "text": "Blue-green — flip all traffic at once"},
+        {"id": "b", "text": "Canary — route N% traffic to new version, watch metrics, gradually ramp or rollback"},
+        {"id": "c", "text": "Rolling — replace 5% of instances first"},
+        {"id": "d", "text": "Immutable — replace all instances simultaneously"}
+      ],
+      "correct": ["b"],
+      "explanation": "Canary: weighted routing (5% new, 95% old) via ALB weighted target groups, Route53, or feature flag. Observe error rate, latency, business metrics. If healthy, ramp to 25% → 50% → 100%. Automated rollback if error rate exceeds threshold. Rolling is a deployment mechanism, not a traffic-split mechanism.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["canary", "deployment"]
+    },
+    {
+      "id": "cd-503",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "10.5 Deployment Patterns",
+      "niche": "feature flags",
+      "topic": "deployment",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "Why do feature flags decouple 'deploy' from 'release'?",
+      "options": [
+        {"id": "a", "text": "Feature flags encrypt the new code until it's released"},
+        {"id": "b", "text": "Code ships to production but stays inactive (flag off) — you enable it for specific users/segments without a new deploy"},
+        {"id": "c", "text": "Feature flags prevent rollbacks from being needed"},
+        {"id": "d", "text": "Feature flags are only for A/B testing, not deployment safety"}
+      ],
+      "correct": ["b"],
+      "explanation": "Deploy dark: ship code to all servers with flag disabled. Release: flip the flag (LaunchDarkly, Unleash, env var) for 1% → beta users → all. Rollback = flip flag off, instant — no redeploy. Enables trunk-based development with long-running incomplete features in main.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["feature-flags", "deployment"]
+    },
+    {
+      "id": "cd-504",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "10.5 Deployment Patterns",
+      "niche": "zero-downtime DB migration",
+      "topic": "deployment",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "You need to rename a column in a heavily-used Postgres table with zero downtime. What's the pattern?",
+      "options": [
+        {"id": "a", "text": "ALTER TABLE RENAME COLUMN — fast and safe"},
+        {"id": "b", "text": "Expand-contract: add new column, dual-write, backfill, switch reads, drop old column across multiple deploys"},
+        {"id": "c", "text": "Take the site down for maintenance, rename, redeploy"},
+        {"id": "d", "text": "Use a database view to alias the old column name"}
+      ],
+      "correct": ["b"],
+      "explanation": "Expand-contract (parallel change): Deploy 1: add new_col, write to both old_col + new_col. Deploy 2: backfill old rows (new_col = old_col where null), switch reads to new_col. Deploy 3: drop old_col. ALTER TABLE RENAME COLUMN acquires a lock and breaks old app versions still referencing the old name.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["deployment", "database-migration"]
+    },
+    {
+      "id": "cd-505",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "subtopic": "10.5 Deployment Patterns",
+      "niche": "CI/CD pipeline design",
+      "topic": "deployment",
+      "timeBudgetSec": 2400,
+      "tracks": ["turing"],
+      "prompt": "Design a CI/CD pipeline for a Node.js API deployed to ECS Fargate. Requirements: automated tests, Docker image, canary release to production, automated rollback on error rate spike.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "CI: lint + unit tests + integration tests on every PR", "weight": 2},
+        {"criterion": "Build Docker image, tag with commit SHA, push to ECR", "weight": 3},
+        {"criterion": "Deploy to staging (ECS service update) + smoke test", "weight": 2},
+        {"criterion": "Canary to production: update task definition → deploy 10% traffic via ALB weighted target group", "weight": 3},
+        {"criterion": "CloudWatch alarm on error rate (5xx > 1%) → triggers rollback (revert target group weights)", "weight": 3},
+        {"criterion": "Secrets from Secrets Manager injected at runtime — not baked into image", "weight": 2}
+      ],
+      "modelAnswer": "GitHub Actions pipeline: PR → run Jest tests + ESLint + tsc. On merge to main: build Docker image tagged with $GITHUB_SHA, push to ECR. Deploy to staging ECS service (update task definition image), run smoke tests (curl health endpoint). If staging passes: create new task definition with new image, deploy to prod ECS service at 10% weight (ALB weighted target group: new=10, old=90). CloudWatch alarm: 5xx rate on new TG > 1% for 2 minutes → EventBridge rule → Lambda updates ALB weights back to old=100. On success after 10 min at 10%: ramp to 50% → 100%. Secrets: ECS task definition pulls from Secrets Manager via task role at container start — never in image. Image scanning: ECR scan on push, fail pipeline on critical CVEs.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["cicd", "canary", "ecs"]
+    },
+    {
+      "id": "cd-506",
+      "type": "mcq-multi",
+      "difficulty": "medium",
+      "subtopic": "10.5 Deployment Patterns",
+      "niche": "immutable infrastructure",
+      "topic": "deployment",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "Which practices characterize immutable infrastructure? (select all)",
+      "options": [
+        {"id": "a", "text": "Never SSH into production servers to patch them"},
+        {"id": "b", "text": "Build a new AMI/Docker image for every change, replace running instances"},
+        {"id": "c", "text": "Use Auto Scaling Groups with launch templates — scale in old, scale out new"},
+        {"id": "d", "text": "Run apt-get upgrade on running production instances"},
+        {"id": "e", "text": "Infrastructure defined as code (Terraform/CDK) — no manual console changes"}
+      ],
+      "correct": ["a", "b", "c", "e"],
+      "explanation": "Immutable infra: servers are never modified after deployment. Changes go through the pipeline — new image, new launch template, ASG rolling replace. Eliminates configuration drift, makes deployments reproducible. SSHing and apt-get are mutable patterns (D is wrong).",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["immutable-infra", "deployment"]
+    },
+
+    {
+      "id": "cd-601",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "10.6 Serverless",
+      "niche": "Lambda cold start",
+      "topic": "lambda",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "What causes a Lambda cold start and how do you mitigate it for latency-sensitive APIs?",
+      "options": [
+        {"id": "a", "text": "Cold starts happen when Lambda runs out of memory"},
+        {"id": "b", "text": "Cold start = first invocation spins up a new execution environment (download code, init runtime, run init code). Mitigate: provisioned concurrency, smaller package size, keep-warm pings."},
+        {"id": "c", "text": "Cold starts only happen once per Lambda function ever"},
+        {"id": "d", "text": "Cold starts are eliminated by increasing Lambda timeout"}
+      ],
+      "correct": ["b"],
+      "explanation": "Lambda execution environments are created on demand and reused for warm invocations. Cold start adds 100ms–2s+ depending on runtime (Java/C# worst, Node/Python best) and package size. Mitigations: Provisioned Concurrency (pre-warms N environments, cost per hour), smaller zip (tree-shake, avoid large ORM), move heavy init outside handler, Lambda SnapStart (Java).",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["lambda", "cold-start"]
+    },
+    {
+      "id": "cd-602",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "10.6 Serverless",
+      "niche": "Lambda vs ECS",
+      "topic": "lambda",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "When should you choose ECS Fargate over Lambda for running a Node.js service?",
+      "options": [
+        {"id": "a", "text": "Lambda is always cheaper — use it for everything"},
+        {"id": "b", "text": "ECS Fargate for: long-running processes (>15min), WebSocket servers, persistent connections, predictable high-traffic workloads where Lambda concurrency costs more"},
+        {"id": "c", "text": "Fargate requires Kubernetes — use Lambda to avoid complexity"},
+        {"id": "d", "text": "Lambda scales faster than Fargate in all cases"}
+      ],
+      "correct": ["b"],
+      "explanation": "Lambda limits: 15-min max execution, no persistent connections (bad for WebSocket), cold starts, cost spikes at sustained high concurrency. ECS Fargate: long-running tasks, WebSocket servers, persistent DB connections, predictable traffic (flat cost). Lambda wins for: event-driven spiky workloads, infrequent jobs, cost at low traffic.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["lambda", "ecs", "fargate"]
+    },
+    {
+      "id": "cd-603",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "10.6 Serverless",
+      "niche": "Lambda concurrency",
+      "topic": "lambda",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "Your Lambda function spikes to 10,000 concurrent invocations and starts throttling. What's happening and how do you prevent it?",
+      "options": [
+        {"id": "a", "text": "Lambda has a per-account concurrency limit (default 1000 per region). Reserve concurrency for critical functions; request limit increase."},
+        {"id": "b", "text": "Lambda throttles after 100 invocations per function"},
+        {"id": "c", "text": "Increase Lambda memory to increase concurrency"},
+        {"id": "d", "text": "Use a VPC to bypass concurrency limits"}
+      ],
+      "correct": ["a"],
+      "explanation": "Lambda account-level concurrency limit defaults to 1000 per region (soft limit, request increase). One noisy Lambda can starve others. Fix: reserved concurrency per function (guarantees and caps), request limit increase via Support, use SQS to buffer and control Lambda invocation rate.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["lambda", "concurrency"]
+    },
+
+    {
+      "id": "cd-701",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "10.7 GCP / Azure Basics",
+      "niche": "GCP equivalents",
+      "topic": "gcp",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "Match GCP services to their AWS equivalents: Cloud Run, Cloud SQL, GCS, BigQuery.",
+      "options": [
+        {"id": "a", "text": "Cloud Run=EKS, Cloud SQL=DynamoDB, GCS=EFS, BigQuery=RDS"},
+        {"id": "b", "text": "Cloud Run=Lambda/Fargate (serverless containers), Cloud SQL=RDS, GCS=S3, BigQuery=Redshift/Athena"},
+        {"id": "c", "text": "Cloud Run=EC2, Cloud SQL=Aurora, GCS=EBS, BigQuery=CloudWatch"},
+        {"id": "d", "text": "They are not comparable"}
+      ],
+      "correct": ["b"],
+      "explanation": "Cloud Run: containerized serverless (like Fargate but with HTTP auto-scaling to zero). Cloud SQL: managed relational DB (MySQL/Postgres/SQL Server) ≈ RDS. GCS (Google Cloud Storage) ≈ S3. BigQuery: serverless data warehouse ≈ Redshift or Athena. Useful to know for multi-cloud FDE conversations.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["gcp", "cloud-comparison"]
+    },
+    {
+      "id": "cd-702",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "10.7 GCP / Azure Basics",
+      "niche": "Azure equivalents",
+      "topic": "azure",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "An enterprise customer runs on Azure. They ask about your platform's Azure integration. Which Azure services map to S3, Lambda, and RDS?",
+      "options": [
+        {"id": "a", "text": "Azure Blob Storage=S3, Azure Functions=Lambda, Azure SQL/PostgreSQL=RDS"},
+        {"id": "b", "text": "Azure Files=S3, Azure Logic Apps=Lambda, CosmosDB=RDS"},
+        {"id": "c", "text": "Azure Disk=S3, Azure DevOps=Lambda, Azure Cache=RDS"},
+        {"id": "d", "text": "OneDrive=S3, Azure App Service=Lambda, Azure Table Storage=RDS"}
+      ],
+      "correct": ["a"],
+      "explanation": "Azure Blob Storage ≈ S3 (object storage). Azure Functions ≈ Lambda (serverless compute). Azure Database for PostgreSQL / Azure SQL ≈ RDS. Useful FDE context: knowing Azure equivalents helps when enterprise customers ask 'can this work in our Azure environment?'",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["azure", "cloud-comparison"]
+    },
+
+    {
+      "id": "cd-801",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "10.1 AWS Core",
+      "niche": "Auto Scaling Group",
+      "topic": "ec2",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "What triggers Auto Scaling Group scale-out and how do you prevent thrashing (rapid scale-in/out)?",
+      "options": [
+        {"id": "a", "text": "ASG scales on CPU only; thrashing is not possible"},
+        {"id": "b", "text": "ASG scales on CloudWatch alarms (CPU, custom metrics). Prevent thrashing with cooldown periods and step scaling policies with sufficient thresholds between scale-in and scale-out."},
+        {"id": "c", "text": "ASG scales randomly to distribute load"},
+        {"id": "d", "text": "ASG requires manual trigger via the AWS console"}
+      ],
+      "correct": ["b"],
+      "explanation": "ASG scaling triggers: CloudWatch alarms (CPU, memory via custom metric, SQS queue depth, ALB request count). Thrashing: scale out at 70% CPU, scale in at 30% CPU → 69% → scale in → 71% → scale out. Fix: use target tracking (e.g. target 60% CPU avg), scale-in cooldown (300s default), step scaling with buffer between thresholds.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["asg", "auto-scaling"]
+    },
+    {
+      "id": "cd-802",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "10.2 Networking",
+      "niche": "VPC peering vs Transit Gateway",
+      "topic": "vpc",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "You need to connect 10 VPCs (dev, staging, prod, and per-service). Why use Transit Gateway instead of VPC peering?",
+      "options": [
+        {"id": "a", "text": "VPC peering is deprecated; Transit Gateway is the replacement"},
+        {"id": "b", "text": "VPC peering is non-transitive — 10 VPCs need 45 peering connections. Transit Gateway: hub-and-spoke, all VPCs connect to one TGW — O(N) connections instead of O(N²)"},
+        {"id": "c", "text": "Transit Gateway supports cross-region; VPC peering does not"},
+        {"id": "d", "text": "VPC peering has bandwidth limits; Transit Gateway does not"}
+      ],
+      "correct": ["b"],
+      "explanation": "VPC peering is point-to-point and non-transitive — traffic doesn't flow A→B→C through peering. N VPCs = N(N-1)/2 peering connections. Transit Gateway is a managed hub: each VPC attaches once, full-mesh routing via TGW routing tables. O(N) attachments, centralized management, support for VPN and Direct Connect.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["vpc", "transit-gateway"]
+    },
+    {
+      "id": "cd-803",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "10.3 IAM & Secrets",
+      "niche": "IMDSv2",
+      "topic": "iam",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "Why should you enforce IMDSv2 (Instance Metadata Service v2) on EC2 instances?",
+      "options": [
+        {"id": "a", "text": "IMDSv2 is faster than IMDSv1"},
+        {"id": "b", "text": "IMDSv2 requires a session token (PUT request first) — prevents SSRF attacks from stealing instance credentials via the metadata endpoint"},
+        {"id": "c", "text": "IMDSv2 encrypts the metadata response"},
+        {"id": "d", "text": "IMDSv2 is required for IAM roles to work"}
+      ],
+      "correct": ["b"],
+      "explanation": "IMDSv1 (GET 169.254.169.254/latest/meta-data/iam/security-credentials/) is vulnerable to SSRF — a malicious redirect can exfiltrate instance credentials. IMDSv2 requires a PUT request with X-aws-ec2-metadata-token-ttl-seconds first to get a session token, then uses that token for metadata requests. SSRF can't follow the PUT redirect.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["imds", "security", "ssrf"]
+    },
+    {
+      "id": "cd-804",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "subtopic": "10.5 Deployment Patterns",
+      "niche": "zero-downtime ECS deployment",
+      "topic": "deployment",
+      "timeBudgetSec": 2400,
+      "tracks": ["turing"],
+      "prompt": "Walk through how you achieve zero-downtime deployments for an ECS Fargate service behind an ALB. What must be configured for health checks, draining, and rollback?",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "ECS rolling update: minimum healthy percent=100, maximum percent=200 — new tasks start before old stop", "weight": 3},
+        {"criterion": "ALB health check: path /health, threshold 2 consecutive successes before routing traffic", "weight": 3},
+        {"criterion": "Deregistration delay (connection draining): 30s — old tasks finish in-flight requests before termination", "weight": 3},
+        {"criterion": "Application must handle SIGTERM — graceful shutdown, stop accepting new connections, finish in-flight", "weight": 3},
+        {"criterion": "Circuit breaker: ECS deployment circuit breaker enabled — auto-rollback if N consecutive tasks fail health checks", "weight": 2},
+        {"criterion": "Task definition versioning — rollback = point service to previous task definition revision", "weight": 2}
+      ],
+      "modelAnswer": "ECS service config: minimumHealthyPercent=100, maximumPercent=200 → new tasks launch alongside old ones before traffic switches. ALB target group: health check /health 200 OK, threshold=2, interval=10s — task only receives traffic after 2 consecutive health checks pass. Deregistration delay=30s — ALB drains in-flight requests before deregistering old tasks. App: listen for SIGTERM → stop accepting new connections → finish in-flight (30s max) → exit 0. ECS deployment circuit breaker: enabled with rollback=true — if 3 consecutive tasks fail health check, ECS auto-reverts to the last stable task definition. Monitoring: CloudWatch deployment events + ALB 5xx rate alarm during deployment window. Canary variant: CodeDeploy ECS blue/green — creates a second target group, shifts traffic linearly over configurable bake time.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["ecs", "zero-downtime", "deployment"]
+    },
+    {
+      "id": "cd-805",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "10.1 AWS Core",
+      "niche": "ECS vs EKS",
+      "topic": "ecs",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "When would you recommend EKS over ECS for a customer?",
+      "options": [
+        {"id": "a", "text": "EKS is always better — Kubernetes is the industry standard"},
+        {"id": "b", "text": "EKS when: team already knows Kubernetes, need Kubernetes-native tooling (Helm, Argo CD, custom controllers), or multi-cloud portability. ECS when: simpler AWS-native stack, smaller team, less operational overhead."},
+        {"id": "c", "text": "EKS for stateless apps; ECS for stateful apps"},
+        {"id": "d", "text": "ECS doesn't support auto-scaling; EKS does"}
+      ],
+      "correct": ["b"],
+      "explanation": "ECS: simpler, AWS-native, less ops overhead, deep IAM integration, good for teams not already invested in K8s. EKS: full Kubernetes — Helm charts, GitOps (Argo CD), custom operators, easier multi-cloud migration, larger ecosystem. EKS adds control plane cost (~$0.10/hr) and K8s expertise requirement.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["ecs", "eks", "containers"]
+    },
+    {
+      "id": "cd-806",
+      "type": "mcq-multi",
+      "difficulty": "medium",
+      "subtopic": "10.5 Deployment Patterns",
+      "niche": "deployment checklist",
+      "topic": "deployment",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "Which are best practices for a production deployment? (select all)",
+      "options": [
+        {"id": "a", "text": "Deploy during low-traffic window"},
+        {"id": "b", "text": "Have a tested rollback plan before deploying"},
+        {"id": "c", "text": "Monitor error rate and latency for 15+ minutes after cutover"},
+        {"id": "d", "text": "Deploy all microservices simultaneously to avoid version mismatch"},
+        {"id": "e", "text": "Run DB migrations as a separate step before deploying new app code"}
+      ],
+      "correct": ["a", "b", "c", "e"],
+      "explanation": "D is wrong — simultaneous multi-service deployment is risky (partial failure leaves system in inconsistent state). Deploy services sequentially with validation between. E: DB migrations before code ensures old code still works on new schema (additive-only migration). A, B, C are standard deployment hygiene.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["deployment", "best-practices"]
+    },
+    {
+      "id": "cd-807",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "10.4 CDN & Static Assets",
+      "niche": "CloudFront signed URLs",
+      "topic": "cdn",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "When do you use CloudFront Signed URLs instead of making S3 content public?",
+      "options": [
+        {"id": "a", "text": "Signed URLs are only for video streaming"},
+        {"id": "b", "text": "When content is user-specific or paid — signed URL grants time-limited access to one resource without exposing S3 directly"},
+        {"id": "c", "text": "Signed URLs bypass CloudFront caching for better freshness"},
+        {"id": "d", "text": "Signed URLs are required for all S3 + CloudFront setups"}
+      ],
+      "correct": ["b"],
+      "explanation": "Signed URLs: time-limited, user-specific access to private content (invoices, paid media, user uploads). Generated server-side with CloudFront key pair. The URL includes signature + expiry — only valid for that window. Signed Cookies: grant access to multiple files (better for video players, entire libraries).",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["cloudfront", "signed-urls"]
+    },
+    {
+      "id": "cd-808",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "10.2 Networking",
+      "niche": "Route53 routing policies",
+      "topic": "route53",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "You want users in Europe to be routed to your EU servers and US users to US servers. Which Route53 routing policy?",
+      "options": [
+        {"id": "a", "text": "Weighted — 50% each"},
+        {"id": "b", "text": "Geolocation — route based on user's geographic location"},
+        {"id": "c", "text": "Latency — route to the region with lowest latency"},
+        {"id": "d", "text": "Failover — primary/secondary only"}
+      ],
+      "correct": ["b"],
+      "explanation": "Geolocation routing: explicit geographic rules (continent/country → endpoint). Always route EU to EU endpoint. Latency routing: routes to lowest-latency endpoint — usually correlates with geography but is dynamic. For compliance/data-residency requirements (GDPR: EU data must stay in EU), use Geolocation, not Latency.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["route53", "geolocation"]
+    }
+  ]
+}

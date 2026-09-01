@@ -11,16 +11,28 @@ import m09 from "@/data/questions/09-system-design.json";
 import m10 from "@/data/questions/10-ai-llm.json";
 import m11 from "@/data/questions/11-fde-decomposition.json";
 import m12 from "@/data/questions/12-fde-client-sim.json";
-import m13 from "@/data/questions/13-behavioral.json";
 import m14 from "@/data/questions/14-web-protocols-security.json";
 import m15 from "@/data/questions/15-distributed-systems.json";
 import m16 from "@/data/questions/16-refactoring-debugging.json";
 import m00 from "@/data/questions/00-programming-fundamentals.json";
 import m01dsa from "@/data/questions/01-dsa.json";
+import m17 from "@/data/questions/17-async-concurrency.json";
+import m18 from "@/data/questions/18-redis-caching.json";
+import m19 from "@/data/questions/19-cloud-deployment.json";
+import m20 from "@/data/questions/20-docker-k8s.json";
+import m23 from "@/data/questions/23-enterprise-integrations.json";
+import m24 from "@/data/questions/24-fde-customer-engineering.json";
+import m25 from "@/data/questions/25-behavioral.json";
+import m27 from "@/data/questions/27-live-coding-take-home.json";
+import m21 from "@/data/questions/21-llm-app-arch.json";
+import m22 from "@/data/questions/22-testing-debugging.json";
+import m26 from "@/data/questions/26-project-deep-dive.json";
+import m28 from "@/data/questions/28-software-engineering.json";
+import m29 from "@/data/questions/29-python.json";
 import type { Manifest, Module } from "./types";
 
 const MODULES: Record<string, Module> = Object.fromEntries(
-  [m00, m01dsa, m01, m02, m03, m04, m05, m06, m07, m08, m09, m10, m11, m12, m13, m14, m15, m16].map(
+  [m00, m01dsa, m01, m02, m03, m04, m05, m06, m07, m08, m09, m10, m11, m12, m14, m15, m16, m17, m18, m19, m20, m21, m22, m23, m24, m25, m26, m27, m28, m29].map(
     (m) => [m.module, m as unknown as Module]
   )
 );

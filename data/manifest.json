@@ -41,7 +41,20 @@
     { "id": "behavioral", "file": "questions/13-behavioral.json", "priority": 2, "estimatedHours": 4 },
     { "id": "web-protocols-security", "file": "questions/14-web-protocols-security.json", "priority": 1, "estimatedHours": 6 },
     { "id": "distributed-systems", "file": "questions/15-distributed-systems.json", "priority": 1, "estimatedHours": 5 },
-    { "id": "refactoring-debugging", "file": "questions/16-refactoring-debugging.json", "priority": 1, "estimatedHours": 4 }
+    { "id": "refactoring-debugging", "file": "questions/16-refactoring-debugging.json", "priority": 1, "estimatedHours": 4 },
+    { "id": "async-concurrency", "file": "questions/17-async-concurrency.json", "priority": 1, "estimatedHours": 8 },
+    { "id": "redis-caching", "file": "questions/18-redis-caching.json", "priority": 1, "estimatedHours": 6 },
+    { "id": "cloud-deployment", "file": "questions/19-cloud-deployment.json", "priority": 1, "estimatedHours": 6 },
+    { "id": "docker-k8s", "file": "questions/20-docker-k8s.json", "priority": 1, "estimatedHours": 5 },
+    { "id": "llm-app-arch", "file": "questions/21-llm-app-arch.json", "priority": 1, "estimatedHours": 6 },
+    { "id": "testing-debugging", "file": "questions/22-testing-debugging.json", "priority": 1, "estimatedHours": 5 },
+    { "id": "project-deep-dive", "file": "questions/26-project-deep-dive.json", "priority": 1, "estimatedHours": 3 },
+    { "id": "software-engineering", "file": "questions/28-software-engineering.json", "priority": 1, "estimatedHours": 5 },
+    { "id": "python", "file": "questions/29-python.json", "priority": 1, "estimatedHours": 6 },
+    { "id": "enterprise-integrations", "file": "questions/23-enterprise-integrations.json", "priority": 1, "estimatedHours": 6 },
+    { "id": "fde-customer-engineering", "file": "questions/24-fde-customer-engineering.json", "priority": 1, "estimatedHours": 6 },
+    { "id": "behavioral", "file": "questions/25-behavioral.json", "priority": 1, "estimatedHours": 4 },
+    { "id": "live-coding-take-home", "file": "questions/27-live-coding-take-home.json", "priority": 1, "estimatedHours": 4 }
   ],
   "plans": {
     "60-day": {

@@ -1,0 +1,613 @@
+{
+  "module": "python",
+  "title": "02. Python",
+  "description": "Python fundamentals for the Turing MCQ screen and Andela HackerRank challenge: data types, collections, comprehensions, OOP, decorators, generators, async/await, the GIL, and common standard library patterns.",
+  "tracks": ["turing", "andela"],
+  "testStages": ["turing-t1-mcq", "andela-a1-hackerrank"],
+  "platformCoverage": ["turing-t1-mcq", "andela-a1-hackerrank"],
+  "estimatedHours": 6,
+  "studyNotes": {
+    "02.1 Core Types & Mutability": ["Mutable: list, dict, set, bytearray. Immutable: tuple, str, int, float, frozenset, bytes.", "Default mutable argument bug: `def fn(x=[])` reuses the same list across calls. Fix: `def fn(x=None): x = x or []`.", "String interning: small integers and short strings are cached — `a is b` can be True even without `==`.", "f-strings (3.6+): fastest string formatting. `f'{value:.2f}'` for formatting.", "Walrus operator `:=` (3.8+): assign inside expression — `while chunk := f.read(8192):`."],
+    "02.2 Collections": ["list: O(1) append/pop-end, O(n) insert/search. Backed by dynamic array.", "dict: O(1) average get/set (hash table). Ordered by insertion in 3.7+.", "set: O(1) average add/remove/contains. Unordered, no duplicates.", "collections.deque: O(1) append/pop from both ends. Better than list for queue.", "collections.Counter: count hashable elements. `.most_common(n)` returns top n.", "collections.defaultdict: dict with default factory — no KeyError on missing key."],
+    "02.3 Comprehensions & Generators": ["List comp: `[x*2 for x in range(10) if x%2==0]` — eager, loads all into memory.", "Generator expr: `(x*2 for x in range(10))` — lazy, one item at a time. Use for large datasets.", "dict comp: `{k: v for k, v in items.items()}`. set comp: `{x for x in lst}`.", "yield: turns a function into a generator. `yield from` delegates to sub-generator.", "Generators can't be rewound — once exhausted, they're done."],
+    "02.4 OOP": ["`__init__`: initialiser (not constructor — `__new__` is constructor). `self` = instance.", "`@classmethod`: receives `cls` — alternative constructors. `@staticmethod`: no implicit args.", "Dunder methods: `__str__` (readable), `__repr__` (unambiguous), `__eq__`, `__hash__`, `__len__`, `__getitem__`.", "MRO (Method Resolution Order): C3 linearisation. `ClassName.__mro__` shows the lookup order.", "Dataclasses (`@dataclass`): auto-generates `__init__`, `__repr__`, `__eq__` from field annotations."],
+    "02.5 Decorators, GIL, Async": ["Decorator: function that wraps another function. `@functools.wraps(fn)` preserves the wrapped function's metadata.", "GIL (Global Interpreter Lock): CPython only allows one thread to execute Python bytecode at a time. Threads work for I/O-bound tasks; use `multiprocessing` for CPU-bound.", "`asyncio`: cooperative multitasking. `async def` + `await` — single thread, yields at I/O points. Not parallelism.", "`concurrent.futures.ThreadPoolExecutor`: easy thread pool for I/O-bound work.", "Type hints (3.5+): `def fn(x: int) -> str`. `Optional[str]` = `str | None` (3.10+: `str | None`)."]
+  },
+  "questions": [
+    {
+      "id": "py-101",
+      "type": "mcq-single",
+      "difficulty": "easy",
+      "subtopic": "02.1 Core Types",
+      "niche": "mutable default arg",
+      "topic": "types",
+      "timeBudgetSec": 60,
+      "tracks": ["turing", "andela"],
+      "prompt": "What is the output of this code?\n```python\ndef append_to(x, lst=[]):\n    lst.append(x)\n    return lst\n\nprint(append_to(1))\nprint(append_to(2))\n```",
+      "options": [
+        {"id": "a", "text": "[1] then [2]"},
+        {"id": "b", "text": "[1] then [1, 2]"},
+        {"id": "c", "text": "[] then []"},
+        {"id": "d", "text": "Error — default args can't be lists"}
+      ],
+      "correct": ["b"],
+      "explanation": "Mutable default argument trap: `lst=[]` is evaluated once at function definition time, not each call. The same list object is reused across all calls without an explicit `lst` argument. After call 1: lst=[1]. After call 2: lst=[1,2]. Fix: `def append_to(x, lst=None): lst = [] if lst is None else lst`.",
+      "sourcePlatforms": ["turing-t1-mcq", "andela-a1-hackerrank"],
+      "tags": ["python", "gotchas", "mutability"]
+    },
+    {
+      "id": "py-102",
+      "type": "mcq-single",
+      "difficulty": "easy",
+      "subtopic": "02.1 Core Types",
+      "niche": "is vs ==",
+      "topic": "types",
+      "timeBudgetSec": 60,
+      "tracks": ["turing", "andela"],
+      "prompt": "What is the difference between `is` and `==` in Python?",
+      "options": [
+        {"id": "a", "text": "They are interchangeable"},
+        {"id": "b", "text": "`is` checks identity (same object in memory); `==` checks equality (same value via `__eq__`)"},
+        {"id": "c", "text": "`is` is faster but only works for strings"},
+        {"id": "d", "text": "`==` compares references; `is` compares values"}
+      ],
+      "correct": ["b"],
+      "explanation": "`a is b` → `id(a) == id(b)` → same object. `a == b` → `a.__eq__(b)` → same value. Pitfall: `[] == []` is True; `[] is []` is False (different objects). Small integer caching (-5 to 256) means `a = 256; b = 256; a is b` can be True — but don't rely on this. Always use `==` for value comparison; use `is` only for `None` checks: `if x is None`.",
+      "sourcePlatforms": ["turing-t1-mcq", "andela-a1-hackerrank"],
+      "tags": ["python", "identity", "equality"]
+    },
+    {
+      "id": "py-103",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "02.1 Core Types",
+      "niche": "tuple vs list",
+      "topic": "types",
+      "timeBudgetSec": 60,
+      "tracks": ["turing", "andela"],
+      "prompt": "When should you prefer a tuple over a list in Python?",
+      "options": [
+        {"id": "a", "text": "Always — tuples are faster for all operations"},
+        {"id": "b", "text": "When the data is heterogeneous and shouldn't change (coordinates, RGB values, DB row) — immutability signals intent and allows use as dict keys / set elements"},
+        {"id": "c", "text": "When you need to sort the collection"},
+        {"id": "d", "text": "Tuples are only for return values from functions"}
+      ],
+      "correct": ["b"],
+      "explanation": "Tuple = immutable sequence. Use for: data that logically shouldn't be modified (`(lat, lon)`, `(name, age)`), dict keys (`{(0,0): 'origin'}`), multiple return values (`return x, y`). List = mutable sequence. Use for: homogeneous collections that grow/shrink. Tuples have slightly lower memory overhead and can be used as dict keys/set elements (because they're hashable, assuming their elements are too).",
+      "sourcePlatforms": ["turing-t1-mcq"],
+      "tags": ["python", "collections"]
+    },
+    {
+      "id": "py-104",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "02.1 Core Types",
+      "niche": "string formatting",
+      "topic": "types",
+      "timeBudgetSec": 60,
+      "tracks": ["turing", "andela"],
+      "prompt": "Which string formatting method is preferred in modern Python (3.6+) and why?",
+      "options": [
+        {"id": "a", "text": "`'Hello %s' % name` — classic and most compatible"},
+        {"id": "b", "text": "`f'Hello {name}'` — f-strings: fastest at runtime, most readable, supports expressions"},
+        {"id": "c", "text": "`'Hello {}'.format(name)` — most explicit"},
+        {"id": "d", "text": "`'Hello ' + name` — concatenation is clearest"}
+      ],
+      "correct": ["b"],
+      "explanation": "F-strings (3.6+) are evaluated at runtime, compiled to efficient bytecode, and the fastest formatting method. They support any expression: `f'{2+2}'`, `f'{obj.method()}'`, `f'{value:.2f}'`. They're also the most readable — no placeholder mismatch possible. `%` and `.format()` are older patterns. String concatenation with `+` in a loop is O(n²) — use `''.join(parts)` instead.",
+      "sourcePlatforms": ["turing-t1-mcq"],
+      "tags": ["python", "strings"]
+    },
+
+    {
+      "id": "py-201",
+      "type": "mcq-single",
+      "difficulty": "easy",
+      "subtopic": "02.2 Collections",
+      "niche": "list complexity",
+      "topic": "collections",
+      "timeBudgetSec": 60,
+      "tracks": ["turing", "andela"],
+      "prompt": "What is the time complexity of `list.insert(0, x)` in Python?",
+      "options": [
+        {"id": "a", "text": "O(1) — Python lists are linked lists"},
+        {"id": "b", "text": "O(n) — all elements after the insert point must be shifted right"},
+        {"id": "c", "text": "O(log n) — Python uses a balanced tree"},
+        {"id": "d", "text": "O(1) amortised — same as append"}
+      ],
+      "correct": ["b"],
+      "explanation": "Python lists are backed by a dynamic array. `append` = O(1) amortised (occasional resize). `insert(0, x)` = O(n) because all n existing elements are shifted one position right. `pop()` (end) = O(1). `pop(0)` (front) = O(n). For O(1) front operations, use `collections.deque`: `deque.appendleft(x)` = O(1).",
+      "sourcePlatforms": ["turing-t1-mcq", "andela-a1-hackerrank"],
+      "tags": ["python", "complexity", "list"]
+    },
+    {
+      "id": "py-202",
+      "type": "mcq-single",
+      "difficulty": "easy",
+      "subtopic": "02.2 Collections",
+      "niche": "dict vs set",
+      "topic": "collections",
+      "timeBudgetSec": 60,
+      "tracks": ["turing", "andela"],
+      "prompt": "What is the average time complexity for `x in my_set` vs `x in my_list` in Python?",
+      "options": [
+        {"id": "a", "text": "Both O(1)"},
+        {"id": "b", "text": "set: O(1) average; list: O(n) — set uses hash table, list does linear scan"},
+        {"id": "c", "text": "Both O(n)"},
+        {"id": "d", "text": "set: O(log n); list: O(1)"}
+      ],
+      "correct": ["b"],
+      "explanation": "`set` (hash table): `in` is O(1) average, O(n) worst case (hash collision). `list`: `in` is O(n) linear scan. For frequent membership checks on large collections, always convert to a set: `lookup = set(my_list)`. This is a classic Python interview trap — checking `x in list` inside a loop gives O(n²) when O(n) is achievable with a set.",
+      "sourcePlatforms": ["turing-t1-mcq", "andela-a1-hackerrank"],
+      "tags": ["python", "complexity", "set"]
+    },
+    {
+      "id": "py-203",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "02.2 Collections",
+      "niche": "Counter",
+      "topic": "collections",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "What does `collections.Counter('aabbbcc').most_common(2)` return?",
+      "options": [
+        {"id": "a", "text": "{'b': 3, 'a': 2}"},
+        {"id": "b", "text": "[('b', 3), ('a', 2)]"},
+        {"id": "c", "text": "['b', 'b', 'b', 'a', 'a']"},
+        {"id": "d", "text": "3"}
+      ],
+      "correct": ["b"],
+      "explanation": "`Counter` counts hashable elements. `Counter('aabbbcc')` = `{'a':2, 'b':3, 'c':2}`. `.most_common(2)` returns a list of (element, count) tuples sorted by count descending: `[('b', 3), ('a', 2)]`. Useful for: frequency problems (LeetCode 347 Top K Frequent), anagram checks (`Counter(s) == Counter(t)`), word frequency counts.",
+      "sourcePlatforms": ["turing-t1-mcq", "andela-a1-hackerrank"],
+      "tags": ["python", "collections", "counter"]
+    },
+    {
+      "id": "py-204",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "02.2 Collections",
+      "niche": "defaultdict",
+      "topic": "collections",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "When does `collections.defaultdict(list)` save you code compared to a plain `dict`?",
+      "options": [
+        {"id": "a", "text": "When you need a sorted dictionary"},
+        {"id": "b", "text": "When grouping items by key — avoids manually checking `if key not in d: d[key] = []` before appending"},
+        {"id": "c", "text": "When you need O(1) lookup"},
+        {"id": "d", "text": "`defaultdict` is slower so you should always use plain `dict`"}
+      ],
+      "correct": ["b"],
+      "explanation": "Without defaultdict: `if word not in groups: groups[word] = []; groups[word].append(doc)`. With `defaultdict(list)`: `groups[word].append(doc)` — missing key auto-initialises to `[]`. Common patterns: `defaultdict(list)` for grouping, `defaultdict(int)` for counting (alternative to Counter), `defaultdict(set)` for adjacency lists in graphs. `dict.setdefault(key, [])` is the plain-dict equivalent.",
+      "sourcePlatforms": ["turing-t1-mcq", "andela-a1-hackerrank"],
+      "tags": ["python", "collections", "defaultdict"]
+    },
+    {
+      "id": "py-205",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "02.2 Collections",
+      "niche": "deque",
+      "topic": "collections",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "You need a queue (FIFO) in Python. Why is `collections.deque` better than `list` for this?",
+      "options": [
+        {"id": "a", "text": "deque supports more methods than list"},
+        {"id": "b", "text": "`deque.popleft()` is O(1); `list.pop(0)` is O(n) — deque uses a doubly-linked list of fixed-size blocks"},
+        {"id": "c", "text": "deque is thread-safe by default"},
+        {"id": "d", "text": "list doesn't support FIFO — you must use deque"}
+      ],
+      "correct": ["b"],
+      "explanation": "`list.pop(0)` shifts all remaining elements left — O(n). `deque.popleft()` = O(1) because deque is implemented as a doubly-linked list of fixed blocks. For BFS, sliding window, or any queue: use `deque`. `deque.append` (right) and `deque.appendleft` (left) are both O(1). Note: `deque` with `maxlen` parameter auto-discards old items — useful for rolling windows.",
+      "sourcePlatforms": ["turing-t1-mcq", "andela-a1-hackerrank"],
+      "tags": ["python", "deque", "queue"]
+    },
+
+    {
+      "id": "py-301",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "02.3 Comprehensions",
+      "niche": "list vs generator",
+      "topic": "comprehensions",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "You have a file with 10 million lines. What's the memory-efficient way to process them?",
+      "options": [
+        {"id": "a", "text": "`lines = [line for line in f]` — load all into a list then process"},
+        {"id": "b", "text": "`for line in f:` or a generator expression `(process(line) for line in f)` — reads one line at a time"},
+        {"id": "c", "text": "`lines = f.readlines()` — readlines is optimised for large files"},
+        {"id": "d", "text": "Split the file into 10 chunks and process in parallel"}
+      ],
+      "correct": ["b"],
+      "explanation": "File objects in Python are iterators — iterating `for line in f:` reads one line at a time without loading the whole file. `readlines()` loads everything into a list — ~1GB for a 10M-line file. Generator expression: `total = sum(len(line) for line in f)` processes lazily. Rule: if you don't need all items simultaneously, use a generator. Use list comprehension only when you need random access or multiple passes.",
+      "sourcePlatforms": ["turing-t1-mcq", "andela-a1-hackerrank"],
+      "tags": ["python", "generators", "memory"]
+    },
+    {
+      "id": "py-302",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "02.3 Comprehensions",
+      "niche": "yield vs return",
+      "topic": "generators",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "What does `yield` do to a function?",
+      "options": [
+        {"id": "a", "text": "It returns a value and ends the function, like return"},
+        {"id": "b", "text": "It turns the function into a generator — calling it returns a generator object; the function body runs lazily, pausing at each `yield` and resuming on `next()`"},
+        {"id": "c", "text": "It pauses execution for one second (async sleep)"},
+        {"id": "d", "text": "`yield` is the same as `await` in async functions"}
+      ],
+      "correct": ["b"],
+      "explanation": "Generator function: contains `yield`. Calling it returns a generator object (no code runs yet). `next(gen)` runs until the next `yield`, returns the yielded value, and suspends. On the next `next()`, execution resumes from after `yield`. `StopIteration` is raised when the function returns. Memory efficient: only one value in memory at a time. `yield from iterable` delegates to a sub-generator.",
+      "sourcePlatforms": ["turing-t1-mcq", "andela-a1-hackerrank"],
+      "tags": ["python", "generators", "yield"]
+    },
+    {
+      "id": "py-303",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "02.3 Comprehensions",
+      "niche": "nested comprehension",
+      "topic": "comprehensions",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "What does `[x for row in matrix for x in row]` do?",
+      "options": [
+        {"id": "a", "text": "Creates a list of lists"},
+        {"id": "b", "text": "Flattens a 2D list (matrix) into a 1D list — iterates outer then inner"},
+        {"id": "c", "text": "Transposes the matrix"},
+        {"id": "d", "text": "Raises a SyntaxError — nested comprehensions require parentheses"}
+      ],
+      "correct": ["b"],
+      "explanation": "Nested comprehension reads left-to-right like nested for loops: `for row in matrix:` (outer) then `for x in row:` (inner). Result: all elements from all rows in one flat list. `[[1,2],[3,4]] → [1,2,3,4]`. Note: the order of `for` clauses matches the order of nested `for` loops. `[[x for x in row] for row in matrix]` = copy of the matrix (list of lists).",
+      "sourcePlatforms": ["turing-t1-mcq", "andela-a1-hackerrank"],
+      "tags": ["python", "comprehensions", "flatten"]
+    },
+
+    {
+      "id": "py-401",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "02.4 OOP",
+      "niche": "classmethod vs staticmethod",
+      "topic": "oop",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "What is the difference between `@classmethod` and `@staticmethod`?",
+      "options": [
+        {"id": "a", "text": "They are identical — different syntactic sugar"},
+        {"id": "b", "text": "`@classmethod` receives `cls` (the class) as the first argument — used for alternative constructors. `@staticmethod` receives no implicit argument — it's a plain function namespaced inside the class."},
+        {"id": "c", "text": "`@staticmethod` receives `self`; `@classmethod` receives nothing"},
+        {"id": "d", "text": "Both receive `self` — the difference is that `@classmethod` can access class-level attributes"}
+      ],
+      "correct": ["b"],
+      "explanation": "`@classmethod`: `def from_string(cls, s): return cls(...)` — receives the class, can create instances of subclasses correctly (polymorphic factory). `@staticmethod`: `def validate(x): ...` — no `self` or `cls`, can't access instance or class state. Use classmethod for: alternative constructors, factory methods. Use staticmethod for: utility functions logically grouped with the class but not needing its state.",
+      "sourcePlatforms": ["turing-t1-mcq"],
+      "tags": ["python", "oop", "classmethod"]
+    },
+    {
+      "id": "py-402",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "02.4 OOP",
+      "niche": "dunder methods",
+      "topic": "oop",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "You want instances of your `Money` class to be usable as dict keys and in sets. Which dunder methods must you implement?",
+      "options": [
+        {"id": "a", "text": "`__str__` and `__repr__`"},
+        {"id": "b", "text": "`__eq__` and `__hash__` — both required; if you define `__eq__`, Python sets `__hash__ = None` by default, making the object unhashable"},
+        {"id": "c", "text": "`__lt__` and `__gt__`"},
+        {"id": "d", "text": "No special methods needed — all Python objects are hashable"}
+      ],
+      "correct": ["b"],
+      "explanation": "For hashable objects (dict keys, set members): must implement both `__eq__` and `__hash__`. Constraint: if `a == b` then `hash(a) == hash(b)`. If you define `__eq__` without `__hash__`, Python 3 sets `__hash__ = None` — the object becomes unhashable. `@dataclass(frozen=True)` auto-generates both. `@dataclass` without `frozen` only generates `__eq__` (not `__hash__`).",
+      "sourcePlatforms": ["turing-t1-mcq"],
+      "tags": ["python", "oop", "hashable"]
+    },
+    {
+      "id": "py-403",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "02.4 OOP",
+      "niche": "MRO",
+      "topic": "oop",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "Class `C(A, B)` — both A and B define `method()`. Which version gets called when `C().method()` is invoked?",
+      "options": [
+        {"id": "a", "text": "B's method — rightmost parent wins"},
+        {"id": "b", "text": "A's method — Python's MRO (C3 linearisation) checks left to right: C → A → B → object"},
+        {"id": "c", "text": "An error — multiple inheritance with overlapping methods raises TypeError"},
+        {"id": "d", "text": "The most recently defined method wins"}
+      ],
+      "correct": ["b"],
+      "explanation": "MRO (Method Resolution Order): C3 linearisation. For `class C(A, B)`: search order is C → A → B → object. Left-to-right, depth-first. Check with `C.__mro__`. `super()` follows MRO — useful for cooperative multiple inheritance. Diamond problem is resolved by MRO — each class appears exactly once. `super().method()` in A calls B's version next (not object's).",
+      "sourcePlatforms": ["turing-t1-mcq"],
+      "tags": ["python", "oop", "mro"]
+    },
+    {
+      "id": "py-404",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "02.4 OOP",
+      "niche": "dataclass",
+      "topic": "oop",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "What does `@dataclass` auto-generate for a class?",
+      "options": [
+        {"id": "a", "text": "Only `__init__`"},
+        {"id": "b", "text": "`__init__` (from annotated fields), `__repr__`, and `__eq__` by default. With `frozen=True`: also `__hash__`. With `order=True`: `__lt__`, `__le__`, etc."},
+        {"id": "c", "text": "All dunder methods"},
+        {"id": "d", "text": "`@dataclass` is only for immutable data — it always freezes the class"}
+      ],
+      "correct": ["b"],
+      "explanation": "`@dataclass` reads class-level type annotations as fields and generates boilerplate. `field(default_factory=list)` for mutable defaults. `frozen=True` makes instances immutable and adds `__hash__`. `slots=True` (3.10+) uses `__slots__` for memory efficiency. Preferred over `NamedTuple` when you need mutability or inheritance. NamedTuple: immutable, works as tuple (indexable, unpackable).",
+      "sourcePlatforms": ["turing-t1-mcq"],
+      "tags": ["python", "oop", "dataclass"]
+    },
+
+    {
+      "id": "py-501",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "02.5 Decorators",
+      "niche": "decorator basics",
+      "topic": "decorators",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "What does a decorator do in Python?",
+      "options": [
+        {"id": "a", "text": "Adds type annotations to a function"},
+        {"id": "b", "text": "Wraps a function with another function — takes the original function as input, returns a new function that adds behaviour before/after the original"},
+        {"id": "c", "text": "Compiles Python to bytecode for speed"},
+        {"id": "d", "text": "Makes a function a class method"}
+      ],
+      "correct": ["b"],
+      "explanation": "`@timer` above `def fn():` is syntactic sugar for `fn = timer(fn)`. The decorator receives `fn`, creates a `wrapper` that adds behaviour (logging, timing, auth), calls `fn`, returns the result. `@functools.wraps(fn)` on the wrapper preserves `fn.__name__`, `fn.__doc__`. Common decorators: `@property`, `@staticmethod`, `@classmethod`, `@lru_cache`, `@retry`.",
+      "sourcePlatforms": ["turing-t1-mcq"],
+      "tags": ["python", "decorators"]
+    },
+    {
+      "id": "py-502",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "02.5 Decorators",
+      "niche": "lru_cache",
+      "topic": "decorators",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "When is `@functools.lru_cache` appropriate and what's its key requirement?",
+      "options": [
+        {"id": "a", "text": "For any function — caching is always a win"},
+        {"id": "b", "text": "For pure functions with hashable arguments — the function must return the same output for the same inputs (no side effects), and all arguments must be hashable"},
+        {"id": "c", "text": "Only for recursive functions — it doesn't work for regular functions"},
+        {"id": "d", "text": "`lru_cache` is deprecated in Python 3.9+"}
+      ],
+      "correct": ["b"],
+      "explanation": "`@lru_cache(maxsize=128)` memoises calls: first call computes and caches; same args → cached result. Requirements: (1) Pure function — same args must always produce same output. (2) Hashable args — can't cache calls with list/dict arguments (raise TypeError). Use `maxsize=None` for unlimited cache (equivalent to `@cache` in 3.9+). Great for: recursive DP (Fibonacci, coin change), expensive API lookups with repeated calls.",
+      "sourcePlatforms": ["turing-t1-mcq", "andela-a1-hackerrank"],
+      "tags": ["python", "decorators", "memoisation"]
+    },
+
+    {
+      "id": "py-601",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "02.5 GIL & Async",
+      "niche": "GIL",
+      "topic": "concurrency",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "You have a CPU-bound Python function. Will using `threading.Thread` make it run faster on a multi-core machine? Why?",
+      "options": [
+        {"id": "a", "text": "Yes — threading always uses multiple cores"},
+        {"id": "b", "text": "No — CPython's GIL prevents multiple threads from executing Python bytecode simultaneously. CPU-bound threads time-slice on one core. Use `multiprocessing` for true CPU parallelism."},
+        {"id": "c", "text": "Yes — the GIL is released for CPU-bound operations"},
+        {"id": "d", "text": "No — Python doesn't support threads at all"}
+      ],
+      "correct": ["b"],
+      "explanation": "GIL (Global Interpreter Lock): CPython holds a lock per Python process — only one thread runs Python bytecode at a time. For CPU-bound work: threads don't speed things up (just context-switch on one core). The GIL IS released for: I/O operations, NumPy C extensions, and other C extensions that explicitly release it. Solutions for CPU-bound: `multiprocessing` (separate processes, each with own GIL), `concurrent.futures.ProcessPoolExecutor`, or PyPy (no GIL).",
+      "sourcePlatforms": ["turing-t1-mcq"],
+      "tags": ["python", "gil", "concurrency"]
+    },
+    {
+      "id": "py-602",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "02.5 GIL & Async",
+      "niche": "asyncio vs threading",
+      "topic": "concurrency",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "When should you use `asyncio` instead of `threading` for I/O-bound work?",
+      "options": [
+        {"id": "a", "text": "asyncio is always faster — always prefer it"},
+        {"id": "b", "text": "asyncio: when you control the code end-to-end and can use async libraries (aiohttp, asyncpg). Threading: when using blocking libraries you can't change or when concurrency count is small (< 50)."},
+        {"id": "c", "text": "They are identical for I/O-bound work — choose either"},
+        {"id": "d", "text": "asyncio requires multiple cores to be effective"}
+      ],
+      "correct": ["b"],
+      "explanation": "asyncio: cooperative multitasking — single thread, explicit yield at `await`. Excellent for: thousands of concurrent I/O ops (HTTP requests, DB queries). But: entire call chain must be async — can't `await` inside a sync function. threading: preemptive — OS switches threads. Works with blocking libraries. Limit: OS thread overhead caps at ~1000 threads. Hybrid: `asyncio.run_in_executor` runs blocking functions in a thread pool from async code.",
+      "sourcePlatforms": ["turing-t1-mcq"],
+      "tags": ["python", "asyncio", "threading"]
+    },
+    {
+      "id": "py-603",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "02.5 GIL & Async",
+      "niche": "async/await basics",
+      "topic": "concurrency",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "What happens if you call an `async def` function without `await`?",
+      "options": [
+        {"id": "a", "text": "The function runs synchronously"},
+        {"id": "b", "text": "It returns a coroutine object — the function body hasn't run yet. You must `await` it or use `asyncio.run()` to execute it."},
+        {"id": "c", "text": "A RuntimeError is raised immediately"},
+        {"id": "d", "text": "Python automatically awaits it"}
+      ],
+      "correct": ["b"],
+      "explanation": "`async def fn():` defines a coroutine function. Calling `fn()` returns a coroutine object — no code inside runs. You must: (1) `await fn()` from another async function; (2) `asyncio.run(fn())` from sync code; or (3) `asyncio.create_task(fn())` to schedule concurrently. Python warns about `RuntimeWarning: coroutine was never awaited` if you forget. This is the most common async beginner mistake.",
+      "sourcePlatforms": ["turing-t1-mcq", "andela-a1-hackerrank"],
+      "tags": ["python", "asyncio"]
+    },
+
+    {
+      "id": "py-701",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "02.6 Standard Library",
+      "niche": "itertools",
+      "topic": "stdlib",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "Which `itertools` function efficiently generates all pairs from two lists without nested loops?",
+      "options": [
+        {"id": "a", "text": "`itertools.chain(a, b)` — concatenates iterables"},
+        {"id": "b", "text": "`itertools.product(a, b)` — Cartesian product, equivalent to nested for loops"},
+        {"id": "c", "text": "`itertools.zip_longest(a, b)` — zips with fill value"},
+        {"id": "d", "text": "`itertools.combinations(a, 2)` — pairs from a single iterable"}
+      ],
+      "correct": ["b"],
+      "explanation": "`itertools.product([1,2], ['a','b'])` yields `(1,'a'), (1,'b'), (2,'a'), (2,'b')` — Cartesian product. Memory efficient: lazy. Also useful: `combinations(lst, r)` = r-length combos without repetition; `permutations(lst, r)` = with order; `chain(a, b)` = concatenate iterators; `groupby(sorted_lst, key)` = SQL-style group-by; `islice(iter, n)` = take first n from iterator.",
+      "sourcePlatforms": ["turing-t1-mcq", "andela-a1-hackerrank"],
+      "tags": ["python", "itertools"]
+    },
+    {
+      "id": "py-702",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "02.6 Standard Library",
+      "niche": "context manager",
+      "topic": "stdlib",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "What is a context manager (`with` statement) and why use it?",
+      "options": [
+        {"id": "a", "text": "A threading primitive for locking shared resources"},
+        {"id": "b", "text": "An object that defines `__enter__` and `__exit__` — guarantees cleanup (close file, release lock) even if an exception occurs inside the `with` block"},
+        {"id": "c", "text": "A decorator for async functions"},
+        {"id": "d", "text": "A way to define module-level constants"}
+      ],
+      "correct": ["b"],
+      "explanation": "`with open('file') as f:` — `f.__enter__()` called on entry, `f.__exit__()` called on exit even if an exception occurs. This ensures files are closed, DB connections released, locks freed. Custom: implement `__enter__` and `__exit__`, or use `@contextlib.contextmanager` with `yield`. `contextmanager` pattern: setup before `yield`, cleanup after `yield` (in `finally`).",
+      "sourcePlatforms": ["turing-t1-mcq", "andela-a1-hackerrank"],
+      "tags": ["python", "context-manager"]
+    },
+    {
+      "id": "py-703",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "02.6 Standard Library",
+      "niche": "sorting",
+      "topic": "stdlib",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "How do you sort a list of dicts by multiple keys — first by 'age' descending, then by 'name' ascending?",
+      "options": [
+        {"id": "a", "text": "`sorted(lst, key=lambda x: (x['age'], x['name']), reverse=True)` — single reverse applies to both"},
+        {"id": "b", "text": "`sorted(lst, key=lambda x: (-x['age'], x['name']))` — negate numeric key to reverse; string can't be negated, so sort ascending naturally"},
+        {"id": "c", "text": "`lst.sort(by=['age', 'name'], ascending=[False, True])` — pandas-style"},
+        {"id": "d", "text": "Python doesn't support multi-key sorting"}
+      ],
+      "correct": ["b"],
+      "explanation": "Python's sort is stable — sort by secondary key first, then primary. Or in one pass: return a tuple key. For descending numeric: negate it (`-x['age']`). For descending string: can't negate, but `(x['age'] * -1, x['name'])` works when age is the primary. Alternative: `functools.cmp_to_key` for complex comparisons. `sorted()` returns new list; `list.sort()` sorts in place.",
+      "sourcePlatforms": ["turing-t1-mcq", "andela-a1-hackerrank"],
+      "tags": ["python", "sorting"]
+    },
+    {
+      "id": "py-704",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "02.6 Standard Library",
+      "niche": "enumerate and zip",
+      "topic": "stdlib",
+      "timeBudgetSec": 60,
+      "tracks": ["turing", "andela"],
+      "prompt": "Which Pythonic idiom replaces `for i in range(len(lst)): print(i, lst[i])`?",
+      "options": [
+        {"id": "a", "text": "`for i, val in enumerate(lst): print(i, val)` — returns (index, value) pairs"},
+        {"id": "b", "text": "`for val in zip(range(len(lst)), lst): print(val)`"},
+        {"id": "c", "text": "`for val in lst.items(): print(val)` — `.items()` works on lists"},
+        {"id": "d", "text": "`for i, val in lst: print(i, val)`"}
+      ],
+      "correct": ["a"],
+      "explanation": "`enumerate(lst)` yields `(0, lst[0]), (1, lst[1]), ...`. Pythonic, avoids manual indexing, works with any iterable. `enumerate(lst, start=1)` starts from 1. `zip(a, b)` pairs elements from two iterables — use for parallel iteration. `zip(*matrix)` transposes a 2D list. `zip_longest(a, b, fillvalue=None)` handles iterables of different lengths.",
+      "sourcePlatforms": ["turing-t1-mcq", "andela-a1-hackerrank"],
+      "tags": ["python", "builtins", "enumerate"]
+    },
+    {
+      "id": "py-705",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "02.3 Comprehensions",
+      "niche": "walrus operator",
+      "topic": "comprehensions",
+      "timeBudgetSec": 75,
+      "tracks": ["turing"],
+      "prompt": "What does the walrus operator `:=` (Python 3.8+) allow?",
+      "options": [
+        {"id": "a", "text": "Assignment inside an expression — avoids recomputing values in loops and comprehensions"},
+        {"id": "b", "text": "Dictionary merging — same as `{**a, **b}`"},
+        {"id": "c", "text": "In-place addition — shorthand for `+=`"},
+        {"id": "d", "text": "Structural pattern matching"}
+      ],
+      "correct": ["a"],
+      "explanation": "`:=` (walrus / assignment expression): `while chunk := file.read(8192):` — reads chunk and checks truthiness in one expression without calling `read()` twice. In comprehensions: `filtered = [y := transform(x), y*2]` — compute `transform(x)` once and use the result multiple times. Use sparingly — overuse hurts readability. Useful for: while loops avoiding double calls, filtering and using computed values in the same comprehension.",
+      "sourcePlatforms": ["turing-t1-mcq"],
+      "tags": ["python", "walrus", "3.8"]
+    },
+    {
+      "id": "py-706",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "02.4 OOP",
+      "niche": "slots",
+      "topic": "oop",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "What does `__slots__` do in a Python class and when should you use it?",
+      "options": [
+        {"id": "a", "text": "It defines which methods the class exposes"},
+        {"id": "b", "text": "Declares fixed instance attributes — prevents `__dict__` creation, reducing memory by 40-60% per instance. Use when creating millions of small instances."},
+        {"id": "c", "text": "It's a hook for the `with` statement"},
+        {"id": "d", "text": "`__slots__` makes attributes read-only"}
+      ],
+      "correct": ["b"],
+      "explanation": "By default, instances store attributes in a `__dict__` (hash table overhead per object). `__slots__ = ('x', 'y')`: replaces `__dict__` with fixed C-level slots — ~40-60% less memory per instance. Tradeoffs: can't add dynamic attributes, multiple inheritance with slots has caveats. Use for: data-heavy classes (millions of points, game entities). `@dataclass(slots=True)` (3.10+) adds slots automatically.",
+      "sourcePlatforms": ["turing-t1-mcq"],
+      "tags": ["python", "slots", "memory"]
+    },
+    {
+      "id": "py-707",
+      "type": "mcq-multi",
+      "difficulty": "medium",
+      "subtopic": "02.6 Standard Library",
+      "niche": "useful stdlib modules",
+      "topic": "stdlib",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "Which standard library modules are most commonly useful in coding challenges? (select all)",
+      "options": [
+        {"id": "a", "text": "`heapq` — min-heap (priority queue) in O(log n)"},
+        {"id": "b", "text": "`bisect` — binary search on sorted lists"},
+        {"id": "c", "text": "`re` — regular expressions"},
+        {"id": "d", "text": "`collections` — Counter, deque, defaultdict, OrderedDict"},
+        {"id": "e", "text": "`tkinter` — GUI toolkit for challenge problems"}
+      ],
+      "correct": ["a", "b", "c", "d"],
+      "explanation": "E is wrong — tkinter is a GUI library, not useful in algorithm challenges. A: `heapq.heappush/heappop` for priority queues (Dijkstra, k-th largest). B: `bisect.bisect_left(sorted_list, x)` — O(log n) insertion point. C: `re.findall`, `re.sub` for string manipulation problems. D: `Counter` for frequencies, `deque` for BFS/sliding window, `defaultdict` for grouping. Also: `math.gcd`, `math.inf`, `functools.lru_cache`.",
+      "sourcePlatforms": ["turing-t1-mcq", "andela-a1-hackerrank"],
+      "tags": ["python", "stdlib", "algorithms"]
+    }
+  ]
+}

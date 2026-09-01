@@ -1,0 +1,615 @@
+{
+  "module": "testing-debugging",
+  "title": "13. Testing / Debugging",
+  "description": "Unit testing with Jest, test doubles (mock/spy/stub/fake), integration and E2E testing, coverage metrics, flaky test playbook, TDD, and production debugging techniques.",
+  "tracks": ["turing", "andela"],
+  "testStages": ["turing-t3-live", "andela-a4-pair"],
+  "platformCoverage": ["turing-t3-live", "andela-a4-pair"],
+  "estimatedHours": 5,
+  "studyNotes": {
+    "13.1 Unit Testing with Jest": ["describe/it/test: describe = suite; it/test = individual case.", "expect().toBe() value equality; toEqual() deep equality; toStrictEqual() includes undefined keys.", "beforeEach / afterEach: reset shared state between tests.", "test.each: table-driven tests — eliminates copy-paste.", "jest --watch: re-runs affected tests on file change."],
+    "13.2 Test Doubles": ["Mock: replace a whole module; control return values; assert calls.", "Spy: wrap a real function; track calls without replacing implementation.", "Stub: static canned return for a specific call.", "Fake: lightweight working implementation (in-memory DB instead of real DB).", "jest.fn() = spy/stub; jest.mock('module') = mock the module; jest.spyOn(obj, 'method') = spy."],
+    "13.3 Integration Testing": ["Test multiple units together — e.g., route handler + middleware + repository.", "Supertest: spin up Express app in-process; send HTTP requests without a real server port.", "Test DB: use a real test DB (Docker / testcontainers) — never mock the DB in integration tests.", "Isolation: truncate/rollback data between tests; never rely on test order."],
+    "13.4 E2E & Flaky Tests": ["E2E: Playwright or Cypress — real browser, full stack. Slow. Use sparingly for critical paths.", "Flaky test causes: shared state, time-dependent (Date.now), race condition, network.", "Fix flaky: eliminate global state, use fixed dates (jest.useFakeTimers), mock network, use retry only as last resort.", "Coverage: 80%+ branch coverage target; 100% is a vanity metric — focus on critical paths."]
+  },
+  "questions": [
+    {
+      "id": "td-101",
+      "type": "mcq-single",
+      "difficulty": "easy",
+      "subtopic": "13.1 Unit Testing",
+      "niche": "toBe vs toEqual",
+      "topic": "unit-testing",
+      "timeBudgetSec": 60,
+      "tracks": ["turing", "andela"],
+      "prompt": "When should you use `toEqual` instead of `toBe` in Jest?",
+      "options": [
+        {"id": "a", "text": "`toBe` is always preferred — it is faster"},
+        {"id": "b", "text": "Use `toEqual` for objects and arrays (deep equality); `toBe` for primitives and reference equality"},
+        {"id": "c", "text": "They are identical — either works for any value"},
+        {"id": "d", "text": "`toEqual` only works for strings"}
+      ],
+      "correct": ["b"],
+      "explanation": "`toBe` uses `Object.is` — passes only if two values are the exact same reference or same primitive. `expect({a:1}).toBe({a:1})` fails (different objects). `toEqual` does deep structural comparison — `expect({a:1}).toEqual({a:1})` passes. Use `toEqual` for objects, arrays, nested structures. `toStrictEqual` additionally checks undefined properties and object type.",
+      "sourcePlatforms": ["turing-t3-live"],
+      "tags": ["jest", "assertions"]
+    },
+    {
+      "id": "td-102",
+      "type": "mcq-single",
+      "difficulty": "easy",
+      "subtopic": "13.1 Unit Testing",
+      "niche": "beforeEach purpose",
+      "topic": "unit-testing",
+      "timeBudgetSec": 60,
+      "tracks": ["turing", "andela"],
+      "prompt": "What is the purpose of `beforeEach` in a Jest test suite?",
+      "options": [
+        {"id": "a", "text": "Runs once before the entire suite to do expensive setup"},
+        {"id": "b", "text": "Runs before each individual test to reset shared state and ensure test isolation"},
+        {"id": "c", "text": "Runs after each test to clean up"},
+        {"id": "d", "text": "Compiles TypeScript before running tests"}
+      ],
+      "correct": ["b"],
+      "explanation": "`beforeEach` runs before every `it/test` in its `describe` block. Use it to reset mocks (`jest.clearAllMocks()`), reinitialise shared objects, or seed test data. `beforeAll` runs once before the whole suite — for expensive setup (start test DB). `afterEach` / `afterAll` are the teardown equivalents. Test isolation: each test must produce the same result regardless of order.",
+      "sourcePlatforms": ["turing-t3-live"],
+      "tags": ["jest", "test-lifecycle"]
+    },
+    {
+      "id": "td-103",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "13.1 Unit Testing",
+      "niche": "test.each",
+      "topic": "unit-testing",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "You need to test a `calculateTax(income, country)` function with 8 different input combinations. What's the best Jest pattern?",
+      "options": [
+        {"id": "a", "text": "Write 8 separate `it` blocks with copy-pasted assertions"},
+        {"id": "b", "text": "`test.each(table)('calculates tax for %s', (income, country, expected) => { expect(calculateTax(income, country)).toBe(expected); })`"},
+        {"id": "c", "text": "Use a for loop inside a single `it` block"},
+        {"id": "d", "text": "Parametrised tests are not supported in Jest"}
+      ],
+      "correct": ["b"],
+      "explanation": "`test.each` (alias `it.each`) runs the same test function over a data table. Each row is a separate test case with its own label — if one fails, Jest shows which row. Much cleaner than 8 copy-pasted tests. Format: `test.each([[arg1, arg2, expected], ...])(name, fn)` or tagged-template-literal form. Avoids duplication while keeping each case independent.",
+      "sourcePlatforms": ["turing-t3-live", "andela-a4-pair"],
+      "tags": ["jest", "parametrised"]
+    },
+    {
+      "id": "td-104",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "13.1 Unit Testing",
+      "niche": "async test",
+      "topic": "unit-testing",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "A Jest test calls an async function but always passes even when the assertion fails. What is the likely bug?",
+      "options": [
+        {"id": "a", "text": "Async functions can't be tested in Jest"},
+        {"id": "b", "text": "The test isn't awaiting the assertion — it returns before the promise resolves, so Jest marks it as passed"},
+        {"id": "c", "text": "The assertion is wrong — should use toEqual instead of toBe"},
+        {"id": "d", "text": "Jest needs `--runInBand` for async tests"}
+      ],
+      "correct": ["b"],
+      "explanation": "Common async trap: `it('test', () => { promise.then(val => expect(val).toBe(x)); })` — if the promise hasn't resolved when the test function returns, Jest marks it done. Fixes: (1) `async/await`: `it('test', async () => { const val = await fn(); expect(val).toBe(x); })`; (2) return the promise: `return expect(promise).resolves.toBe(x)`. Always `await` inside async tests.",
+      "sourcePlatforms": ["turing-t3-live"],
+      "tags": ["jest", "async"]
+    },
+    {
+      "id": "td-105",
+      "type": "mcq-single",
+      "difficulty": "easy",
+      "subtopic": "13.1 Unit Testing",
+      "niche": "test scope",
+      "topic": "unit-testing",
+      "timeBudgetSec": 60,
+      "tracks": ["turing", "andela"],
+      "prompt": "What should a unit test NOT test?",
+      "options": [
+        {"id": "a", "text": "The return value of the function under test"},
+        {"id": "b", "text": "The internal implementation details (which private methods were called)"},
+        {"id": "c", "text": "Error cases and edge cases"},
+        {"id": "d", "text": "Boundary values"}
+      ],
+      "correct": ["b"],
+      "explanation": "Unit tests should test behaviour (inputs → outputs, visible side effects), not implementation. Testing which private methods are called couples the test to the implementation — any refactor breaks the test even if behaviour is correct. This is 'white-box testing gone too far'. Test the contract: given these inputs, expect these outputs. Let the implementation be free to change.",
+      "sourcePlatforms": ["turing-t3-live", "andela-a4-pair"],
+      "tags": ["unit-testing", "principles"]
+    },
+
+    {
+      "id": "td-201",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "13.2 Test Doubles",
+      "niche": "mock vs spy",
+      "topic": "test-doubles",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "What is the difference between `jest.fn()` (spy/stub) and `jest.mock('module')` (mock)?",
+      "options": [
+        {"id": "a", "text": "They are identical — different names for the same thing"},
+        {"id": "b", "text": "`jest.fn()` creates a single function spy you assign manually; `jest.mock('module')` replaces the entire module and auto-mocks all exports for the whole test file"},
+        {"id": "c", "text": "`jest.mock` only works for Node built-ins"},
+        {"id": "d", "text": "`jest.fn()` replaces the real implementation; `jest.mock` keeps it"}
+      ],
+      "correct": ["b"],
+      "explanation": "`jest.fn()`: creates a standalone spy function — tracks calls, you control the return value per test. Used for: `obj.method = jest.fn().mockReturnValue(42)`. `jest.mock('../../services/emailService')`: hoisted to the top of the file, replaces the entire module. All exports become `jest.fn()` automatically. Use `jest.mock` when a module is imported and you can't intercept it otherwise. Both record calls, arguments, return values.",
+      "sourcePlatforms": ["turing-t3-live", "andela-a4-pair"],
+      "tags": ["mocking", "jest"]
+    },
+    {
+      "id": "td-202",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "13.2 Test Doubles",
+      "niche": "jest.spyOn",
+      "topic": "test-doubles",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "When would you use `jest.spyOn(object, 'methodName')` instead of `jest.fn()`?",
+      "options": [
+        {"id": "a", "text": "When you want to completely replace the method with a mock"},
+        {"id": "b", "text": "When you want to wrap an existing method — track calls but optionally keep the real implementation, or restore it after the test"},
+        {"id": "c", "text": "`jest.spyOn` is only for static methods"},
+        {"id": "d", "text": "They are interchangeable — choose either"}
+      ],
+      "correct": ["b"],
+      "explanation": "`jest.spyOn(console, 'error')` wraps the real `console.error` — it still calls through by default, but you can verify it was called. Add `.mockImplementation(() => {})` to suppress output. After the test: `jest.restoreAllMocks()` puts the original back. Use `spyOn` when you need the real implementation to run OR when restoring the original is important. `jest.fn()` replaces outright; `spyOn` wraps and can restore.",
+      "sourcePlatforms": ["turing-t3-live"],
+      "tags": ["mocking", "spyOn"]
+    },
+    {
+      "id": "td-203",
+      "type": "mcq-multi",
+      "difficulty": "medium",
+      "subtopic": "13.2 Test Doubles",
+      "niche": "mock vs stub vs fake vs spy",
+      "topic": "test-doubles",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "Which statements correctly describe test double types? (select all)",
+      "options": [
+        {"id": "a", "text": "Stub: returns canned data for specific inputs — doesn't verify it was called"},
+        {"id": "b", "text": "Mock: pre-configured with expectations — verifies it was called correctly"},
+        {"id": "c", "text": "Fake: lightweight working implementation (e.g., in-memory database instead of real DB)"},
+        {"id": "d", "text": "Spy: replaces the real implementation entirely so the real code never runs"},
+        {"id": "e", "text": "Spy: wraps the real function and records calls while keeping original behavior by default"}
+      ],
+      "correct": ["a", "b", "c", "e"],
+      "explanation": "D is false. Spy wraps — the real code runs by default (unless you mock the implementation too). Stub: static return value, no call verification. Mock: includes expectations ('must be called with X exactly once'). Fake: working substitute with simplified behaviour. Spy: intercepts calls, records them, optionally forwards to real. In Jest: `jest.fn().mockReturnValue(x)` = stub; `expect(fn).toHaveBeenCalledWith(...)` makes it mock-like; `jest.spyOn` = spy.",
+      "sourcePlatforms": ["turing-t3-live", "andela-a4-pair"],
+      "tags": ["test-doubles", "theory"]
+    },
+    {
+      "id": "td-204",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "13.2 Test Doubles",
+      "niche": "mocking time",
+      "topic": "test-doubles",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "A function returns different results based on `Date.now()`. How do you make tests deterministic?",
+      "options": [
+        {"id": "a", "text": "Run tests at a fixed time of day"},
+        {"id": "b", "text": "Use `jest.useFakeTimers()` to control system time, or inject time as a parameter to make the function pure"},
+        {"id": "c", "text": "Mock `Math.random` instead of Date"},
+        {"id": "d", "text": "Use `jest.fn().mockReturnValue(Date.now())` — captures the real time at mock creation"}
+      ],
+      "correct": ["b"],
+      "explanation": "`jest.useFakeTimers()` replaces `Date.now`, `setTimeout`, `setInterval` etc. with Jest-controlled versions. Set a specific time: `jest.setSystemTime(new Date('2024-01-15'))`. Better design: inject time as a parameter (`fn(now = Date.now())`). Dependency injection makes the function pure and trivially testable without mocking. Reset after: `jest.useRealTimers()` or `afterEach(() => jest.useRealTimers())`.",
+      "sourcePlatforms": ["turing-t3-live", "andela-a4-pair"],
+      "tags": ["mocking", "time", "fake-timers"]
+    },
+    {
+      "id": "td-205",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "13.2 Test Doubles",
+      "niche": "module factory",
+      "topic": "test-doubles",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "You mock a module with `jest.mock('../emailService')`. In one test you want it to throw. In another you want it to return a success. How?",
+      "options": [
+        {"id": "a", "text": "Create two separate test files"},
+        {"id": "b", "text": "Use `mockImplementation` or `mockRejectedValueOnce` per test inside `beforeEach` or the test body"},
+        {"id": "c", "text": "jest.mock doesn't support per-test configuration"},
+        {"id": "d", "text": "Pass different options to jest.mock for each test"}
+      ],
+      "correct": ["b"],
+      "explanation": "`jest.mock('../emailService')` auto-mocks the module. Then per test: `emailService.send.mockResolvedValueOnce({ success: true })` for success, `emailService.send.mockRejectedValueOnce(new Error('SMTP down'))` for failure. `mockReturnValueOnce` / `mockResolvedValueOnce` / `mockRejectedValueOnce` apply only to the next call. Call `jest.clearAllMocks()` in `beforeEach` to reset call counts between tests.",
+      "sourcePlatforms": ["turing-t3-live"],
+      "tags": ["mocking", "per-test"]
+    },
+
+    {
+      "id": "td-301",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "13.3 Integration Testing",
+      "niche": "supertest",
+      "topic": "integration-testing",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "What does Supertest let you do that unit-testing your Express handler alone doesn't?",
+      "options": [
+        {"id": "a", "text": "Run tests faster"},
+        {"id": "b", "text": "Send real HTTP requests through the full middleware chain (auth, validation, routing, error handling) without starting an actual server on a port"},
+        {"id": "c", "text": "Mock the database automatically"},
+        {"id": "d", "text": "Generate test data from your schema"}
+      ],
+      "correct": ["b"],
+      "explanation": "Supertest: `request(app).post('/users').send(payload).expect(201)`. The `app` is your Express instance (not yet `app.listen`). Supertest binds to a random port internally and makes real HTTP calls — middleware, route matching, error handlers all run. Catches bugs that unit tests of the handler alone miss (middleware misconfiguration, wrong status codes, missing headers). Pairs with a test database for true integration.",
+      "sourcePlatforms": ["turing-t3-live", "andela-a4-pair"],
+      "tags": ["integration-testing", "supertest"]
+    },
+    {
+      "id": "td-302",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "13.3 Integration Testing",
+      "niche": "should you mock the DB",
+      "topic": "integration-testing",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "Should you mock the database in integration tests? Why or why not?",
+      "options": [
+        {"id": "a", "text": "Yes — mocking is always faster and more reliable"},
+        {"id": "b", "text": "No — the point of integration tests is to verify that your code works with the real database; mocking defeats this by not catching SQL errors, index issues, or constraint violations"},
+        {"id": "c", "text": "Yes — integration tests should mock all external systems"},
+        {"id": "d", "text": "It doesn't matter — unit and integration tests are the same thing"}
+      ],
+      "correct": ["b"],
+      "explanation": "Mocking the DB in integration tests gives false confidence. Real integration tests use a real DB (usually a Docker container or SQLite in-memory for simple cases, Testcontainers for PostgreSQL/MySQL). Run DB migrations before the suite, truncate between tests. This catches: wrong SQL syntax, missing indexes affecting correctness, constraint violations, ORM quirks. Use mocking only for unit tests of the repository layer itself.",
+      "sourcePlatforms": ["turing-t3-live", "andela-a4-pair"],
+      "tags": ["integration-testing", "database"]
+    },
+    {
+      "id": "td-303",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "13.3 Integration Testing",
+      "niche": "test isolation",
+      "topic": "integration-testing",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "Two integration tests share a database. Test A creates a user with email 'test@example.com'. Test B tries to create the same user and gets a unique constraint error. What's the fix?",
+      "options": [
+        {"id": "a", "text": "Run tests sequentially so they don't conflict"},
+        {"id": "b", "text": "Truncate or roll back all test data between tests using `afterEach` — or wrap each test in a transaction that's rolled back"},
+        {"id": "c", "text": "Use a different email in Test B"},
+        {"id": "d", "text": "Disable unique constraints in the test database"}
+      ],
+      "correct": ["b"],
+      "explanation": "Test isolation: each test must start from a clean state. Options: (1) `afterEach`: truncate all tables (fast but loses data across the suite). (2) Transaction rollback: wrap each test in a transaction, roll back at the end — no data persists. (3) Separate DB per test suite (parallel CI). Never rely on test order — a future parallel run or reorder will break everything. Disable unique constraints = hiding real bugs.",
+      "sourcePlatforms": ["turing-t3-live", "andela-a4-pair"],
+      "tags": ["integration-testing", "isolation"]
+    },
+
+    {
+      "id": "td-401",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "13.4 E2E & Coverage",
+      "niche": "when to use E2E",
+      "topic": "e2e-testing",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "When should you use E2E tests (Playwright/Cypress) vs integration tests?",
+      "options": [
+        {"id": "a", "text": "E2E for everything — they test the most realistic scenario"},
+        {"id": "b", "text": "E2E for critical user flows (login, checkout, onboarding); integration for API contracts and DB logic. E2E is slow and brittle — use sparingly."},
+        {"id": "c", "text": "Never use E2E — integration tests are sufficient"},
+        {"id": "d", "text": "E2E for unit behaviour; integration for full flows"}
+      ],
+      "correct": ["b"],
+      "explanation": "E2E tests spin up a real browser and real server — most realistic but slowest, most brittle. A full suite of 500 E2E tests can take 30+ minutes. Best for: critical paths (login → dashboard, signup → email verification, payment flow). Integration tests cover API contracts and DB logic much faster. Testing pyramid: many unit, some integration, few E2E. Playwright is currently preferred over Cypress for speed and multi-browser.",
+      "sourcePlatforms": ["turing-t3-live"],
+      "tags": ["e2e", "test-pyramid"]
+    },
+    {
+      "id": "td-402",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "13.4 E2E & Coverage",
+      "niche": "coverage targets",
+      "topic": "coverage",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "Your manager demands 100% code coverage. Why is this target potentially counterproductive?",
+      "options": [
+        {"id": "a", "text": "100% coverage is impossible to achieve"},
+        {"id": "b", "text": "100% line/statement coverage doesn't guarantee quality — tests may hit lines without meaningful assertions; it incentivises trivial tests to hit uncovered lines instead of testing real behaviour"},
+        {"id": "c", "text": "Coverage slows down the test runner"},
+        {"id": "d", "text": "100% coverage is only achievable with mocking"}
+      ],
+      "correct": ["b"],
+      "explanation": "Coverage measures which lines were executed, not whether assertions are correct. You can have 100% coverage with `expect(1).toBe(1)` — meaningless. Coverage gaming: devs write throwaway tests just to bump the number. Better: 80%+ branch coverage on critical business logic paths, 0% on generated code or simple getters. Use coverage to find gaps, not as a primary quality metric. High coverage + meaningful assertions = good.",
+      "sourcePlatforms": ["turing-t3-live", "andela-a4-pair"],
+      "tags": ["coverage", "quality"]
+    },
+    {
+      "id": "td-403",
+      "type": "mcq-multi",
+      "difficulty": "medium",
+      "subtopic": "13.4 E2E & Coverage",
+      "niche": "flaky test causes",
+      "topic": "flaky-tests",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "Which are common root causes of flaky tests? (select all)",
+      "options": [
+        {"id": "a", "text": "Shared mutable state between tests (global variables, singleton caches)"},
+        {"id": "b", "text": "Time-dependent assertions without mocked timers"},
+        {"id": "c", "text": "Race conditions in async tests (missing awaits, timing assumptions)"},
+        {"id": "d", "text": "Using describe() to group tests"},
+        {"id": "e", "text": "Network calls to real external services in unit tests"}
+      ],
+      "correct": ["a", "b", "c", "e"],
+      "explanation": "D is fine — `describe()` just organises tests. A: shared state = test order dependency. B: `Date.now()` comparisons without fake timers fail based on system load. C: not awaiting promises properly. E: real network calls fail in CI or flap on service unavailability. Fixes: reset state in `beforeEach`, use `jest.useFakeTimers()`, always `await` async code, mock all network in unit/integration tests.",
+      "sourcePlatforms": ["turing-t3-live", "andela-a4-pair"],
+      "tags": ["flaky-tests"]
+    },
+    {
+      "id": "td-404",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "13.4 E2E & Coverage",
+      "niche": "flaky test fix strategy",
+      "topic": "flaky-tests",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "A test that hits an external API flakes in CI 1 in 10 runs. Your colleague suggests adding `jest.retryTimes(3)`. Is this the right fix?",
+      "options": [
+        {"id": "a", "text": "Yes — retry is the standard fix for flaky tests"},
+        {"id": "b", "text": "No — retry hides the real problem. The right fix is to mock the external API call so the test doesn't depend on a real network. Retry only as a last resort when the flakiness is truly environmental and uncontrollable."},
+        {"id": "c", "text": "Yes — 3 retries is the industry standard"},
+        {"id": "d", "text": "No — you should skip the test instead"}
+      ],
+      "correct": ["b"],
+      "explanation": "Retry masks the root cause and slows CI (each retry takes full test time). Real fix: mock the HTTP call with `nock` or `msw` (Mock Service Worker) so the test never makes a real network request. Now it's fast, deterministic, and independent of the external service's availability. `jest.retryTimes` is appropriate only for inherently non-deterministic things (e.g., Playwright clicking a slow UI element) where no cleaner solution exists.",
+      "sourcePlatforms": ["turing-t3-live", "andela-a4-pair"],
+      "tags": ["flaky-tests", "mocking"]
+    },
+
+    {
+      "id": "td-501",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "13.5 TDD",
+      "niche": "Red-Green-Refactor",
+      "topic": "tdd",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "Explain the TDD Red-Green-Refactor cycle.",
+      "options": [
+        {"id": "a", "text": "Write all tests first, then all code, then refactor once"},
+        {"id": "b", "text": "Red: write a failing test (nothing implemented). Green: write the minimum code to make it pass. Refactor: improve the code without breaking tests."},
+        {"id": "c", "text": "Red: test fails due to syntax error. Green: fix the syntax. Refactor: add more tests."},
+        {"id": "d", "text": "Write code, run tests, refactor if they pass."}
+      ],
+      "correct": ["b"],
+      "explanation": "TDD cycle: (1) Red — write a test that describes the desired behaviour; run it; it must fail (proves the test is testing something). (2) Green — write the simplest code that makes the test pass; no premature optimisation. (3) Refactor — improve code quality (naming, structure, duplication) while keeping tests green. Each cycle is 5-15 minutes. Benefits: forces clear specification before code, tight feedback loop, built-in regression suite.",
+      "sourcePlatforms": ["turing-t3-live", "andela-a4-pair"],
+      "tags": ["tdd"]
+    },
+    {
+      "id": "td-502",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "13.5 TDD",
+      "niche": "TDD when not to use",
+      "topic": "tdd",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "When is TDD a poor fit?",
+      "options": [
+        {"id": "a", "text": "TDD is always the best approach for all code"},
+        {"id": "b", "text": "Exploratory/spike code where the right design isn't yet known; UI prototyping; glue code where testing adds more weight than value"},
+        {"id": "c", "text": "TDD is only for unit tests, not integration"},
+        {"id": "d", "text": "TDD doesn't work with TypeScript"}
+      ],
+      "correct": ["b"],
+      "explanation": "TDD excels when requirements are clear and stable. Poor fit: (1) Spikes — throw-away exploratory code to learn an API or discover requirements; (2) UI layout/visual code where the test would test pixels; (3) Generated boilerplate; (4) Highly changing requirements where tests become a maintenance burden. Best practice: use TDD for business logic, critical algorithms, and public APIs. Be pragmatic — tests-after is better than no tests.",
+      "sourcePlatforms": ["turing-t3-live"],
+      "tags": ["tdd", "tradeoffs"]
+    },
+
+    {
+      "id": "td-601",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "13.6 Debugging",
+      "niche": "node debugger",
+      "topic": "debugging",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "How do you attach a debugger to a running Node.js process?",
+      "options": [
+        {"id": "a", "text": "Add `console.log` statements throughout the code"},
+        {"id": "b", "text": "Start with `node --inspect` (or `--inspect-brk` to pause at first line), then open `chrome://inspect` or use VS Code's Node.js attach configuration"},
+        {"id": "c", "text": "Node.js doesn't support debuggers — use logging only"},
+        {"id": "d", "text": "Restart with `NODE_ENV=debug` — this automatically attaches a debugger"}
+      ],
+      "correct": ["b"],
+      "explanation": "`node --inspect server.js`: starts the inspector on `127.0.0.1:9229`. `--inspect-brk`: pauses before the first line (useful if you need to debug startup). Chrome DevTools: `chrome://inspect` → discover targets → click 'inspect'. VS Code: launch config with `\"request\": \"attach\"` or use F5 with Node debugger. Set breakpoints, step through code, inspect variables in the call stack. Far more efficient than `console.log` for complex bugs.",
+      "sourcePlatforms": ["turing-t3-live", "andela-a4-pair"],
+      "tags": ["debugging", "node"]
+    },
+    {
+      "id": "td-602",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "13.6 Debugging",
+      "niche": "memory leak debugging",
+      "topic": "debugging",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "A Node.js service's heap grows 50MB/hour until it crashes. How do you identify the memory leak?",
+      "options": [
+        {"id": "a", "text": "Increase the Node.js heap size with --max-old-space-size"},
+        {"id": "b", "text": "Take heap snapshots at intervals using Chrome DevTools or `v8.writeHeapSnapshot()`; compare snapshots to identify objects accumulating in memory; look for closures, event listeners, or caches that aren't being cleared"},
+        {"id": "c", "text": "Add more RAM to the server"},
+        {"id": "d", "text": "Restart the service every hour as a workaround"}
+      ],
+      "correct": ["b"],
+      "explanation": "Memory leak debugging: (1) `node --inspect` → Chrome DevTools → Memory → Heap snapshot. Take snapshots at t=0 and t=1hr. Filter: 'Objects allocated between snapshots'. Look for: (2) Event listeners not removed (`emitter.removeListener`); (3) Closure capturing large scope that isn't freed; (4) Array/Map/Set that grows without bound (cache without eviction); (5) Long-lived callbacks holding references. Tools: `clinic.js flame`, `heapdump` npm package, `--expose-gc` + manual GC to confirm objects release.",
+      "sourcePlatforms": ["turing-t3-live"],
+      "tags": ["debugging", "memory-leak"]
+    },
+    {
+      "id": "td-603",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "13.6 Debugging",
+      "niche": "production debugging",
+      "topic": "debugging",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "A bug appears only in production, not locally. What's your systematic approach?",
+      "options": [
+        {"id": "a", "text": "Add console.log statements and deploy to production to debug live"},
+        {"id": "b", "text": "(1) Check structured logs + error traces for the exact failure. (2) Check if it's environment-specific (env vars, secrets, DB version). (3) Reproduce locally with production data shape. (4) Add feature-flagged debug logging to production. (5) Use distributed tracing to isolate the failing component."},
+        {"id": "c", "text": "Roll back to the previous version immediately"},
+        {"id": "d", "text": "The bug will go away on its own — wait"}
+      ],
+      "correct": ["b"],
+      "explanation": "Production-only bugs: (1) Environment mismatch: local uses SQLite, prod uses PostgreSQL — SQL syntax difference. (2) Environment variables missing or different values. (3) Race condition under load that doesn't occur with single-user local testing. (4) Data shape in prod DB differs from test data. (5) External service behaves differently. Approach: logs first → reproduce locally with same conditions → narrow scope via tracing → fix → add regression test. Never add unguarded console.log to prod — use feature flags or structured debug levels.",
+      "sourcePlatforms": ["turing-t3-live", "andela-a4-pair"],
+      "tags": ["debugging", "production"]
+    },
+    {
+      "id": "td-604",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "13.6 Debugging",
+      "niche": "async stack traces",
+      "topic": "debugging",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "An async error has a useless stack trace that doesn't show where it originated. What are two ways to improve async stack trace quality?",
+      "options": [
+        {"id": "a", "text": "Use synchronous code everywhere to avoid async issues"},
+        {"id": "b", "text": "(1) Use `async/await` instead of raw `.then()` chains — V8 captures the async call stack. (2) Enable `--async-stack-traces` (Node 12+) / `--enable-source-maps`. (3) Add error context: rethrow with `new Error('context', { cause: originalError })`."},
+        {"id": "c", "text": "Async stack traces are a V8 limitation with no workaround"},
+        {"id": "d", "text": "Use `process.on('unhandledRejection')` to catch all async errors"}
+      ],
+      "correct": ["b"],
+      "explanation": "Raw `.then()` chains: each `.then()` is a separate microtask — the stack at the point of rejection doesn't include the original caller. `async/await`: V8's 'zero-cost async stack traces' reconstruct the logical call stack across `await` boundaries. Also: (1) `--enable-source-maps`: maps minified production stacks to source. (2) Error cause chaining: `throw new Error('Failed to process payment', { cause: originalError })` — preserves original error context. (3) `source-map-support` npm package in Node.",
+      "sourcePlatforms": ["turing-t3-live"],
+      "tags": ["debugging", "async"]
+    },
+    {
+      "id": "td-605",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "subtopic": "13.6 Debugging",
+      "niche": "live debug session",
+      "topic": "debugging",
+      "timeBudgetSec": 2700,
+      "tracks": ["turing", "andela"],
+      "prompt": "During your live interview, the interviewer shares a buggy Express route. Users report that `POST /orders` intermittently returns 500 with no body. Walk through your debugging process out loud.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Start with logs: check error logs for stack trace and request context (user_id, payload, timing)", "weight": 3},
+        {"criterion": "Check async error handling: unhandled promise rejection in middleware or handler → wrap in try/catch or use express-async-errors", "weight": 3},
+        {"criterion": "Reproduce: construct a minimal test case mimicking the failing request shape", "weight": 2},
+        {"criterion": "Isolate: narrow to specific line by adding structured logging / breakpoint at key steps", "weight": 2},
+        {"criterion": "Fix: address root cause (not just swallow the error); add a regression test", "weight": 3},
+        {"criterion": "Think aloud: articulate hypothesis → evidence → test → conclusion clearly", "weight": 2}
+      ],
+      "modelAnswer": "First, I'd look at the server logs — 500 with no body usually means an unhandled error is being caught by the default Express error handler which returns an empty body. I'd check: (1) Is there a stack trace in the logs? That immediately tells me the file/line. (2) Is the error async? Express 4 doesn't catch async errors automatically — a rejected promise in the handler silently fails without calling next(err). Fix: wrap handler in try/catch and call next(err), or use `express-async-errors` package. (3) Reproduce: write a test with supertest that sends the payload shape users report. (4) If it's intermittent, could be a race condition — check if any shared state is being mutated (connection pool exhausted, in-memory cache race). (5) Once root cause found: fix it, add a unit test that asserts the 500 case is handled with a proper error body (not empty), and add the stack trace to structured logging so future errors are traceable.",
+      "sourcePlatforms": ["turing-t3-live", "andela-a4-pair"],
+      "tags": ["debugging", "express", "think-aloud"]
+    },
+    {
+      "id": "td-701",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "13.1 Unit Testing",
+      "niche": "mocking modules with ESM",
+      "topic": "unit-testing",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "Why is mocking ES modules with `jest.mock()` trickier than CommonJS modules?",
+      "options": [
+        {"id": "a", "text": "ES modules are always faster so they don't need mocking"},
+        {"id": "b", "text": "ES module imports are static and live bindings — jest.mock hoisting works, but you need `jest.unstable_mockModule` for dynamic ESM. Default exports need `default` key when accessing the mock."},
+        {"id": "c", "text": "ES modules cannot be mocked at all in Jest"},
+        {"id": "d", "text": "Jest converts all ESM to CommonJS automatically so there's no difference"}
+      ],
+      "correct": ["b"],
+      "explanation": "With CJS, `require()` is dynamic — Jest intercepts it easily. ESM imports are static (compiled away) and live bindings (re-exported values update). Jest typically transpiles ESM to CJS via Babel/ts-jest, making `jest.mock()` work. For native ESM (`\"type\": \"module\"`): use `jest.unstable_mockModule()` (currently experimental) or `--experimental-vm-modules`. Common pitfall: `import * as mod from './foo'; mod.default` for default export mocks.",
+      "sourcePlatforms": ["turing-t3-live"],
+      "tags": ["jest", "esm"]
+    },
+    {
+      "id": "td-702",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "13.3 Integration Testing",
+      "niche": "testcontainers",
+      "topic": "integration-testing",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "What problem does the `testcontainers` library solve for integration testing?",
+      "options": [
+        {"id": "a", "text": "It runs Jest tests in Docker containers for isolation"},
+        {"id": "b", "text": "It programmatically starts and stops real Docker containers (PostgreSQL, Redis, etc.) within the test lifecycle — no pre-installed local service needed"},
+        {"id": "c", "text": "It generates mock responses from real database schemas"},
+        {"id": "d", "text": "It replaces Docker Compose for production deployments"}
+      ],
+      "correct": ["b"],
+      "explanation": "Testcontainers: `const pg = await new PostgreSqlContainer().start()`. Jest `beforeAll` starts the container, `afterAll` stops it. The test uses the dynamically assigned port. Benefits: tests run against a real PostgreSQL (not SQLite shim), fully isolated per test run, portable across any dev machine or CI that has Docker. Cost: slower startup (5-15s) — use `beforeAll` (once per suite) not `beforeEach` (once per test).",
+      "sourcePlatforms": ["turing-t3-live"],
+      "tags": ["integration-testing", "testcontainers", "docker"]
+    },
+    {
+      "id": "td-703",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "13.4 E2E & Coverage",
+      "niche": "MSW mock service worker",
+      "topic": "mocking",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "What advantage does Mock Service Worker (MSW) have over jest.mock for mocking HTTP API calls?",
+      "options": [
+        {"id": "a", "text": "MSW is always faster than jest.mock"},
+        {"id": "b", "text": "MSW intercepts at the network layer (service worker in browsers, nock-style in Node) — the same mock handlers work in unit tests, integration tests, and E2E. No need to mock the fetch/axios implementation."},
+        {"id": "c", "text": "MSW generates TypeScript types from your API"},
+        {"id": "d", "text": "MSW only works for REST APIs"}
+      ],
+      "correct": ["b"],
+      "explanation": "With `jest.mock('axios')` you mock the library — if you switch from axios to fetch, all mocks break. MSW intercepts the actual network request: in Node tests it uses `@mswjs/interceptors`; in browsers it uses a service worker. Same handler definitions work in Playwright E2E and Jest unit tests. This means test setup reuse across the testing pyramid. Supports REST and GraphQL. Handlers can be shared between test suites and even development stubs.",
+      "sourcePlatforms": ["turing-t3-live", "andela-a4-pair"],
+      "tags": ["mocking", "msw", "network"]
+    },
+    {
+      "id": "td-704",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "13.6 Debugging",
+      "niche": "CPU profiling",
+      "topic": "debugging",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "A Node.js API endpoint takes 2 seconds when it should take 50ms. How do you identify where the time is being spent?",
+      "options": [
+        {"id": "a", "text": "Add Date.now() before and after every function call"},
+        {"id": "b", "text": "Use `node --prof` to generate a V8 CPU profile, then `node --prof-process` to read it; or use Chrome DevTools Performance tab with `--inspect` to get a flame graph"},
+        {"id": "c", "text": "Run the endpoint 1000 times and calculate the average"},
+        {"id": "d", "text": "Upgrade to a faster server — slow endpoints are always hardware-bound"}
+      ],
+      "correct": ["b"],
+      "explanation": "CPU profiling: `node --prof app.js` → generates `isolate-*.log`. `node --prof-process isolate-*.log > processed.txt`. Read to find hot functions. Or: Chrome DevTools (`--inspect`) → Performance tab → Record while making the request → Flame graph shows where JS time is spent. Also: `console.time('label')` / `console.timeEnd` for quick targeted timing; `performance.now()` for high-resolution timing. Clinic.js Doctor/Flame for production profiling without restarting.",
+      "sourcePlatforms": ["turing-t3-live"],
+      "tags": ["debugging", "performance", "profiling"]
+    }
+  ]
+}

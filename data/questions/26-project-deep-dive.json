@@ -1,0 +1,196 @@
+{
+  "module": "project-deep-dive",
+  "title": "26. Project Deep Dive",
+  "description": "Résumé drilling, 'I not we' ownership audit, impact quantification, technical decision justification, and project story templates for Turing's HM screen and Andela's screening interview.",
+  "tracks": ["turing", "andela"],
+  "testStages": ["turing-t1-hm", "andela-a3-screen"],
+  "platformCoverage": ["turing-t1-hm", "andela-a3-screen"],
+  "estimatedHours": 3,
+  "studyNotes": {
+    "26.1 Project Story Framework": ["Structure: Context → Problem → Your Role → Actions → Result → Lessons.", "Every number should be real and defensible: '$2M in savings', '40% latency reduction', '200k users'.", "'I not we': own your individual contribution. Say 'I designed the data model' not 'we built the feature'.", "Prepare 2-3 projects. Know each one well enough to answer: 'What would you do differently?' 'What was the hardest part?' 'How did it scale?'", "For Turing specifically: highlight remote collaboration, async communication, and ownership without hand-holding."],
+    "26.2 Technical Decision Justification": ["Every major technical choice should have: alternatives considered, criteria used, trade-offs accepted.", "Example: 'We chose PostgreSQL over MongoDB because our data was relational and transactions were critical. We considered MongoDB's flexible schema but the join patterns in our queries made it a poor fit.'", "Interviewers probe: 'Why not X?' Be ready to defend without being defensive."],
+    "26.3 Impact Quantification": ["Before the interview, extract numbers from every project: users, revenue, latency, error rate, deployment frequency, team size.", "If you don't have exact numbers, give ranges: '500k–1M daily active users', '30–40% performance improvement'.", "Be honest about your confidence: 'I recall it was around 200ms P95 reduction, though I'd need to verify the exact number.'"]
+  },
+  "questions": [
+    {
+      "id": "pd-101",
+      "type": "open-rubric",
+      "difficulty": "medium",
+      "subtopic": "26.1 Project Story",
+      "niche": "project intro",
+      "topic": "project-story",
+      "timeBudgetSec": 300,
+      "tracks": ["turing", "andela"],
+      "prompt": "'Tell me about the most impactful project you've worked on.' Practice your answer in 2–3 minutes.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Opens with context: company, product, scale — orients the listener in 1-2 sentences", "weight": 2},
+        {"criterion": "States the problem clearly: what was broken, missing, or needed", "weight": 2},
+        {"criterion": "Uses 'I' not 'we' to describe personal contribution — owns specific actions", "weight": 3},
+        {"criterion": "Quantifies impact: numbers, percentages, user counts, revenue, latency", "weight": 3},
+        {"criterion": "Ends with a lesson or reflection — shows growth mindset", "weight": 2},
+        {"criterion": "Stays under 3 minutes — concise and structured, not rambling", "weight": 2}
+      ],
+      "modelAnswer": "Context: 'At Acme Corp, I was the lead backend engineer on our real-time messaging feature serving 400k daily active users.' Problem: 'Messages were arriving with 4–8 second delays — customer complaints were increasing and churn was spiking.' My role: 'I redesigned the message delivery pipeline, replacing polling with WebSockets and introducing a Redis Pub/Sub layer for fan-out.' Result: 'P95 latency dropped from 6 seconds to under 200ms. Complaint tickets fell 70% in the next sprint cycle.' Lesson: 'I learned that instrumenting before optimising is critical — our initial assumption that the DB was the bottleneck was wrong; the real issue was HTTP polling overhead. Profiling saved us from a wasted migration.'",
+      "sourcePlatforms": ["turing-t1-hm", "andela-a3-screen"],
+      "tags": ["project-story", "impact"]
+    },
+    {
+      "id": "pd-102",
+      "type": "open-rubric",
+      "difficulty": "medium",
+      "subtopic": "26.1 Project Story",
+      "niche": "hardest technical challenge",
+      "topic": "project-story",
+      "timeBudgetSec": 300,
+      "tracks": ["turing", "andela"],
+      "prompt": "'What was the hardest technical problem you personally solved?' Tell me in under 3 minutes.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Problem is genuinely hard — not trivially solved with a library call", "weight": 2},
+        {"criterion": "Describes the debugging or design process — the struggle, not just the solution", "weight": 3},
+        {"criterion": "Shows ownership: 'I investigated', 'I implemented', 'I wrote the post-mortem'", "weight": 3},
+        {"criterion": "Outcome stated: what changed after the fix", "weight": 2},
+        {"criterion": "Technical depth: correct terminology, plausible numbers", "weight": 2}
+      ],
+      "modelAnswer": "Hard problems that work well here: a subtle race condition in distributed state, a memory leak that took days to locate, an N+1 query causing 10-second page loads, a schema migration on a live 50M-row table. Structure: What made it hard → How I approached it (first hypothesis, why it was wrong, pivoting) → What I finally found → How I fixed it → What I put in place to prevent recurrence.",
+      "sourcePlatforms": ["turing-t1-hm", "andela-a3-screen"],
+      "tags": ["project-story", "debugging"]
+    },
+    {
+      "id": "pd-103",
+      "type": "open-rubric",
+      "difficulty": "medium",
+      "subtopic": "26.2 Technical Decision",
+      "niche": "why did you choose X",
+      "topic": "technical-decision",
+      "timeBudgetSec": 240,
+      "tracks": ["turing", "andela"],
+      "prompt": "The interviewer asks: 'You used PostgreSQL for this project. Why not MongoDB?' Practice defending the choice.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "States criteria used to decide: data shape, query patterns, transaction needs, team familiarity", "weight": 3},
+        {"criterion": "Acknowledges MongoDB's strengths rather than dismissing it", "weight": 2},
+        {"criterion": "Explains why PostgreSQL fit the specific requirements better", "weight": 3},
+        {"criterion": "Honest about trade-offs accepted: more rigid schema, more complex to scale horizontally", "weight": 2},
+        {"criterion": "Doesn't hedge excessively — takes a clear position", "weight": 2}
+      ],
+      "modelAnswer": "'We considered MongoDB early on. Our data had clear relational structure — orders contain line items, line items reference products, products have categories. The access patterns were mostly join-heavy: fetch order with all items and product details in one query. MongoDB would have required denormalisation or multiple round trips. More importantly, we needed ACID transactions across multiple collections for inventory deduction and order creation — MongoDB's multi-document transactions exist but add complexity. The team also had deep SQL expertise, which reduced risk. We accepted the trade-off that horizontal write scaling would be harder, but given our scale (~50k orders/day), that wasn't a near-term concern.'",
+      "sourcePlatforms": ["turing-t1-hm", "andela-a3-screen"],
+      "tags": ["technical-decision", "databases"]
+    },
+    {
+      "id": "pd-104",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "26.1 Project Story",
+      "niche": "i not we",
+      "topic": "project-story",
+      "timeBudgetSec": 60,
+      "tracks": ["turing", "andela"],
+      "prompt": "Why do interviewers specifically watch for 'I' vs 'we' language in project discussions?",
+      "options": [
+        {"id": "a", "text": "Grammar — 'I' is always grammatically correct in interviews"},
+        {"id": "b", "text": "They want to assess your individual contribution and ownership — 'we built the feature' tells them nothing about what you specifically did"},
+        {"id": "c", "text": "'We' is preferred — it shows team collaboration"},
+        {"id": "d", "text": "It's a trick question — both are equally valid"}
+      ],
+      "correct": ["b"],
+      "explanation": "Interviewers are hiring you, not your team. Using 'we' throughout signals: lack of confidence in your own contribution, inability to distinguish your work, or unclear ownership. Fix: 'I designed the data model; I wrote the migration scripts; I led the code review process.' You can acknowledge the team ('the team shipped it') while claiming your specific work. Turing particularly values individual accountability on remote teams.",
+      "sourcePlatforms": ["turing-t1-hm", "andela-a3-screen"],
+      "tags": ["project-story", "ownership"]
+    },
+    {
+      "id": "pd-105",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "26.3 Impact Quantification",
+      "niche": "no numbers",
+      "topic": "impact",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "You don't have exact metrics from a past project. How do you still communicate impact?",
+      "options": [
+        {"id": "a", "text": "Avoid mentioning that project — only discuss projects with exact numbers"},
+        {"id": "b", "text": "Give a confident estimate with a qualifier: 'The team reported a 30-40% reduction in support tickets — I'd need to look up the exact figure but the improvement was significant and we tracked it at the time'"},
+        {"id": "c", "text": "Make up numbers — interviewers can't verify them"},
+        {"id": "d", "text": "Say 'the team was very happy with the result' without specifics"}
+      ],
+      "correct": ["b"],
+      "explanation": "Ranges with honest qualifiers are far better than no numbers. Interviewers don't expect you to have memorised every metric — they want to know you thought about impact. 'I recall it was roughly 40% faster, though I'd need to check the dashboard' is credible and honest. Making up precise numbers is risky — a follow-up question about how it was measured will expose a fabrication. Vague sentiment ('people liked it') is useless.",
+      "sourcePlatforms": ["turing-t1-hm", "andela-a3-screen"],
+      "tags": ["impact", "numbers"]
+    },
+    {
+      "id": "pd-106",
+      "type": "open-rubric",
+      "difficulty": "medium",
+      "subtopic": "26.1 Project Story",
+      "niche": "what would you do differently",
+      "topic": "project-story",
+      "timeBudgetSec": 240,
+      "tracks": ["turing", "andela"],
+      "prompt": "'Looking back at that project, what would you do differently?' Practice a honest, thoughtful answer about a real past project.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Names a specific concrete thing — not 'I'd communicate better' (vague)", "weight": 3},
+        {"criterion": "Shows genuine reflection — not just a disguised humblebrag ('I worked too hard')", "weight": 3},
+        {"criterion": "Explains the impact of the original decision — what went wrong or was suboptimal", "weight": 2},
+        {"criterion": "Ties the lesson to what they would now do differently", "weight": 2},
+        {"criterion": "Confident and self-aware — not defensive or apologetic", "weight": 2}
+      ],
+      "modelAnswer": "Good answers: 'I'd write integration tests before the feature, not after — we had a regression in production that a test would have caught.' 'I'd push back on the timeline earlier — I knew two weeks was too tight but didn't say so until we were behind.' 'I'd start with a simpler architecture and evolve it — we over-engineered the event sourcing layer for a use case that didn't need it.' Bad answers: 'I wouldn't change anything' (not credible), 'I'd have taken more time off' (irrelevant), 'my teammates caused the issues' (blame, not reflection).",
+      "sourcePlatforms": ["turing-t1-hm", "andela-a3-screen"],
+      "tags": ["project-story", "reflection"]
+    },
+    {
+      "id": "pd-107",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "26.1 Project Story",
+      "niche": "remote ownership signal",
+      "topic": "project-story",
+      "timeBudgetSec": 75,
+      "tracks": ["turing"],
+      "prompt": "Turing specifically values 'remote ownership'. What does this mean in a project answer?",
+      "options": [
+        {"id": "a", "text": "Owning a home office setup"},
+        {"id": "b", "text": "Working independently without waiting to be told what to do — identifying problems proactively, making decisions autonomously, and communicating async progress without micromanagement"},
+        {"id": "c", "text": "Having full admin access to production systems"},
+        {"id": "d", "text": "Being the team lead on every project"}
+      ],
+      "correct": ["b"],
+      "explanation": "Turing's clients pay a premium for engineers who need minimal hand-holding. In your project answers, signal: 'I noticed X was a problem and proposed a solution without being asked.' 'I made the call to use Y after researching alternatives — I documented my reasoning in an ADR and got async sign-off.' 'I set up a weekly written update to keep the client informed without meetings.' These signals differentiate Turing-caliber engineers from those who need close supervision.",
+      "sourcePlatforms": ["turing-t1-hm"],
+      "tags": ["project-story", "remote", "turing"]
+    },
+    {
+      "id": "pd-108",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "subtopic": "26.2 Technical Decision",
+      "niche": "architecture decision deep dive",
+      "topic": "technical-decision",
+      "timeBudgetSec": 480,
+      "tracks": ["turing", "andela"],
+      "prompt": "The interviewer asks: 'Walk me through the most significant architecture decision you made on a past project. What were the alternatives, why did you choose what you did, and what were the downsides?'",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Names a real, significant decision — not a trivial library choice", "weight": 2},
+        {"criterion": "Describes at least 2 alternatives that were genuinely considered", "weight": 3},
+        {"criterion": "Explains the decision criteria: performance, cost, team expertise, maintainability, scale", "weight": 3},
+        {"criterion": "Honestly states the downsides/trade-offs of the chosen approach", "weight": 3},
+        {"criterion": "Outcome: did the decision hold up? Any regrets?", "weight": 2},
+        {"criterion": "Technical accuracy: the trade-offs described are real and plausible", "weight": 2}
+      ],
+      "modelAnswer": "Good architecture decisions: microservices vs monolith, event-driven vs synchronous, PostgreSQL vs NoSQL, gRPC vs REST, managed service vs self-hosted, synchronous vs async job processing. Structure: 'We needed to decide how to handle order processing. Options: (A) synchronous HTTP — simple but creates tight coupling and risks cascading failures; (B) async queue with SQS — decoupled, resilient, but adds operational complexity and eventual consistency; (C) event sourcing — most powerful but significant engineering overhead for our team size. We chose B because reliability was non-negotiable and we had SQS experience. The downside: building idempotent consumers and handling duplicate delivery added 2 sprint-weeks of work. In retrospect it was the right call — we had a downstream service outage 3 months later and the queue absorbed the backlog cleanly.'",
+      "sourcePlatforms": ["turing-t1-hm", "andela-a3-screen"],
+      "tags": ["technical-decision", "architecture"]
+    }
+  ]
+}

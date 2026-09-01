@@ -30,7 +30,7 @@ export const SYLLABUS: SyllabusEntry[] = [
 
   { num: 2, id: "python", title: "Python",
     blurb: "Basics, data structures, OOP, async, decorators, GIL, testing idioms.",
-    targetQs: 70, status: "planned", moduleId: null,
+    targetQs: 70, status: "built", moduleId: "python",
     tracks: ["turing", "andela"], testStages: ["turing-t1-mcq", "andela-a1-hackerrank"] },
 
   { num: 3, id: "javascript-typescript", title: "JavaScript / TypeScript",
@@ -55,12 +55,12 @@ export const SYLLABUS: SyllabusEntry[] = [
 
   { num: 7, id: "redis-caching", title: "Redis & Caching",
     blurb: "Data types, patterns, pub/sub, cluster, invalidation, cache-aside vs write-through.",
-    targetQs: 50, status: "planned", moduleId: null,
+    targetQs: 50, status: "built", moduleId: "redis-caching",
     tracks: ["turing"], testStages: ["turing-t4-fde"] },
 
   { num: 8, id: "async-queues", title: "Async / Concurrency / Queues",
     blurb: "Event loop, promises, workers, Kafka, RabbitMQ, SQS, backpressure.",
-    targetQs: 60, status: "partial", moduleId: "distributed-systems",
+    targetQs: 60, status: "built", moduleId: "async-concurrency",
     tracks: ["turing", "andela"], testStages: ["turing-t1-mcq", "turing-t4-fde"] },
 
   { num: 9, id: "system-design", title: "System Design",
@@ -70,22 +70,22 @@ export const SYLLABUS: SyllabusEntry[] = [
 
   { num: 10, id: "cloud", title: "Cloud & Deployment",
     blurb: "AWS core (EC2/S3/RDS/IAM/VPC/ALB), secrets, CDN, GCP/Azure basics.",
-    targetQs: 50, status: "planned", moduleId: null,
+    targetQs: 50, status: "built", moduleId: "cloud-deployment",
     tracks: ["turing"], testStages: ["turing-t4-fde"] },
 
   { num: 11, id: "docker-k8s", title: "Docker / Kubernetes",
     blurb: "Docker basics, multi-stage, K8s pods/services/deployments/HPA/probes.",
-    targetQs: 30, status: "planned", moduleId: null,
+    targetQs: 30, status: "built", moduleId: "docker-k8s",
     tracks: ["turing"], testStages: ["turing-t4-fde"] },
 
   { num: 12, id: "software-engineering", title: "Software Engineering",
     blurb: "SOLID, patterns, semver, ADRs, code review, Git flow, PR review drills.",
-    targetQs: 40, status: "partial", moduleId: "refactoring-debugging",
+    targetQs: 40, status: "built", moduleId: "software-engineering",
     tracks: ["turing", "andela"], testStages: ["turing-t3-live", "andela-a4-pair"] },
 
   { num: 13, id: "testing-debugging", title: "Testing / Debugging",
     blurb: "Unit/integration/e2e/mocks/coverage/flaky-test playbook.",
-    targetQs: 50, status: "partial", moduleId: "refactoring-debugging",
+    targetQs: 50, status: "built", moduleId: "testing-debugging",
     tracks: ["turing", "andela"], testStages: ["turing-t3-live", "andela-a4-pair"] },
 
   { num: 14, id: "security", title: "Security",
@@ -110,7 +110,7 @@ export const SYLLABUS: SyllabusEntry[] = [
 
   { num: 18, id: "llm-arch", title: "LLM Application Architecture",
     blurb: "System prompts, guardrails, structured output, tracing, cost tracking.",
-    targetQs: 40, status: "planned", moduleId: null,
+    targetQs: 40, status: "built", moduleId: "llm-app-arch",
     tracks: ["turing"], testStages: ["turing-t4-fde"] },
 
   { num: 19, id: "agents-tools", title: "Agents / Tool Calling",
@@ -135,27 +135,27 @@ export const SYLLABUS: SyllabusEntry[] = [
 
   { num: 23, id: "enterprise-integrations", title: "Enterprise Integrations",
     blurb: "Webhooks, SSO/SAML, SCIM, OAuth bridging, CRM/ERP adapters, legacy.",
-    targetQs: 40, status: "partial", moduleId: "system-design",
+    targetQs: 40, status: "partial", moduleId: "enterprise-integrations",
     tracks: ["turing"], testStages: ["turing-t4-fde"] },
 
   { num: 24, id: "fde-customer-eng", title: "FDE / Customer Engineering",
     blurb: "Decomposition (5-step framework), client sim (posture drills).",
-    targetQs: 40, status: "partial", moduleId: "fde-decomposition", extraModuleIds: ["fde-client-sim"],
+    targetQs: 40, status: "built", moduleId: "fde-customer-engineering",
     tracks: ["turing"], testStages: ["turing-t4-fde"] },
 
   { num: 25, id: "behavioral", title: "Behavioral / Communication",
     blurb: "STAR stories across 8 core slots + comms drills + EPIC values.",
-    targetQs: 40, status: "partial", moduleId: "behavioral",
+    targetQs: 40, status: "built", moduleId: "behavioral",
     tracks: ["turing", "andela"], testStages: ["turing-t1-hm", "andela-a5-epic"] },
 
   { num: 26, id: "project-deep-dive", title: "Project Deep Dive",
     blurb: "Résumé drilling, 'I not we' audit, project story templates.",
-    targetQs: 20, status: "planned", moduleId: null,
+    targetQs: 20, status: "built", moduleId: "project-deep-dive",
     tracks: ["turing", "andela"], testStages: ["turing-t1-hm", "andela-a3-screen"] },
 
   { num: 27, id: "live-coding-take-home", title: "Live Coding / Take-Home",
     blurb: "Timed drills, take-home rubrics, code defense.",
-    targetQs: 30, status: "partial", moduleId: "refactoring-debugging",
+    targetQs: 30, status: "built", moduleId: "live-coding-take-home",
     tracks: ["turing", "andela"], testStages: ["turing-t3-live", "andela-a4-pair"] },
 
   { num: 28, id: "architecture-cases", title: "Architecture Case Studies",

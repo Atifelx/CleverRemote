@@ -1,0 +1,358 @@
+{
+  "module": "software-engineering",
+  "title": "12. Software Engineering",
+  "description": "SOLID principles, design patterns, Git workflow, code review, semantic versioning, ADRs, API design, tech debt, and PR best practices for the live coding and pair programming rounds.",
+  "tracks": ["turing", "andela"],
+  "testStages": ["turing-t3-live", "andela-a4-pair"],
+  "platformCoverage": ["turing-t3-live", "andela-a4-pair"],
+  "estimatedHours": 5,
+  "studyNotes": {
+    "12.1 SOLID": ["S — Single Responsibility: one reason to change per class/function.", "O — Open/Closed: open for extension, closed for modification (strategy, plugin).", "L — Liskov Substitution: subtypes must be substitutable for their base type.", "I — Interface Segregation: many specific interfaces > one fat interface.", "D — Dependency Inversion: depend on abstractions, not concretions (inject dependencies)."],
+    "12.2 Design Patterns": ["Factory: creates objects without specifying exact class — hides instantiation logic.", "Observer: pub/sub — subjects notify observers on state change (EventEmitter, React context).", "Strategy: swap algorithm at runtime — dependency injection for behaviour.", "Decorator: wrap an object to add behaviour without subclassing.", "Adapter: convert one interface to another — bridging incompatible APIs.", "Singleton: single instance; use with care — global state = hidden coupling."],
+    "12.3 Git & Code Review": ["Conventional commits: feat/fix/chore/docs/refactor/test + scope. Enables changelogs.", "Rebase vs merge: rebase rewrites history (cleaner linear log); merge preserves branching history.", "Squash before PR: clean single commit per feature for main branch history.", "PR review: comment on 'what' and 'why', not just 'how'. Approve when confident, not just to be nice."]
+  },
+  "questions": [
+    {
+      "id": "se-101",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "12.1 SOLID",
+      "niche": "single responsibility",
+      "topic": "solid",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "A `UserService` class handles: authentication, sending emails, and saving to DB. Which SOLID principle does this violate?",
+      "options": [
+        {"id": "a", "text": "Open/Closed — the class isn't extensible"},
+        {"id": "b", "text": "Single Responsibility — the class has three distinct reasons to change: auth logic, email provider, and DB schema"},
+        {"id": "c", "text": "Liskov Substitution — subclasses can't substitute the parent"},
+        {"id": "d", "text": "Interface Segregation — the interface has too many methods"}
+      ],
+      "correct": ["b"],
+      "explanation": "SRP: a class should have only one reason to change. Three responsibilities = three independent axes of change. Fix: split into `AuthService`, `EmailService`, `UserRepository`. Each can be changed, tested, and deployed independently. SRP is violated most commonly by 'god classes' that grow organically — add a feature, it goes in the existing class.",
+      "sourcePlatforms": ["turing-t3-live"],
+      "tags": ["solid", "srp"]
+    },
+    {
+      "id": "se-102",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "12.1 SOLID",
+      "niche": "open/closed",
+      "topic": "solid",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "You have a `PaymentProcessor` with a giant `if/else` for each payment method (Stripe, PayPal, Crypto). A new method is added quarterly. Which principle applies and what's the fix?",
+      "options": [
+        {"id": "a", "text": "Single Responsibility. Fix: split the class."},
+        {"id": "b", "text": "Open/Closed. Fix: define a `PaymentGateway` interface; each provider implements it; `PaymentProcessor` accepts a `PaymentGateway` and calls its methods — open for extension (new class) without modifying the processor."},
+        {"id": "c", "text": "Liskov Substitution. Fix: use generics."},
+        {"id": "d", "text": "Dependency Inversion. Fix: inject a factory."}
+      ],
+      "correct": ["b"],
+      "explanation": "OCP: add new behaviour by adding new code, not changing existing code. Each new payment provider becomes a new class implementing the interface — zero changes to `PaymentProcessor`. This is the Strategy pattern in action. Adding an `else` branch every quarter = violating OCP + accumulating risk in a central class.",
+      "sourcePlatforms": ["turing-t3-live", "andela-a4-pair"],
+      "tags": ["solid", "ocp", "strategy"]
+    },
+    {
+      "id": "se-103",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "12.1 SOLID",
+      "niche": "dependency inversion",
+      "topic": "solid",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "Which code example correctly applies Dependency Inversion?",
+      "options": [
+        {"id": "a", "text": "`class OrderService { private db = new PostgresDB(); }`"},
+        {"id": "b", "text": "`class OrderService { constructor(private db: Database) {} }` — where `Database` is an interface implemented by `PostgresDB`"},
+        {"id": "c", "text": "`class OrderService { private db = process.env.DB_TYPE === 'pg' ? new PostgresDB() : new MySQLDB(); }`"},
+        {"id": "d", "text": "`class OrderService { static db = PostgresDB.getInstance(); }`"}
+      ],
+      "correct": ["b"],
+      "explanation": "DIP: high-level modules should not depend on low-level modules — both should depend on abstractions. In B: `OrderService` depends on the `Database` interface (abstraction), not `PostgresDB` (concrete). In tests, inject `MockDatabase`. In prod, inject `PostgresDB`. A, C, D all hard-code the concrete class, making testing and swapping impossible without changing `OrderService`.",
+      "sourcePlatforms": ["turing-t3-live", "andela-a4-pair"],
+      "tags": ["solid", "dip", "di"]
+    },
+    {
+      "id": "se-104",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "12.1 SOLID",
+      "niche": "Liskov substitution",
+      "topic": "solid",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "A `Square` extends `Rectangle`. `Rectangle.setWidth(5)` also updates height (for a square to stay square). Does this violate LSP?",
+      "options": [
+        {"id": "a", "text": "No — Square is a rectangle mathematically, so the subtype is valid"},
+        {"id": "b", "text": "Yes — code that uses `Rectangle` and calls `setWidth(5); setHeight(3)` and expects area = 15 will get 9 with a `Square`. The subtype changes behaviour that callers rely on."},
+        {"id": "c", "text": "No — LSP only applies to abstract classes, not concrete ones"},
+        {"id": "d", "text": "Yes — but only if the caller uses instanceof checks"}
+      ],
+      "correct": ["b"],
+      "explanation": "LSP: `Rectangle r = new Square(); r.setWidth(5); r.setHeight(3); assert r.area() == 15` — fails with Square (area = 9 because setHeight forces width = 3 too). The subtype breaks the contract of the base type. Classic square-rectangle problem. Fix: don't use inheritance here — prefer composition or separate classes without shared hierarchy.",
+      "sourcePlatforms": ["turing-t3-live"],
+      "tags": ["solid", "lsp"]
+    },
+
+    {
+      "id": "se-201",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "12.2 Design Patterns",
+      "niche": "strategy vs inheritance",
+      "topic": "patterns",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "Why is the Strategy pattern preferred over subclassing to vary behaviour?",
+      "options": [
+        {"id": "a", "text": "Subclassing is always better — it's simpler"},
+        {"id": "b", "text": "Strategy favours composition over inheritance — behaviour can be swapped at runtime, avoids deep class hierarchies, and allows combining behaviours independently"},
+        {"id": "c", "text": "Strategy is only for sorting algorithms"},
+        {"id": "d", "text": "Subclassing uses less memory than the strategy pattern"}
+      ],
+      "correct": ["b"],
+      "explanation": "Inheritance: rigid at compile time. A `SortedList` subclass can't swap its sort algorithm without creating more subclasses. Strategy: inject the algorithm as an object (`new Sorter(new QuickSort())`); swap at runtime (`sorter.setStrategy(new MergeSort())`). Avoids explosion of subclasses (n behaviours × m contexts = n×m subclasses vs n + m classes with strategy). 'Favour composition over inheritance' is one of GoF's guiding principles.",
+      "sourcePlatforms": ["turing-t3-live", "andela-a4-pair"],
+      "tags": ["patterns", "strategy"]
+    },
+    {
+      "id": "se-202",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "12.2 Design Patterns",
+      "niche": "observer pattern",
+      "topic": "patterns",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "You need multiple services (email, analytics, audit-log) to react when an order is placed. Which pattern applies and what's the key benefit?",
+      "options": [
+        {"id": "a", "text": "Factory — creates all the services together"},
+        {"id": "b", "text": "Observer (pub/sub) — `OrderService` emits an 'order.placed' event; subscribers react independently. Decouples producers from consumers."},
+        {"id": "c", "text": "Singleton — ensures only one instance of each service"},
+        {"id": "d", "text": "Adapter — converts the order format for each service"}
+      ],
+      "correct": ["b"],
+      "explanation": "Observer: subject knows nothing about subscribers. `orderService.emit('order.placed', data)`. EmailService, AnalyticsService, AuditLogger each subscribe independently. Adding a new subscriber = new class + one `.on()` call, zero changes to `OrderService`. Node's `EventEmitter` and browser `addEventListener` are built-in Observer implementations. Domain events in DDD follow the same pattern.",
+      "sourcePlatforms": ["turing-t3-live", "andela-a4-pair"],
+      "tags": ["patterns", "observer"]
+    },
+    {
+      "id": "se-203",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "12.2 Design Patterns",
+      "niche": "factory vs constructor",
+      "topic": "patterns",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "When should you use a Factory function / Factory Method instead of a plain constructor?",
+      "options": [
+        {"id": "a", "text": "Factories are always better — never use constructors"},
+        {"id": "b", "text": "When creation logic is complex, requires async work, can return different subtypes, or when the constructor name would be ambiguous"},
+        {"id": "c", "text": "Factory is only for singletons"},
+        {"id": "d", "text": "When you need to avoid using `new` for style reasons"}
+      ],
+      "correct": ["b"],
+      "explanation": "Factory solves: (1) Complex setup — `Connection.create()` can do async validation before returning. (2) Polymorphism — `Animal.create('dog')` returns a `Dog` instance; caller doesn't know the subtype. (3) Named constructors — `Money.fromCents(100)` vs `Money.fromDollars(1)` — constructor name can't vary. (4) Caching — factory can return a cached instance. Constructors can't be async, can't return different types, can't be named meaningfully.",
+      "sourcePlatforms": ["turing-t3-live"],
+      "tags": ["patterns", "factory"]
+    },
+    {
+      "id": "se-204",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "12.2 Design Patterns",
+      "niche": "decorator pattern",
+      "topic": "patterns",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "How does the Decorator pattern differ from subclassing to add behaviour?",
+      "options": [
+        {"id": "a", "text": "They are identical — decorators are just syntactic sugar for subclasses"},
+        {"id": "b", "text": "Decorators wrap an object at runtime and can be stacked (LoggingDecorator + CachingDecorator); subclassing is fixed at compile time and creates combinatorial class explosion if you want multiple behaviours"},
+        {"id": "c", "text": "Decorator is only for classes with exactly one method"},
+        {"id": "d", "text": "Subclassing is always cleaner — decorators are an anti-pattern"}
+      ],
+      "correct": ["b"],
+      "explanation": "Decorator: `new Logging(new Caching(new RealService()))` — wraps the object, implements the same interface, adds behaviour before/after delegation. Stack decorators in any order. Subclassing: `LoggingCachingService extends RealService` — static. With n decorators: subclassing needs 2ⁿ subclasses to cover all combinations; decorators need n classes. TypeScript/NestJS `@Injectable()` style decorators use this pattern for cross-cutting concerns (logging, auth, caching).",
+      "sourcePlatforms": ["turing-t3-live"],
+      "tags": ["patterns", "decorator"]
+    },
+
+    {
+      "id": "se-301",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "12.3 Git & Code Review",
+      "niche": "rebase vs merge",
+      "topic": "git",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "What is the key difference between `git merge` and `git rebase` when integrating a feature branch?",
+      "options": [
+        {"id": "a", "text": "Merge is faster; rebase is slower"},
+        {"id": "b", "text": "Merge preserves the full branching history with a merge commit; rebase replays your commits on top of the target branch for a linear history — but rewrites commit SHAs"},
+        {"id": "c", "text": "They produce identical results"},
+        {"id": "d", "text": "Rebase should never be used — it always causes conflicts"}
+      ],
+      "correct": ["b"],
+      "explanation": "Merge: creates a merge commit preserving when branches diverged. `git log --graph` shows the branch topology. Rebase: takes your commits, reapplies them on top of the target branch — linear history, cleaner `git log`, easier `git bisect`. Rule: never rebase shared branches (rewrites history = force push required). Rebase feature branches locally before PR; merge (or squash-merge) into main.",
+      "sourcePlatforms": ["turing-t3-live", "andela-a4-pair"],
+      "tags": ["git", "rebase"]
+    },
+    {
+      "id": "se-302",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "12.3 Git & Code Review",
+      "niche": "conventional commits",
+      "topic": "git",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "What is the conventional commits format and why does it matter?",
+      "options": [
+        {"id": "a", "text": "A commit must contain 100+ characters to be 'conventional'"},
+        {"id": "b", "text": "`type(scope): description` — e.g. `feat(auth): add OAuth PKCE flow`. Enables automated changelogs, semantic versioning bumps, and makes `git log` scannable by machine and human."},
+        {"id": "c", "text": "Conventional commits require a ticketing system integration"},
+        {"id": "d", "text": "It's an optional style preference with no tooling benefits"}
+      ],
+      "correct": ["b"],
+      "explanation": "Conventional Commits spec: `feat` = new feature (minor bump), `fix` = bug fix (patch bump), `feat!` or `BREAKING CHANGE:` = major bump. Tools like `semantic-release` or `standard-version` parse commit messages to auto-bump package.json version and generate CHANGELOG.md. Types: `feat`, `fix`, `docs`, `chore`, `refactor`, `test`, `perf`, `ci`, `style`. Makes `git log` immediately informative.",
+      "sourcePlatforms": ["turing-t3-live", "andela-a4-pair"],
+      "tags": ["git", "conventional-commits"]
+    },
+    {
+      "id": "se-303",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "12.3 Git & Code Review",
+      "niche": "code review mindset",
+      "topic": "code-review",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "What is the most common mistake engineers make when giving code review feedback?",
+      "options": [
+        {"id": "a", "text": "Being too positive — reviewers should be critical"},
+        {"id": "b", "text": "Commenting on style preferences as if they're bugs, without distinguishing blocking issues (correctness, security) from nits (naming, formatting), and framing comments as personal criticism rather than questions"},
+        {"id": "c", "text": "Approving too quickly"},
+        {"id": "d", "text": "Not reviewing enough lines"}
+      ],
+      "correct": ["b"],
+      "explanation": "Good code review: (1) Distinguish: blocking (must change), suggestion (worth considering), nit (optional). (2) Ask questions: 'What happens if X is null here?' not 'This is wrong.' (3) Comment on code, not the person. (4) Approve when you're confident, not just to be nice. (5) Be timely — slow reviews block teammates. The goal is knowledge sharing and quality, not gatekeeping.",
+      "sourcePlatforms": ["turing-t3-live", "andela-a4-pair"],
+      "tags": ["code-review"]
+    },
+    {
+      "id": "se-304",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "12.3 Git & Code Review",
+      "niche": "semantic versioning",
+      "topic": "semver",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "Your library is at v2.3.1. You add a new optional parameter with a default value that preserves existing behaviour. What should the new version be?",
+      "options": [
+        {"id": "a", "text": "v3.0.0 — any parameter change is a major version"},
+        {"id": "b", "text": "v2.4.0 — new backwards-compatible functionality = minor version bump"},
+        {"id": "c", "text": "v2.3.2 — it's just a small change so it's a patch"},
+        {"id": "d", "text": "v2.3.1 — no change needed, the version stays the same"}
+      ],
+      "correct": ["b"],
+      "explanation": "Semver: `MAJOR.MINOR.PATCH`. MAJOR: breaking change. MINOR: new backwards-compatible feature. PATCH: backwards-compatible bug fix. Adding an optional parameter with a default = new feature (existing callers unaffected = backwards compatible) = MINOR bump. Rule of thumb: if existing code breaks without changes after upgrade → MAJOR. New capability added → MINOR. Bug fixed → PATCH.",
+      "sourcePlatforms": ["turing-t3-live", "andela-a4-pair"],
+      "tags": ["semver"]
+    },
+    {
+      "id": "se-305",
+      "type": "mcq-multi",
+      "difficulty": "medium",
+      "subtopic": "12.3 Git & Code Review",
+      "niche": "PR best practices",
+      "topic": "code-review",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "Which are hallmarks of a well-structured pull request? (select all)",
+      "options": [
+        {"id": "a", "text": "Small and focused — one logical change per PR"},
+        {"id": "b", "text": "Self-reviewing: the author reads the diff before requesting review"},
+        {"id": "c", "text": "Description explains WHY the change is needed, not just WHAT changed"},
+        {"id": "d", "text": "Including as many unrelated fixes as possible to reduce total PR count"},
+        {"id": "e", "text": "Tests included or updated to cover the change"}
+      ],
+      "correct": ["a", "b", "c", "e"],
+      "explanation": "D is an anti-pattern — mixing unrelated changes makes review harder and rollback impossible. A: smaller PRs get faster, better reviews. B: catching your own issues before review saves reviewer time. C: context makes future maintainers understand the decision. E: tests prove correctness and prevent regression. Also: link to the ticket, add screenshots for UI changes, mark draft if not ready.",
+      "sourcePlatforms": ["turing-t3-live", "andela-a4-pair"],
+      "tags": ["code-review", "pr"]
+    },
+    {
+      "id": "se-401",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "12.4 Tech Debt & ADRs",
+      "niche": "tech debt classification",
+      "topic": "tech-debt",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "What is the difference between deliberate and accidental tech debt?",
+      "options": [
+        {"id": "a", "text": "All tech debt is accidental — engineers never choose to write bad code"},
+        {"id": "b", "text": "Deliberate: conscious shortcut taken for speed ('we'll clean this up after launch'). Accidental: didn't know better at the time, or requirements changed. Both accumulate interest — deliberate debt at least has a repayment plan."},
+        {"id": "c", "text": "Tech debt only applies to database schemas"},
+        {"id": "d", "text": "Accidental debt is worse and should be fixed first always"}
+      ],
+      "correct": ["b"],
+      "explanation": "Fowler's tech debt quadrant: deliberate-reckless ('no time for design'), deliberate-prudent ('ship now, refactor later'), inadvertent-reckless ('what's layering?'), inadvertent-prudent ('now we know better'). Prudent deliberate debt is acceptable — acknowledge it, log it (TODO with ticket #), pay it back. Reckless debt compounds silently. Key: make debt visible and treat it like financial debt — track it, schedule repayment.",
+      "sourcePlatforms": ["turing-t3-live"],
+      "tags": ["tech-debt"]
+    },
+    {
+      "id": "se-402",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "12.4 Tech Debt & ADRs",
+      "niche": "ADR purpose",
+      "topic": "adr",
+      "timeBudgetSec": 75,
+      "tracks": ["turing"],
+      "prompt": "What is an Architecture Decision Record (ADR) and why should teams maintain them?",
+      "options": [
+        {"id": "a", "text": "An ADR is a database schema migration file"},
+        {"id": "b", "text": "A short document recording a significant architectural decision: context, options considered, decision made, and consequences — capturing the 'why' for future team members"},
+        {"id": "c", "text": "ADRs replace unit tests for architectural verification"},
+        {"id": "d", "text": "ADRs are only needed for large enterprise projects"}
+      ],
+      "correct": ["b"],
+      "explanation": "ADR template: Title, Status (proposed/accepted/superseded), Context (what forced a decision), Decision (what was chosen), Consequences (trade-offs accepted). Why: 6 months later no one remembers why Redis was chosen over Memcached. ADRs make implicit decisions explicit and searchable. Format: Markdown files in `/docs/adr/`. Tools: `adr-tools`, Backstage, Confluence. Helps onboarding — new engineers understand 'why' not just 'what'.",
+      "sourcePlatforms": ["turing-t3-live"],
+      "tags": ["adr", "architecture"]
+    },
+    {
+      "id": "se-403",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "subtopic": "12.1 SOLID",
+      "niche": "live refactor exercise",
+      "topic": "solid",
+      "timeBudgetSec": 2700,
+      "tracks": ["turing", "andela"],
+      "prompt": "The interviewer shares this 80-line `OrderController` that does: parse input, validate, calculate tax, send email, write to DB, and log — all in one function. Walk through how you'd refactor it, narrating your reasoning aloud.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Identify SRP violation first — multiple responsibilities in one function/class", "weight": 3},
+        {"criterion": "Propose extracting: validation layer, tax calculation service, email service, repository, logger — each injected as dependency", "weight": 3},
+        {"criterion": "Apply DIP: inject dependencies via constructor so each can be replaced/mocked", "weight": 3},
+        {"criterion": "Mention testability: after refactor, each piece is independently unit-testable", "weight": 2},
+        {"criterion": "Incremental approach: refactor in small steps, run tests after each step", "weight": 2},
+        {"criterion": "Communication: thinks aloud, asks clarifying questions (Are there tests? What's the urgency?)", "weight": 2}
+      ],
+      "modelAnswer": "I'd start by reading the function and naming each distinct concern: (1) input parsing/validation, (2) tax calculation, (3) order persistence, (4) email notification, (5) logging. That's 5 responsibilities in one function — SRP violation. I'd refactor incrementally: first extract the tax calculation into a pure `TaxCalculator` function (stateless, easy to test). Then extract DB writes into an `OrderRepository` class. Inject both into the controller via constructor (DIP). Extract email into `NotificationService` injected the same way. Now the controller's job is just orchestration: validate → calculate → save → notify. Each service is independently mockable. I'd add tests after each extraction to prove behaviour didn't change. If there are no existing tests, I'd write characterisation tests first to capture current behaviour before touching anything.",
+      "sourcePlatforms": ["turing-t3-live", "andela-a4-pair"],
+      "tags": ["solid", "refactoring", "think-aloud"]
+    }
+  ]
+}

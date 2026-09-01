@@ -1,0 +1,618 @@
+{
+  "module": "docker-k8s",
+  "title": "11. Docker / Kubernetes",
+  "description": "Turing FDE core: Docker fundamentals, multi-stage builds, layer caching, security, K8s architecture (pods/services/deployments/HPA/probes/ConfigMaps/Secrets/Ingress), resource management, and production patterns.",
+  "tracks": ["turing"],
+  "testStages": ["turing-t4-fde"],
+  "platformCoverage": ["turing-t4-fde"],
+  "estimatedHours": 5,
+  "studyNotes": {
+    "11.1 Docker Fundamentals": ["Image = read-only layered filesystem. Container = running image instance.", "Each RUN/COPY/ADD in Dockerfile creates a new layer. Layers are cached by Docker.", "COPY --chown, USER non-root, no secrets in layers — key security rules.", "Multi-stage: build stage compiles; final stage copies only the artifact. Reduces image size 10x+.", ".dockerignore: exclude node_modules, .git, .env from build context."],
+    "11.2 K8s Core Concepts": ["Pod: smallest deployable unit — one or more containers sharing network + storage.", "Deployment: manages ReplicaSet (desired state). Rolling update by default.", "Service: stable DNS + VIP in front of pod set. ClusterIP (internal), NodePort, LoadBalancer.", "ConfigMap: non-secret config. Secret: base64-encoded (not encrypted by default — use Sealed Secrets or KMS).", "Namespace: virtual cluster isolation. Resource quotas per namespace."],
+    "11.3 Health Probes & Scheduling": ["livenessProbe: is the container alive? Fail → kubelet restarts container.", "readinessProbe: is the container ready to serve traffic? Fail → removed from Service endpoints.", "startupProbe: for slow-starting apps — disables liveness during startup.", "Resources: requests (scheduler uses) vs limits (enforced). OOMKilled = limit exceeded.", "PodDisruptionBudget: min available pods during voluntary disruption (node drain)."],
+    "11.4 HPA & Scaling": ["HPA: scales Deployment replicas based on CPU/memory/custom metrics.", "HPA needs resource requests set — otherwise can't compute utilisation.", "VPA: adjusts resource requests/limits. Not for production without careful tuning.", "Cluster Autoscaler: adds/removes nodes based on pending pods."],
+    "11.5 Ingress & Networking": ["Ingress: L7 routing rules (host/path) → Services. Requires Ingress Controller (nginx, Traefik).", "ClusterIP: internal only. NodePort: exposes on node IP:port. LoadBalancer: cloud LB per service.", "NetworkPolicy: firewall rules between pods. Default: all pods can talk to all pods.", "Pod-to-pod: flat network, every pod gets an IP (CNI plugin: Calico, Cilium, Flannel)."]
+  },
+  "questions": [
+    {
+      "id": "dk-101",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "11.1 Docker Fundamentals",
+      "niche": "layer caching",
+      "topic": "docker",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "Why should you COPY package.json and run npm install BEFORE copying the rest of your source code in a Dockerfile?",
+      "options": [
+        {"id": "a", "text": "npm install must run before COPY in all cases"},
+        {"id": "b", "text": "Docker layer cache: if package.json hasn't changed, the npm install layer is reused — only source code changes rebuild from that layer, not reinstall deps"},
+        {"id": "c", "text": "It reduces the final image size"},
+        {"id": "d", "text": "Docker requires dependencies before source code"}
+      ],
+      "correct": ["b"],
+      "explanation": "Docker invalidates cache from the first changed layer downward. COPY package.json → npm install creates a cached layer. If only src/ changes, that layer is reused and the build only re-runs from COPY src/. Without this pattern, every code change triggers a full npm install.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["docker", "layer-caching"]
+    },
+    {
+      "id": "dk-102",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "11.1 Docker Fundamentals",
+      "niche": "multi-stage build",
+      "topic": "docker",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "What is the main benefit of a multi-stage Docker build for a Node.js app?",
+      "options": [
+        {"id": "a", "text": "Allows parallel execution of build steps"},
+        {"id": "b", "text": "The final image contains only production artifacts — build tools, devDependencies, and intermediate files are excluded, drastically reducing image size"},
+        {"id": "c", "text": "Multi-stage builds are required for TypeScript projects"},
+        {"id": "d", "text": "Speeds up npm install by caching across stages"}
+      ],
+      "correct": ["b"],
+      "explanation": "Stage 1 (build): node:20 image, install all deps, run tsc → compile JS. Stage 2 (final): node:20-alpine, COPY --from=build only dist/ and package.json, npm ci --only=production. Final image: ~150MB instead of ~900MB. No TypeScript compiler, no devDeps, no source files.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["docker", "multi-stage"]
+    },
+    {
+      "id": "dk-103",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "11.1 Docker Fundamentals",
+      "niche": "non-root user",
+      "topic": "docker",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "Why should containers run as a non-root user?",
+      "options": [
+        {"id": "a", "text": "Root is not available inside containers"},
+        {"id": "b", "text": "If the container is compromised, a non-root process has fewer host privileges — limits blast radius of container escape"},
+        {"id": "c", "text": "Non-root containers start faster"},
+        {"id": "d", "text": "Kubernetes requires non-root users"}
+      ],
+      "correct": ["b"],
+      "explanation": "Containers sharing the host kernel: a root process inside a container that escapes can act as root on the host. Non-root: USER node (uid 1000) in Dockerfile. Combine with read-only filesystem, no privilege escalation (allowPrivilegeEscalation: false in K8s SecurityContext).",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["docker", "security"]
+    },
+    {
+      "id": "dk-104",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "11.1 Docker Fundamentals",
+      "niche": "secrets in images",
+      "topic": "docker",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "A dev accidentally ran `COPY .env /app/.env` then `RUN rm /app/.env` in a Dockerfile. Is the secret safe?",
+      "options": [
+        {"id": "a", "text": "Yes — the RUN rm deletes it"},
+        {"id": "b", "text": "No — the .env file exists in the intermediate layer and can be extracted with docker history or docker save"},
+        {"id": "c", "text": "Yes — Docker compresses and encrypts intermediate layers"},
+        {"id": "d", "text": "Depends on whether the image is pushed to a private registry"}
+      ],
+      "correct": ["b"],
+      "explanation": "Each Docker layer is immutable and stacked. The COPY layer containing .env persists even after RUN rm — it's just hidden by the deletion layer on top. docker save | tar xv extracts all layers including the one with the secret. Fix: use Docker BuildKit --secret mount, or inject secrets at runtime via env vars/Secrets Manager.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["docker", "secrets", "security"]
+    },
+    {
+      "id": "dk-105",
+      "type": "mcq-multi",
+      "difficulty": "medium",
+      "subtopic": "11.1 Docker Fundamentals",
+      "niche": "Dockerfile best practices",
+      "topic": "docker",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "Which are Dockerfile best practices? (select all)",
+      "options": [
+        {"id": "a", "text": "Use a .dockerignore to exclude node_modules and .git"},
+        {"id": "b", "text": "Pin base image versions (node:20.11-alpine3.19) not floating tags (node:latest)"},
+        {"id": "c", "text": "Combine multiple RUN commands with && to reduce layers"},
+        {"id": "d", "text": "Use CMD instead of ENTRYPOINT for production services"},
+        {"id": "e", "text": "Run npm ci instead of npm install for reproducible builds"}
+      ],
+      "correct": ["a", "b", "c", "e"],
+      "explanation": "D is debatable — ENTRYPOINT defines the executable (harder to override accidentally), CMD provides defaults. For production services ENTRYPOINT [\"node\", \"dist/index.js\"] is preferred. A, B, C, E are all clear best practices: .dockerignore reduces build context, pinned tags are reproducible, chained RUN reduces layers, npm ci is lockfile-strict.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["docker", "best-practices"]
+    },
+
+    {
+      "id": "dk-201",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "11.2 K8s Core Concepts",
+      "niche": "Pod vs Deployment",
+      "topic": "kubernetes",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "Why do you never deploy a bare Pod in production — always a Deployment?",
+      "options": [
+        {"id": "a", "text": "Pods are deprecated in Kubernetes 1.28+"},
+        {"id": "b", "text": "A bare Pod is not restarted if the node fails. A Deployment manages a ReplicaSet — if a pod dies or a node goes down, it reschedules automatically."},
+        {"id": "c", "text": "Pods can't mount ConfigMaps"},
+        {"id": "d", "text": "Services can only route to Deployments, not Pods"}
+      ],
+      "correct": ["b"],
+      "explanation": "Bare Pods are not self-healing — if the node crashes, the pod is gone. Deployment → ReplicaSet → Pods: maintains desired replica count, handles rolling updates, auto-restarts failed pods. DaemonSet for one-per-node. StatefulSet for ordered, persistent-identity pods (databases).",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["kubernetes", "deployment"]
+    },
+    {
+      "id": "dk-202",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "11.2 K8s Core Concepts",
+      "niche": "Service types",
+      "topic": "kubernetes",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "What's the difference between ClusterIP, NodePort, and LoadBalancer Service types?",
+      "options": [
+        {"id": "a", "text": "ClusterIP=external, NodePort=internal, LoadBalancer=both"},
+        {"id": "b", "text": "ClusterIP: internal cluster DNS only. NodePort: exposed on every node's IP at a static port. LoadBalancer: provisions cloud LB with external IP."},
+        {"id": "c", "text": "They are identical — just different billing tiers"},
+        {"id": "d", "text": "LoadBalancer is only available on-premise"}
+      ],
+      "correct": ["b"],
+      "explanation": "ClusterIP (default): stable internal virtual IP, DNS: svc-name.namespace.svc.cluster.local. NodePort: makes service reachable at <NodeIP>:<NodePort> from outside — useful for dev, not prod. LoadBalancer: cloud-native LB (AWS ELB, GCP LB) with public IP per service. In prod: use Ingress + ClusterIP services to avoid one LB per service.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["kubernetes", "services"]
+    },
+    {
+      "id": "dk-203",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "11.2 K8s Core Concepts",
+      "niche": "ConfigMap vs Secret",
+      "topic": "kubernetes",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "What's the key difference between a ConfigMap and a Secret in Kubernetes?",
+      "options": [
+        {"id": "a", "text": "ConfigMaps are encrypted at rest; Secrets are not"},
+        {"id": "b", "text": "ConfigMaps for non-sensitive config (env, feature flags). Secrets for sensitive data (passwords, tokens) — base64-encoded by default, encrypt at rest with KMS envelope encryption."},
+        {"id": "c", "text": "Secrets can only be mounted as volumes; ConfigMaps can only be env vars"},
+        {"id": "d", "text": "They are identical; the naming is just convention"}
+      ],
+      "correct": ["b"],
+      "explanation": "ConfigMap: plain text config — no encryption. Secret: base64-encoded (NOT encrypted by default in etcd). Enable EncryptionConfiguration with KMS provider for real encryption at rest. Both can be mounted as volumes or injected as env vars. Use External Secrets Operator to sync from AWS Secrets Manager/Vault.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["kubernetes", "configmap", "secrets"]
+    },
+    {
+      "id": "dk-204",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "11.2 K8s Core Concepts",
+      "niche": "StatefulSet use case",
+      "topic": "kubernetes",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "When do you use a StatefulSet instead of a Deployment?",
+      "options": [
+        {"id": "a", "text": "When you need more than 3 replicas"},
+        {"id": "b", "text": "When pods need stable network identities (pod-0, pod-1), ordered startup/shutdown, and persistent storage that follows the pod — e.g. Kafka brokers, Redis cluster, databases"},
+        {"id": "c", "text": "StatefulSets are always better than Deployments"},
+        {"id": "d", "text": "When you need rolling updates"}
+      ],
+      "correct": ["b"],
+      "explanation": "StatefulSet guarantees: stable hostnames (kafka-0, kafka-1), ordered rolling updates (pod-N waits for pod-N-1 to be ready), PersistentVolumeClaims that survive pod rescheduling. Use for: Kafka, ZooKeeper, Cassandra, Redis Cluster, Postgres (with care). Deployment pods are ephemeral and interchangeable.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["kubernetes", "statefulset"]
+    },
+    {
+      "id": "dk-205",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "11.2 K8s Core Concepts",
+      "niche": "namespace isolation",
+      "topic": "kubernetes",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "What does a Kubernetes Namespace provide — and what does it NOT provide?",
+      "options": [
+        {"id": "a", "text": "Namespaces provide strong security isolation — pods in different namespaces can't communicate"},
+        {"id": "b", "text": "Namespaces provide logical grouping + resource quotas. They do NOT isolate network — pods across namespaces can communicate unless NetworkPolicies restrict it."},
+        {"id": "c", "text": "Namespaces are equivalent to separate clusters"},
+        {"id": "d", "text": "Namespaces encrypt traffic between their pods"}
+      ],
+      "correct": ["b"],
+      "explanation": "Namespace: virtual partition for resource names, RBAC scoping, and ResourceQuota. Default: all pods in all namespaces can talk to each other — flat network. NetworkPolicy is required to restrict cross-namespace traffic. For strong isolation (different customers), use separate clusters.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["kubernetes", "namespace", "networking"]
+    },
+
+    {
+      "id": "dk-301",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "11.3 Health Probes",
+      "niche": "liveness vs readiness",
+      "topic": "kubernetes",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "What's the difference between a liveness probe and a readiness probe?",
+      "options": [
+        {"id": "a", "text": "Liveness: checks if pod is in the cluster. Readiness: checks if pod is on the right node."},
+        {"id": "b", "text": "Liveness: is the container alive? Fail → restart. Readiness: is the container ready to serve traffic? Fail → remove from Service endpoints (no restart)."},
+        {"id": "c", "text": "They are identical — just different names for the same check"},
+        {"id": "d", "text": "Readiness probes only run once at startup"}
+      ],
+      "correct": ["b"],
+      "explanation": "Liveness: detects deadlocks/crashes — failure triggers restart. Use for: infinite loop detection, crash detection. Don't make it too aggressive (avoid restart loops). Readiness: detects when pod is ready to accept traffic — failure removes it from Service load balancing without restart. Use for: cache warmup, DB connection pool ready, graceful drain.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["kubernetes", "probes"]
+    },
+    {
+      "id": "dk-302",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "11.3 Health Probes",
+      "niche": "startup probe",
+      "topic": "kubernetes",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "Your Java app takes 90 seconds to start. Liveness probes kill it after 30s. What's the fix?",
+      "options": [
+        {"id": "a", "text": "Increase liveness probe failureThreshold to a very high number"},
+        {"id": "b", "text": "Add a startupProbe with failureThreshold × periodSeconds ≥ 90s — liveness is disabled until startupProbe succeeds"},
+        {"id": "c", "text": "Remove the liveness probe"},
+        {"id": "d", "text": "Set initialDelaySeconds=90 on the liveness probe"}
+      ],
+      "correct": ["b"],
+      "explanation": "startupProbe: runs until success, disabling liveness/readiness probes during startup. failureThreshold=30, periodSeconds=5 = up to 150s for startup. Once startup probe passes, liveness/readiness take over. Better than initialDelaySeconds (which is fixed; startup probe adapts to actual startup time).",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["kubernetes", "probes", "startup"]
+    },
+    {
+      "id": "dk-303",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "11.3 Health Probes",
+      "niche": "resource requests vs limits",
+      "topic": "kubernetes",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "What's the difference between resource requests and limits in Kubernetes?",
+      "options": [
+        {"id": "a", "text": "Requests = max; limits = min"},
+        {"id": "b", "text": "Requests: used by the scheduler to place pods on nodes. Limits: enforced at runtime — OOMKilled if memory exceeded, CPU throttled if CPU exceeded."},
+        {"id": "c", "text": "Requests and limits must always be equal"},
+        {"id": "d", "text": "Limits are only checked once per hour"}
+      ],
+      "correct": ["b"],
+      "explanation": "Requests: guaranteed resources, used for scheduling. A node with 4GB RAM can schedule pods totalling 4GB in requests. Limits: hard ceiling. CPU limit → throttled (CFS quota). Memory limit → OOMKilled and restarted. Set requests = expected usage; limits = 2-3x requests. HPA requires requests to compute utilisation %.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["kubernetes", "resources"]
+    },
+    {
+      "id": "dk-304",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "11.3 Health Probes",
+      "niche": "OOMKilled",
+      "topic": "kubernetes",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "A pod keeps getting OOMKilled. What are the three things you should investigate?",
+      "options": [
+        {"id": "a", "text": "CPU throttling, network latency, disk I/O"},
+        {"id": "b", "text": "Memory limit too low, memory leak in app, or excessive per-request allocations — verify with kubectl top pod, heap profiler, and memory limit vs actual usage"},
+        {"id": "c", "text": "Liveness probe misconfiguration, node pressure, ingress timeouts"},
+        {"id": "d", "text": "Image size, layer count, registry latency"}
+      ],
+      "correct": ["b"],
+      "explanation": "OOMKilled: container exceeded memory limit. Investigate: (1) memory limit too low for workload — raise limit; (2) memory leak — heap profiler (Node: --inspect + clinic.js, Java: heap dump), look for growing old-gen; (3) spike in traffic causing high per-request allocation — add memory or horizontal scale. kubectl top pod + kubectl describe pod (Last State: OOMKilled).",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["kubernetes", "oomkilled", "debugging"]
+    },
+
+    {
+      "id": "dk-401",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "11.4 HPA & Scaling",
+      "niche": "HPA prerequisites",
+      "topic": "kubernetes",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "HPA isn't scaling your deployment despite high CPU. What's the most likely missing configuration?",
+      "options": [
+        {"id": "a", "text": "The Deployment has no labels"},
+        {"id": "b", "text": "Resource requests are not set on the containers — HPA can't compute CPU utilisation % without a request baseline"},
+        {"id": "c", "text": "The HPA needs a ConfigMap to function"},
+        {"id": "d", "text": "HPA only works with StatefulSets"}
+      ],
+      "correct": ["b"],
+      "explanation": "HPA computes: (current CPU usage / requested CPU) × 100. Without resource requests, the denominator is undefined — HPA shows <unknown> for CPU and won't scale. Always set requests on every container. Also requires metrics-server installed in the cluster.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["kubernetes", "hpa", "autoscaling"]
+    },
+    {
+      "id": "dk-402",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "11.4 HPA & Scaling",
+      "niche": "HPA vs VPA",
+      "topic": "kubernetes",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "When would you use VPA (Vertical Pod Autoscaler) instead of HPA?",
+      "options": [
+        {"id": "a", "text": "VPA is always safer for production workloads"},
+        {"id": "b", "text": "VPA for single-instance workloads that can't scale horizontally (e.g. a stateful batch job) — it adjusts resource requests. HPA for stateless apps that scale by adding replicas."},
+        {"id": "c", "text": "HPA and VPA cannot be used in the same cluster"},
+        {"id": "d", "text": "VPA works in real-time like HPA"}
+      ],
+      "correct": ["b"],
+      "explanation": "HPA: adds/removes pod replicas. VPA: resizes resource requests/limits on existing pods (requires pod restart in most modes). Use VPA for: workloads that don't scale horizontally, right-sizing initial requests, recommendation mode (VPA recommends, you apply manually). Don't run HPA and VPA on the same metric for the same deployment — they'll fight.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["kubernetes", "vpa", "autoscaling"]
+    },
+    {
+      "id": "dk-403",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "11.4 HPA & Scaling",
+      "niche": "PodDisruptionBudget",
+      "topic": "kubernetes",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "Why do you need a PodDisruptionBudget (PDB) for a production Deployment?",
+      "options": [
+        {"id": "a", "text": "PDB sets the maximum number of pods that can run simultaneously"},
+        {"id": "b", "text": "PDB ensures a minimum number of pods remain available during voluntary disruptions (node drain, cluster upgrades) — prevents all pods being evicted at once"},
+        {"id": "c", "text": "PDB is required for HPA to work"},
+        {"id": "d", "text": "PDB limits pod restart frequency"}
+      ],
+      "correct": ["b"],
+      "explanation": "Without PDB: kubectl drain can evict all pods of a deployment simultaneously → downtime. PDB: minAvailable: 1 (or maxUnavailable: 1) tells the eviction API to refuse evictions that would violate the budget. The drain waits for pods to reschedule before evicting the next one. Critical for zero-downtime cluster maintenance.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["kubernetes", "pdb"]
+    },
+
+    {
+      "id": "dk-501",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "11.5 Ingress & Networking",
+      "niche": "Ingress vs LoadBalancer Service",
+      "topic": "kubernetes",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "Why use an Ingress instead of LoadBalancer-type Services for each microservice?",
+      "options": [
+        {"id": "a", "text": "Ingress supports UDP; LoadBalancer Services don't"},
+        {"id": "b", "text": "Each LoadBalancer Service creates a cloud LB (cost + IP per service). Ingress: one LB, multiple services routed by host/path rules — much cheaper and simpler to manage TLS."},
+        {"id": "c", "text": "LoadBalancer Services can't handle HTTPS"},
+        {"id": "d", "text": "Ingress is faster because it bypasses the Service layer"}
+      ],
+      "correct": ["b"],
+      "explanation": "LoadBalancer Service = one cloud LB per service (ELB = ~$18/mo each). 20 services = 20 LBs. Ingress: nginx/Traefik as a single entry point, routes traffic by host (api.example.com) or path (/api/, /auth/) to different ClusterIP services. TLS termination and cert-manager at one place. Standard production pattern.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["kubernetes", "ingress"]
+    },
+    {
+      "id": "dk-502",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "11.5 Ingress & Networking",
+      "niche": "NetworkPolicy",
+      "topic": "kubernetes",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "By default in Kubernetes, which pods can communicate with each other?",
+      "options": [
+        {"id": "a", "text": "Only pods in the same namespace"},
+        {"id": "b", "text": "Only pods in the same Deployment"},
+        {"id": "c", "text": "All pods in the cluster can communicate with all other pods — flat network by default"},
+        {"id": "d", "text": "Pods can only communicate through Services"}
+      ],
+      "correct": ["c"],
+      "explanation": "K8s default: flat network — every pod gets a cluster-routable IP and can reach any other pod directly. No isolation without NetworkPolicy. For multi-tenant or defense-in-depth: add NetworkPolicy rules restricting ingress/egress per namespace or pod selector. Requires a CNI that supports NetworkPolicy (Calico, Cilium — not Flannel).",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["kubernetes", "network-policy"]
+    },
+    {
+      "id": "dk-503",
+      "type": "open-rubric",
+      "difficulty": "hard",
+      "subtopic": "11.5 Ingress & Networking",
+      "niche": "K8s production deployment design",
+      "topic": "kubernetes",
+      "timeBudgetSec": 2700,
+      "tracks": ["turing"],
+      "prompt": "An enterprise customer wants to run your SaaS on their own EKS cluster. Design the Kubernetes manifests and architecture: 3 microservices, TLS, autoscaling, zero-downtime deployments, and secret management.",
+      "options": [],
+      "correct": [],
+      "rubric": [
+        {"criterion": "Deployment per service with readiness + liveness probes", "weight": 3},
+        {"criterion": "ClusterIP Service per deployment; single nginx Ingress with host/path routing + TLS via cert-manager (Let's Encrypt)", "weight": 3},
+        {"criterion": "HPA per deployment with CPU target (requests must be set)", "weight": 2},
+        {"criterion": "Secrets from AWS Secrets Manager via External Secrets Operator — not baked into image", "weight": 3},
+        {"criterion": "PodDisruptionBudget per deployment for zero-downtime cluster ops", "weight": 2},
+        {"criterion": "RBAC: service accounts per microservice with least-privilege IAM roles (IRSA for EKS)", "weight": 2},
+        {"criterion": "Namespace isolation + ResourceQuota per environment", "weight": 2}
+      ],
+      "modelAnswer": "Namespaces: prod, staging. Each microservice: Deployment (3 replicas min, rollingUpdate maxUnavailable=0, maxSurge=1), ClusterIP Service, HPA (min=2, max=10, targetCPUUtilizationPercentage=70), PDB (minAvailable=1). Ingress: nginx-ingress controller, cert-manager + ClusterIssuer (Let's Encrypt), annotations for TLS. Secrets: External Secrets Operator syncs from AWS Secrets Manager → K8s Secret; pods mount as env. IRSA: each service account annotated with IAM role ARN (eks.amazonaws.com/role-arn) — least privilege (e.g. only S3 GetObject on its bucket). ResourceQuota per namespace: cpu=8, memory=16Gi, pods=50. Probes: readinessProbe HTTP /health 200, livenessProbe same but longer thresholds. Image: multi-stage, non-root USER, pinned digest tag for reproducibility.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["kubernetes", "design", "eks"]
+    },
+
+    {
+      "id": "dk-601",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "11.1 Docker Fundamentals",
+      "niche": "ENTRYPOINT vs CMD",
+      "topic": "docker",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "What's the difference between ENTRYPOINT and CMD in a Dockerfile?",
+      "options": [
+        {"id": "a", "text": "ENTRYPOINT runs during build; CMD runs at container start"},
+        {"id": "b", "text": "ENTRYPOINT defines the fixed executable; CMD provides default arguments that can be overridden at docker run"},
+        {"id": "c", "text": "CMD is for Linux; ENTRYPOINT is for Windows containers"},
+        {"id": "d", "text": "They are identical — just different syntax"}
+      ],
+      "correct": ["b"],
+      "explanation": "ENTRYPOINT [\"node\"]: always runs node. CMD [\"dist/index.js\"]: default arg, overridable. docker run myimage dist/other.js → runs node dist/other.js. For production services: ENTRYPOINT [\"node\", \"dist/index.js\"] with no CMD. For tools/scripts: ENTRYPOINT + CMD for overridable defaults.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["docker", "entrypoint"]
+    },
+    {
+      "id": "dk-602",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "11.2 K8s Core Concepts",
+      "niche": "rolling update strategy",
+      "topic": "kubernetes",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "What do maxUnavailable: 0 and maxSurge: 1 mean in a Deployment rolling update?",
+      "options": [
+        {"id": "a", "text": "At most 1 pod total runs during update; all old pods stop first"},
+        {"id": "b", "text": "No old pods are taken down until a new pod is healthy; only 1 extra pod runs above desired count — zero-downtime update with +1 capacity overhead"},
+        {"id": "c", "text": "maxSurge=1 means the update takes 1 minute maximum"},
+        {"id": "d", "text": "maxUnavailable=0 pauses the update until manual approval"}
+      ],
+      "correct": ["b"],
+      "explanation": "maxUnavailable=0: never reduce below desired replica count → no downtime. maxSurge=1: can have desired+1 pods during rollout. Each cycle: start 1 new pod → wait for readiness → terminate 1 old pod. Tradeoff: needs +1 pod's worth of cluster capacity during update.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["kubernetes", "rolling-update"]
+    },
+    {
+      "id": "dk-603",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "11.2 K8s Core Concepts",
+      "niche": "DaemonSet use case",
+      "topic": "kubernetes",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "Which workload type should you use for a log collector (Fluentd) that must run on every node in the cluster?",
+      "options": [
+        {"id": "a", "text": "Deployment with replicas = node count"},
+        {"id": "b", "text": "DaemonSet — automatically runs one pod per node, follows node additions/removals"},
+        {"id": "c", "text": "StatefulSet with one replica per node"},
+        {"id": "d", "text": "CronJob that polls all nodes"}
+      ],
+      "correct": ["b"],
+      "explanation": "DaemonSet: exactly one pod per (matching) node. Automatically adds pods when nodes join the cluster and removes them when nodes leave. Perfect for: log shippers (Fluentd, Filebeat), monitoring agents (Prometheus node-exporter, Datadog agent), CNI plugins, security scanners.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["kubernetes", "daemonset"]
+    },
+    {
+      "id": "dk-604",
+      "type": "mcq-multi",
+      "difficulty": "medium",
+      "subtopic": "11.3 Health Probes",
+      "niche": "graceful shutdown",
+      "topic": "kubernetes",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "For zero-downtime pod termination in Kubernetes, which must be true? (select all)",
+      "options": [
+        {"id": "a", "text": "The app handles SIGTERM and stops accepting new connections"},
+        {"id": "b", "text": "terminationGracePeriodSeconds is long enough for in-flight requests to complete"},
+        {"id": "c", "text": "preStop hook adds a short sleep (e.g. 5s) to allow load balancer to drain the pod from endpoints"},
+        {"id": "d", "text": "The readiness probe must be disabled at shutdown"},
+        {"id": "e", "text": "The pod must have a PodDisruptionBudget"}
+      ],
+      "correct": ["a", "b", "c"],
+      "explanation": "Graceful shutdown sequence: K8s removes pod from Service endpoints AND sends SIGTERM simultaneously. There's a propagation delay — some requests still arrive after SIGTERM. preStop sleep(5) gives time for endpoint removal to propagate. App must handle SIGTERM (don't let Node.js default crash it). terminationGracePeriodSeconds must cover preStop duration + max request duration. PDB is for voluntary disruption scheduling, not per-pod shutdown.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["kubernetes", "graceful-shutdown"]
+    },
+    {
+      "id": "dk-605",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "11.2 K8s Core Concepts",
+      "niche": "RBAC",
+      "topic": "kubernetes",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "What does a Kubernetes RoleBinding do?",
+      "options": [
+        {"id": "a", "text": "Binds a node to a cluster for scheduling purposes"},
+        {"id": "b", "text": "Grants a Role's permissions to a subject (user, group, or ServiceAccount) within a namespace"},
+        {"id": "c", "text": "Restricts pod-to-pod communication"},
+        {"id": "d", "text": "Associates a PersistentVolume with a PersistentVolumeClaim"}
+      ],
+      "correct": ["b"],
+      "explanation": "RBAC: Role (rules: what can be done) + RoleBinding (who gets those rules in a namespace). ClusterRole + ClusterRoleBinding for cluster-wide. Use ServiceAccounts for pod identity. Least privilege: each microservice's SA gets only what it needs (e.g. read Secrets in its namespace only).",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["kubernetes", "rbac"]
+    },
+    {
+      "id": "dk-606",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "11.5 Ingress & Networking",
+      "niche": "IRSA — IAM Roles for Service Accounts",
+      "topic": "kubernetes",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "In EKS, how does a pod assume an AWS IAM role without storing AWS credentials in the cluster?",
+      "options": [
+        {"id": "a", "text": "Store AWS_ACCESS_KEY_ID in a Kubernetes Secret mounted to the pod"},
+        {"id": "b", "text": "IRSA: annotate the ServiceAccount with the IAM role ARN; EKS projects a signed OIDC token; AWS STS exchanges it for short-lived credentials via AssumeRoleWithWebIdentity"},
+        {"id": "c", "text": "Assign the IAM role to the EC2 node — all pods on that node inherit it"},
+        {"id": "d", "text": "Use kube2iam to proxy IAM requests"}
+      ],
+      "correct": ["b"],
+      "explanation": "IRSA (IAM Roles for Service Accounts): EKS acts as an OIDC provider. Annotate ServiceAccount: eks.amazonaws.com/role-arn: arn:aws:iam::123:role/MyRole. IAM role trust policy allows the OIDC provider + service account. Pod receives a projected token → AWS SDK exchanges for STS creds automatically. Per-pod least privilege without node-level access. Node instance profile gives too broad access to all pods on the node.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["kubernetes", "eks", "irsa"]
+    },
+    {
+      "id": "dk-607",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "11.1 Docker Fundamentals",
+      "niche": "docker compose vs K8s",
+      "topic": "docker",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "When is Docker Compose appropriate vs Kubernetes?",
+      "options": [
+        {"id": "a", "text": "Docker Compose for production; Kubernetes for development"},
+        {"id": "b", "text": "Docker Compose for local development and simple single-host setups. Kubernetes for production multi-node, HA, autoscaling workloads."},
+        {"id": "c", "text": "They are interchangeable — docker compose up = kubectl apply"},
+        {"id": "d", "text": "Kubernetes is required for containers; Docker Compose is optional"}
+      ],
+      "correct": ["b"],
+      "explanation": "Docker Compose: single host, simple YAML, great for local dev and small internal tools. No built-in HA, no autoscaling, no rolling updates, no multi-node. Kubernetes: production-grade orchestration — multi-node, self-healing, HPA, rolling updates, secret management, RBAC. For FDE context: customers with K8s infra expect you to understand both.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["docker", "docker-compose", "kubernetes"]
+    },
+    {
+      "id": "dk-608",
+      "type": "mcq-multi",
+      "difficulty": "medium",
+      "subtopic": "11.2 K8s Core Concepts",
+      "niche": "K8s debugging commands",
+      "topic": "kubernetes",
+      "timeBudgetSec": 90,
+      "tracks": ["turing"],
+      "prompt": "A pod is stuck in CrashLoopBackOff. Which commands help diagnose it? (select all)",
+      "options": [
+        {"id": "a", "text": "kubectl logs <pod> --previous (logs from the crashed container)"},
+        {"id": "b", "text": "kubectl describe pod <pod> (shows events, exit code, restart count)"},
+        {"id": "c", "text": "kubectl exec -it <pod> -- sh (exec into the running container)"},
+        {"id": "d", "text": "kubectl get events --sort-by=.lastTimestamp"},
+        {"id": "e", "text": "kubectl top node (node CPU/memory usage)"}
+      ],
+      "correct": ["a", "b", "d"],
+      "explanation": "CrashLoopBackOff: container starts, crashes, K8s waits exponentially before restarting. kubectl logs --previous: last crash's stdout/stderr (most useful). kubectl describe: events section shows OOMKilled, image pull errors, probe failures, exit codes. kubectl get events: cluster-wide event timeline. kubectl exec requires the container to be running. kubectl top node is for scheduling, not crash diagnosis.",
+      "sourcePlatforms": ["turing-t4-fde"],
+      "tags": ["kubernetes", "debugging"]
+    }
+  ]
+}
