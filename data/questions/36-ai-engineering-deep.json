@@ -495,6 +495,1032 @@
       "correct": ["b"],
       "explanation": "Autoregressive LLM decoding is limited by memory bandwidth, not arithmetic compute — reading model weights from HBM is the bottleneck. The large model's forward pass takes nearly the same wall-clock time whether it processes 1 token or K tokens (up to a batch size limit), because the memory reads dominate. Speculative decoding exploits this: draft model (7B) proposes 4 tokens → large model (70B) verifies all 4 in one pass. If 3 are accepted, you get 3 tokens for the cost of 1 large-model pass — roughly 3× throughput. The output distribution is provably identical to sampling from the large model alone.",
       "tags": ["speculative-decoding", "inference", "throughput", "memory-bandwidth"]
+    },
+    {
+      "id": "ae-021",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "L1.1 — Neural Network Basics",
+      "topic": "vanishing-gradient",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela", "toptal"],
+      "prompt": "Why does sigmoid activation cause vanishing gradients in deep networks, and why does ReLU largely solve this?",
+      "options": [
+        {"id": "a", "text": "Sigmoid outputs are larger than ReLU outputs, so gradients explode instead"},
+        {"id": "b", "text": "Sigmoid saturates for |x|>2 — its derivative approaches 0, so gradients multiplied across many layers shrink exponentially. ReLU derivative is 1 for x>0, so gradients pass through unchanged"},
+        {"id": "c", "text": "Sigmoid requires more memory than ReLU, limiting batch size"},
+        {"id": "d", "text": "Sigmoid is not differentiable, so backprop cannot compute gradients"}
+      ],
+      "correct": ["b"],
+      "explanation": "σ'(x) = σ(x)(1-σ(x)) ≤ 0.25 for all x, and approaches 0 when |x| is large (saturated neurons). In a 10-layer network, the gradient shrinks by up to 0.25^10 ≈ 0.000001 — nearly zero. ReLU'(x) = 1 for x>0 and 0 for x<0. Positive-activation neurons pass gradients through with factor 1 — no shrinkage. The trade-off: ReLU can produce 'dead neurons' (always 0 output → always 0 gradient) if pre-activations are consistently negative. Leaky ReLU (slope 0.01 for negatives) and GELU mitigate this.",
+      "tags": ["vanishing-gradient", "sigmoid", "relu", "activation-functions"]
+    },
+    {
+      "id": "ae-022",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "L1.1 — Neural Network Basics",
+      "topic": "cross-entropy-loss",
+      "timeBudgetSec": 60,
+      "tracks": ["turing", "andela", "toptal"],
+      "prompt": "Why use cross-entropy loss instead of MSE (mean squared error) for classification and next-token prediction?",
+      "options": [
+        {"id": "a", "text": "MSE produces larger numerical values that are harder for optimizers to handle"},
+        {"id": "b", "text": "Cross-entropy is the negative log-likelihood of the correct class under the model's distribution — it penalizes confident wrong predictions much more than MSE and has well-behaved gradients when combined with softmax"},
+        {"id": "c", "text": "MSE requires integer outputs; cross-entropy works with probabilities"},
+        {"id": "d", "text": "Cross-entropy is faster to compute because it only depends on the correct class"}
+      ],
+      "correct": ["b"],
+      "explanation": "MSE between predicted probability 0.01 and true label 1 gives loss 0.98 — similar to the loss at 0.5 (which gives 0.25). Cross-entropy loss = -log(0.01) = 4.6 vs -log(0.5) = 0.69 — confident wrong predictions receive exponentially higher loss. The softmax + cross-entropy gradient ∂L/∂z_i = p_i - y_i is clean and doesn't vanish. For next-token prediction with a 100k vocab, CE loss at random guessing ≈ ln(100k) ≈ 11.5 — a natural entropy baseline to measure training progress.",
+      "tags": ["cross-entropy", "loss-function", "classification", "mse"]
+    },
+    {
+      "id": "ae-023",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "L1.1 — Neural Network Basics",
+      "topic": "dropout",
+      "timeBudgetSec": 60,
+      "tracks": ["turing", "andela"],
+      "prompt": "How does dropout prevent overfitting, and why are dropout rates typically NOT used at inference time?",
+      "options": [
+        {"id": "a", "text": "Dropout removes low-importance neurons permanently, shrinking the model"},
+        {"id": "b", "text": "During training, dropout randomly zeroes p% of neurons each batch — forcing the network to learn redundant representations and preventing co-adaptation. At inference, all neurons activate and weights are scaled by (1-p) to match expected activation magnitude"},
+        {"id": "c", "text": "Dropout adds Gaussian noise to weights to simulate multiple models"},
+        {"id": "d", "text": "Dropout is used at inference to produce uncertainty estimates via Monte Carlo sampling"}
+      ],
+      "correct": ["b"],
+      "explanation": "With dropout p=0.1: each batch, 10% of neurons are set to 0 at random. A neuron cannot 'rely' on any specific other neuron being present — it must learn robust features. This creates an implicit ensemble of 2^N subnetworks (for N neurons). At inference: all neurons are active. Without scaling, expected activation = E[neuron] = (1-p)×activation + p×0. Scaling weights by (1-p) = 0.9 corrects this so expected values match training. In LLMs, dropout is p=0.1 in attention and FFN during pretraining. Note: Monte Carlo Dropout (leaving it on at inference) is a Bayesian uncertainty technique — a separate valid use.",
+      "tags": ["dropout", "regularization", "overfitting", "training"]
+    },
+    {
+      "id": "ae-024",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L1.1 — Neural Network Basics",
+      "topic": "bias-variance",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "A 7B LLM fine-tuned on 10 examples achieves 98% accuracy on those examples but 45% on new test examples. A 7B model fine-tuned on 100k examples achieves 72% on training and 70% on test. What is the correct diagnosis?",
+      "options": [
+        {"id": "a", "text": "First model: high variance (overfitting). Second model: high bias (underfitting)"},
+        {"id": "b", "text": "First model: high bias. Second model: high variance"},
+        {"id": "c", "text": "Both models are high variance — more data is always needed"},
+        {"id": "d", "text": "First model has a data quality issue; second model has a model size issue"}
+      ],
+      "correct": ["a"],
+      "explanation": "High variance = large gap between train and test accuracy (overfitting: model memorized training set). First model: 98% train, 45% test = 53% gap → severe overfitting on 10 examples. Fix: more data, regularization, or use LoRA with very low rank + early stopping. High bias = poor train AND test accuracy (underfitting: model too simple or not enough capacity). Second model: 72% train, 70% test = 2% gap, consistent but not great → low variance but possibly high bias — fix with more fine-tuning, larger model, or better data curation. Scale generally moves models toward low bias (surprising given their size), but few-shot fine-tuning amplifies variance.",
+      "tags": ["bias-variance", "overfitting", "underfitting", "fine-tuning"]
+    },
+    {
+      "id": "ae-025",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "L1.2 — Classical Architectures",
+      "topic": "rnn-vanishing-gradient",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "Why do vanilla RNNs fail on sequences longer than ~20 tokens, and what architectural change did LSTMs introduce to fix this?",
+      "options": [
+        {"id": "a", "text": "RNNs have no memory between batches; LSTMs add batch normalization to fix this"},
+        {"id": "b", "text": "RNNs multiply the same weight matrix Wh at each step — gradients flowing back T steps are multiplied by Wh^T, causing exponential vanishing or explosion. LSTMs add a cell state with additive (not multiplicative) updates, giving gradients a highway that doesn't shrink"},
+        {"id": "c", "text": "RNNs process tokens in parallel; LSTMs are sequential which prevents gradient issues"},
+        {"id": "d", "text": "RNNs use sigmoid activation that saturates; LSTMs switch to ReLU"}
+      ],
+      "correct": ["b"],
+      "explanation": "In a vanilla RNN, h_t = tanh(Wh·h_{t-1} + Wx·x_t). Backprop through time: ∂h_t/∂h_{t-k} = Π_{i=t-k+1}^{t} Wh·diag(tanh'). If |λ_max(Wh)| < 1, gradients vanish exponentially; if > 1, they explode. LSTMs introduce a cell state c_t updated additively: c_t = f_t ⊗ c_{t-1} + i_t ⊗ tanh(input). When the forget gate f_t ≈ 1, gradients flow through c with factor ≈ 1 — the 'constant error carousel'. This allows gradients to survive hundreds of time steps. Transformers (2017) superseded LSTMs by removing recurrence entirely.",
+      "tags": ["rnn", "vanishing-gradient", "lstm", "bptt"]
+    },
+    {
+      "id": "ae-026",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L1.2 — Classical Architectures",
+      "topic": "lstm-gates",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "In an LSTM, what does the forget gate specifically control, and what would happen if the forget gate output was always 0?",
+      "options": [
+        {"id": "a", "text": "Forget gate controls which new information enters the cell; output 0 → no new information written"},
+        {"id": "b", "text": "Forget gate gates c_{t-1} — it scales how much of the previous cell state to keep. Output always 0 → c_{t-1} is zeroed every step → LSTM loses all long-term memory and becomes a feedforward net"},
+        {"id": "c", "text": "Forget gate controls output projection; output 0 → h_t = 0 always"},
+        {"id": "d", "text": "Forget gate controls the input gate; output 0 → the two gates are identical"}
+      ],
+      "correct": ["b"],
+      "explanation": "LSTM cell update: c_t = f_t ⊗ c_{t-1} + i_t ⊗ g_t where f_t is the forget gate, i_t is input gate, g_t is candidate cell. f_t = σ(Wf·[h_{t-1}, x_t] + bf). When f_t=1: preserve c_{t-1} fully (long memory). When f_t=0: erase c_{t-1} entirely (start fresh). If f_t ≡ 0 always: c_t = i_t ⊗ g_t — the cell state resets at every step, losing all prior context. The LSTM becomes equivalent to a standard RNN with one hidden state and suffers the same vanishing gradient problem. In practice, LSTMs are initialized with bias bf=1 to make forgetting rare initially — allowing gradient flow during early training.",
+      "tags": ["lstm", "forget-gate", "cell-state", "gradient-flow"]
+    },
+    {
+      "id": "ae-027",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "L1.2 — Classical Architectures",
+      "topic": "cnn-vs-vit",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "A CNN and a Vision Transformer (ViT) are both trained on a 1,000-image dataset. Which performs better and why?",
+      "options": [
+        {"id": "a", "text": "ViT performs better — attention scales better with image size"},
+        {"id": "b", "text": "CNN performs better — translation invariance and local feature detection are strong inductive biases that let CNNs learn effectively from small data; ViT has no such biases and requires large datasets to generalize"},
+        {"id": "c", "text": "They perform identically — dataset size doesn't affect architecture choice"},
+        {"id": "d", "text": "ViT performs better because its patches contain more information than CNN kernels"}
+      ],
+      "correct": ["b"],
+      "explanation": "CNNs have baked-in inductive biases: locality (features are local), translation invariance (a cat's ear looks the same anywhere in the image). These biases require less data to exploit — the model's hypothesis space is already constrained in the right direction. ViTs treat image patches as independent tokens with no spatial bias — self-attention must learn spatial relationships from scratch. With 1000 images, ViT lacks the data to learn these relationships and overfits. The ViT paper explicitly noted this: ViT underperforms CNNs on small datasets but surpasses them on JFT-300M (300M images). DeiT closed this gap with data augmentation and knowledge distillation.",
+      "tags": ["vit", "cnn", "inductive-bias", "sample-efficiency"]
+    },
+    {
+      "id": "ae-028",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "L1.2 — Classical Architectures",
+      "topic": "seq2seq-bottleneck",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "In a vanilla seq2seq RNN (encoder-decoder without attention), why does translation quality degrade severely for long sentences (>20 words)?",
+      "options": [
+        {"id": "a", "text": "Longer sentences have more tokens, which increases computational cost quadratically"},
+        {"id": "b", "text": "The entire source sentence is compressed into a single fixed-size hidden vector — the encoder's bottleneck. Long sentences lose information, especially from early tokens, because the vector has finite capacity"},
+        {"id": "c", "text": "Beam search decoding fails for long sequences"},
+        {"id": "d", "text": "The encoder's vocabulary is too small to handle long sentences"}
+      ],
+      "correct": ["b"],
+      "explanation": "In seq2seq RNN: encoder reads 'The cat that sat on the mat yesterday was hungry' → single h_T vector (e.g. 512-dim). The decoder must generate the full translation conditioned ONLY on this vector. For long sentences: early tokens ('The cat') are overwritten by later context; the 512-dim vector cannot simultaneously encode all details. Quality peaks around 15-20 tokens then degrades sharply (shown in Bahdanau et al. 2015). Attention (Bahdanau 2014) fixed this by letting the decoder 'look back' at every encoder hidden state — making the memory O(N) rather than O(1).",
+      "tags": ["seq2seq", "bottleneck", "rnn", "attention", "translation"]
+    },
+    {
+      "id": "ae-029",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L1.3 — Attention Mechanism",
+      "topic": "attention-complexity",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela", "toptal"],
+      "prompt": "Self-attention has O(N²) time and memory complexity in N (sequence length). What specifically causes this, and what approaches reduce it?",
+      "options": [
+        {"id": "a", "text": "O(N²) from the embedding dimension squared; reduced by smaller d_model"},
+        {"id": "b", "text": "Computing QKᵀ requires N×N dot products (each of the N queries attends to each of the N keys). This N×N matrix must be materialized. Approaches: Sparse attention (Longformer O(N)), linear attention (O(N)), FlashAttention (same complexity but avoids HBM materialization), sliding window (Mistral)"},
+        {"id": "c", "text": "O(N²) from the number of attention heads; GQA reduces this to O(N)"},
+        {"id": "d", "text": "Self-attention is O(N log N) — it's already efficient due to the softmax"}
+      ],
+      "correct": ["b"],
+      "explanation": "For each of N query positions, you compute a dot product with all N key positions → N² operations. The N×N attention weight matrix consumes O(N²) memory. For N=32,768 (32k tokens): 32768² × 2 bytes × 32 heads = 64GB just for attention weights. FlashAttention avoids materializing this matrix but doesn't change the computational complexity — it's still O(N²) operations. True sub-quadratic approaches: Longformer uses local + global attention O(N×window), linear attention approximates softmax with kernel functions O(N), Mamba replaces attention with selective state spaces O(N).",
+      "tags": ["attention", "complexity", "quadratic", "flashattention", "longformer"]
+    },
+    {
+      "id": "ae-030",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L1.3 — Attention Mechanism",
+      "topic": "multi-head",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "An ablation study removes all but one attention head in GPT-2 (12 heads → 1 head) keeping total d_model=768 fixed. What is the most likely outcome?",
+      "options": [
+        {"id": "a", "text": "No change — a single larger head learns the same representations"},
+        {"id": "b", "text": "Significant perplexity degradation — the single head must capture all relationship types simultaneously with a 768-dim projection, while multiple heads specialize (syntactic, semantic, positional) with 64-dim projections each. The diversity of attention patterns is lost"},
+        {"id": "c", "text": "Improved performance — fewer heads reduce overfitting"},
+        {"id": "d", "text": "The model fails entirely — attention with 1 head is numerically unstable"}
+      ],
+      "correct": ["b"],
+      "explanation": "Multi-head attention produces h different attention patterns by projecting Q,K,V into h lower-dimensional (d_k=d_model/h=64) subspaces. Each head learns to attend to different relationships: head 0 might track subject-verb agreement, head 7 might track coreference, head 11 might track positional proximity. A single head must learn all these relationships simultaneously in one 768-dim projection — the single attention map is forced to compromise. Michel et al. (2019) showed that pruning individual heads degrades performance modestly (some heads are surprisingly redundant), but collapsing to 1 head causes 15-30% perplexity increase on language modeling tasks.",
+      "tags": ["multi-head-attention", "ablation", "specialization", "heads"]
+    },
+    {
+      "id": "ae-031",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L1.3 — Attention Mechanism",
+      "topic": "causal-mask",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "If you remove the causal mask from a GPT-style decoder during training, what happens — and why does GPT still need to generate autoregressively at inference?",
+      "options": [
+        {"id": "a", "text": "Without the mask, training fails immediately due to numerical instability"},
+        {"id": "b", "text": "Without causal mask: the model sees future tokens during training (data leakage) — it learns a trivial copy-the-future strategy, scoring 0 loss without learning language. At inference there are no future tokens, so the model fails completely. GPT must generate autoregressively because it can only generate one token at a time — future tokens don't exist yet"},
+        {"id": "c", "text": "Without the mask, the model becomes bidirectional and equivalent to BERT"},
+        {"id": "d", "text": "Removing the mask would make training faster but reduce quality slightly"}
+      ],
+      "correct": ["b"],
+      "explanation": "The causal mask forces token at position i to predict position i+1 using only positions 0..i — matching the inference condition (generate one token at a time, no future context). Without the mask during training: position i sees all tokens including i+1..N — it can directly 'copy' the next token with near-zero loss. The model learns to cheat rather than model language. This is a training-inference mismatch: the model would train on bidirectional data but must generate autoregressively at inference (future tokens don't exist), causing catastrophic failure. BERT intentionally has no causal mask because it's not generative — it sees full context for understanding tasks.",
+      "tags": ["causal-mask", "autoregressive", "training-inference-mismatch"]
+    },
+    {
+      "id": "ae-032",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L1.3 — Attention Mechanism",
+      "topic": "qkv-geometry",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "Two tokens have identical Query and Key vectors. What does this imply about their attention score relative to other token pairs?",
+      "options": [
+        {"id": "a", "text": "The attention score is 0 — identical vectors cancel out"},
+        {"id": "b", "text": "The attention score is maximized — Q·K = ||Q||² is the highest possible dot product for a given magnitude, so this token pair receives the most attention weight after softmax"},
+        {"id": "c", "text": "The attention score equals 1/N (uniform) because identical vectors contribute equally"},
+        {"id": "d", "text": "The attention score depends on the Value vector, not Q or K similarity"}
+      ],
+      "correct": ["b"],
+      "explanation": "Attention score = Q·Kᵀ/√d_k. When Q = K (identical vectors), Q·K = ||Q||² — the dot product of a vector with itself equals its squared magnitude, which is the maximum possible value by Cauchy-Schwarz (Q·K ≤ ||Q||||K|| = ||Q||² when Q=K). After softmax over all (Q_i, K_j) pairs, this pair receives the highest weight. Geometrically, maximum cosine similarity = 1 when vectors are parallel. In practice, a token often attends most strongly to itself — this is called 'attention to self'. Multi-head attention mitigates this by using different W_Q, W_K projections per head, so Q and K of the same token are projected differently.",
+      "tags": ["attention", "dot-product", "geometry", "cosine-similarity"]
+    },
+    {
+      "id": "ae-033",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "L1.4 — Transformer Architecture",
+      "topic": "transformer-block",
+      "timeBudgetSec": 60,
+      "tracks": ["turing", "andela", "toptal"],
+      "prompt": "What are the three core components of a single Transformer decoder block (in order), and what does each compute?",
+      "options": [
+        {"id": "a", "text": "Embedding → Attention → Output projection"},
+        {"id": "b", "text": "Causal Multi-Head Self-Attention (contextual mixing of all positions) → Add & Norm (residual + LayerNorm/RMSNorm) → Feed-Forward Network (per-position transformation) → Add & Norm"},
+        {"id": "c", "text": "Conv layer (local features) → Attention (global) → Linear (projection)"},
+        {"id": "d", "text": "Q/K/V projection → Softmax → Value aggregation (that is all)"}
+      ],
+      "correct": ["b"],
+      "explanation": "Each decoder block has two sub-layers, each followed by Add & Norm: (1) Causal Multi-Head Self-Attention: queries, keys, values computed from same input; causal mask applied; outputs a weighted sum of values — this is how tokens 'communicate'. (2) Position-wise Feed-Forward Network: two linear transformations with a non-linearity (ReLU/GELU/SwiGLU) applied independently to each position — this is where computation (not communication) happens. Each sub-layer uses a residual connection (x + sublayer(x)) and normalization. The FFN typically expands 4× (d_model→4d_model→d_model) or 8/3× with SwiGLU. GPT-4 stacks ~96 such blocks.",
+      "tags": ["transformer-block", "attention", "ffn", "residual", "architecture"]
+    },
+    {
+      "id": "ae-034",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L1.4 — Transformer Architecture",
+      "topic": "pre-ln-post-ln",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "Post-LN (original Transformer) places LayerNorm after residual: Norm(x + Sublayer(x)). Pre-LN (GPT-2+) places it before: x + Sublayer(Norm(x)). Why is Pre-LN preferred for large models?",
+      "options": [
+        {"id": "a", "text": "Pre-LN uses fewer parameters since normalization is applied before projection"},
+        {"id": "b", "text": "Post-LN causes training instability at initialization because gradients flowing through the residual path are also normalized — the last layer receives normalized gradients but early layers receive large unnormalized gradients. Pre-LN normalizes before sublayer inputs, stabilizing the gradient scale throughout"},
+        {"id": "c", "text": "Pre-LN converges faster because it applies more normalization operations per block"},
+        {"id": "d", "text": "Post-LN was removed because LayerNorm before softmax causes numerical overflow"}
+      ],
+      "correct": ["b"],
+      "explanation": "In Post-LN: output = Norm(x + f(x)). At initialization, f(x)≈0, so output ≈ Norm(x) ≈ x. But gradients from the loss are normalized at the output layer, then unnormalized through the residual path in earlier layers — gradient variance grows with depth, causing instability for many-layer models. Xiong et al. (2020) analyzed this theoretically and empirically. Pre-LN: output = x + f(Norm(x)). At initialization, f(Norm(x)) is small, so the residual path dominates — gradient scale is bounded and similar across all layers. Pre-LN requires a final Norm after the last block (since the last output is unnormalized). All LLaMA-family models use Pre-RMSNorm.",
+      "tags": ["pre-ln", "post-ln", "layer-norm", "training-stability", "gradient"]
+    },
+    {
+      "id": "ae-035",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "L1.4 — Transformer Architecture",
+      "topic": "transformers-vs-rnns",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela", "toptal"],
+      "prompt": "What is the primary reason Transformers replaced RNNs for language modeling at scale — despite RNNs being theoretically capable of similar modeling?",
+      "options": [
+        {"id": "a", "text": "Transformers have fewer parameters for the same quality"},
+        {"id": "b", "text": "RNNs process tokens sequentially — step t cannot begin until step t-1 finishes — making training on long sequences on parallel hardware (GPUs) extremely inefficient. Transformers compute attention over all positions in parallel, fully utilizing GPU matrix multiplication throughput"},
+        {"id": "c", "text": "Transformers use fewer layers for the same perplexity"},
+        {"id": "d", "text": "Transformers avoid overfitting because attention is deterministic"}
+      ],
+      "correct": ["b"],
+      "explanation": "RNNs: h_t = f(h_{t-1}, x_t) — step t depends on step t-1. For a 1024-token sequence, you must execute 1024 sequential steps — each waiting for the previous. GPU throughput is wasted waiting for the dependency chain. Transformers: attention(Q,K,V) can be computed for all N positions simultaneously as a matrix multiplication — GPUs are used at full utilization. Training a 1000-token sequence on a Transformer takes the same number of parallel steps as a 1-token sequence (just a larger matrix). This 100-1000× training efficiency advantage (not model quality alone) is why Transformers dominate — scaling to trillions of tokens requires parallelizable training.",
+      "tags": ["transformers", "rnn", "parallelism", "gpu", "sequential"]
+    },
+    {
+      "id": "ae-036",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "L1.5 — Tokenization & Embeddings",
+      "topic": "embedding-arithmetic",
+      "timeBudgetSec": 60,
+      "tracks": ["turing", "andela"],
+      "prompt": "The classic embedding arithmetic 'king − man + woman ≈ queen' works with static Word2Vec embeddings. Why does this NOT reliably work with contextual embeddings from BERT or GPT?",
+      "options": [
+        {"id": "a", "text": "BERT and GPT use larger embedding dimensions that make arithmetic unstable"},
+        {"id": "b", "text": "Contextual embeddings encode word meaning in context — 'king' in 'The king ruled' has a different vector than 'king' in 'King cobra'. The arithmetic works for static embeddings because each word has ONE fixed vector capturing its average meaning, not context-dependent meaning"},
+        {"id": "c", "text": "Contextual models don't have embedding lookup tables"},
+        {"id": "d", "text": "The arithmetic works identically in contextual models but only for common words"}
+      ],
+      "correct": ["b"],
+      "explanation": "Word2Vec learns one static vector per word token — 'king' always maps to the same 300-dim vector regardless of context. This allows semantic arithmetic in the static embedding space. BERT/GPT produce contextualized embeddings: 'bank' in 'river bank' and 'bank' in 'savings bank' produce completely different vectors — the embedding encodes the full sentence context. There is no single 'king' vector to subtract from. You'd need to average 'king' across thousands of contexts to get a representative vector — then arithmetic becomes approximate at best. OpenAI's text-embedding models (designed for semantic similarity) work better for arithmetic because they're trained to produce consistent representations.",
+      "tags": ["embeddings", "word2vec", "contextual", "arithmetic", "bert"]
+    },
+    {
+      "id": "ae-037",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "L1.5 — Tokenization & Embeddings",
+      "topic": "tokenization-cost",
+      "timeBudgetSec": 60,
+      "tracks": ["turing", "andela", "toptal"],
+      "prompt": "OpenAI's API charges per token. A developer wants to send a 1,000-word English document. Approximately how many tokens should they expect, and why is the ratio not 1:1?",
+      "options": [
+        {"id": "a", "text": "~500 tokens — tokens are roughly 2 words each"},
+        {"id": "b", "text": "~1,300 tokens — each token is approximately 0.75 words (or ~4 characters), so 1000 words ≈ 1333 tokens. Common words become single tokens; rare or long words split into multiple subword tokens"},
+        {"id": "c", "text": "~10,000 tokens — each character is a token"},
+        {"id": "d", "text": "~1,000 tokens — one token per word exactly, by design"}
+      ],
+      "correct": ["b"],
+      "explanation": "OpenAI's rule of thumb: 1 token ≈ 4 characters ≈ 0.75 words for English prose. 1000 words × (1/0.75) ≈ 1333 tokens. The ratio varies: common short words ('the', 'a', 'is') are usually 1 token. Long or technical words ('immunohistochemistry', 'Anthropic') may split into 3-5 tokens. Code is denser — newlines, operators, and variable names tokenize differently. Numbers like '123456789' may become 3-4 tokens (not 1). This has cost/context implications: a 128k-token GPT-4 window holds ~96k English words, but may only hold ~50k tokens of Python code. Use tiktoken (OpenAI's open-source tokenizer) to count tokens before sending API requests.",
+      "tags": ["tokenization", "tokens-per-word", "api-cost", "context-window"]
+    },
+    {
+      "id": "ae-038",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L1.5 — Tokenization & Embeddings",
+      "topic": "tokenization-numbers",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "LLMs notoriously struggle with arithmetic on large numbers (e.g., 947 × 683). What does this reveal about the tokenization of numbers?",
+      "options": [
+        {"id": "a", "text": "Numbers are stored as floats in the embedding table, causing rounding errors"},
+        {"id": "b", "text": "Numbers are split into arbitrary subword tokens — '947' might tokenize as ['94', '7'] or ['9', '47'] — with no semantic relationship between the tokens and their numeric value. The model must learn digit-by-digit arithmetic from patterns in training data, not from numeric understanding"},
+        {"id": "c", "text": "Arithmetic fails because numbers are out-of-vocabulary tokens"},
+        {"id": "d", "text": "The model has a maximum numeric precision of 3 significant figures"}
+      ],
+      "correct": ["b"],
+      "explanation": "GPT-4's tokenizer (tiktoken cl100k_base): '947' → single token (common 3-digit numbers are often single tokens). '683' → single token. But '1947683' might tokenize as ['194', '7683'] or ['1', '947', '683'] — inconsistently across numbers. Even if tokenized consistently, the model has no 'understanding' that token '947' encodes the value nine-hundred-forty-seven. Arithmetic must be learned from patterns: '2+2=4' occurs frequently in training data. '947×683=647,201' does not. Tool calling (calculator) or code execution sidesteps this completely — the correct architectural solution for arithmetic in production systems.",
+      "tags": ["tokenization", "numbers", "arithmetic", "llm-limitations"]
+    },
+    {
+      "id": "ae-039",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L1.6 — Transformer Internals",
+      "topic": "rmsnorm-vs-layernorm",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "LayerNorm(x) = (x - μ) / √(σ² + ε) · γ + β. RMSNorm(x) = x / √(mean(x²) + ε) · γ. What computation does RMSNorm skip, and why is this safe for Transformer training?",
+      "options": [
+        {"id": "a", "text": "RMSNorm skips the scale parameter γ; safe because γ is usually 1 anyway"},
+        {"id": "b", "text": "RMSNorm skips mean subtraction (re-centering) and the shift parameter β. Safe because Transformers have residual connections that maintain the mean near zero — re-centering is redundant; removing it saves ~10% normalization compute and reduces parameters by half"},
+        {"id": "c", "text": "RMSNorm skips variance normalization; safe because activations don't vary much in large models"},
+        {"id": "d", "text": "RMSNorm skips the learnable parameters entirely, using fixed normalization"}
+      ],
+      "correct": ["b"],
+      "explanation": "LayerNorm computes: (1) mean μ over features, (2) variance σ² over features, (3) normalize x by (x-μ)/σ, (4) apply γ (scale) and β (shift). RMSNorm: (1) root mean square (equivalent to variance when mean≈0), (2) normalize x/RMS(x), (3) apply only γ. Residual connections in Transformers (x + f(x)) keep the mean of activations near zero across layers — so subtracting the mean is approximately a no-op. Zhang & Sennrich (2019) showed empirically that removing mean subtraction and β with residuals has near-zero quality impact. The ~10% speedup and 50% parameter reduction in the norm layers (β removed) are free wins. LLaMA, Mistral, Gemma, Qwen all use RMSNorm.",
+      "tags": ["rmsnorm", "layernorm", "normalization", "transformer-internals"]
+    },
+    {
+      "id": "ae-040",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L1.6 — Transformer Internals",
+      "topic": "causal-mask-effect",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "A GPT-style decoder with the causal mask removed (bidirectional self-attention) is fine-tuned on chat data. What fundamental problem would arise at inference time?",
+      "options": [
+        {"id": "a", "text": "The model would generate text much faster without the mask"},
+        {"id": "b", "text": "At inference, when generating token t, tokens t+1..N don't exist yet — the model was trained expecting future tokens in attention, but they're absent during generation. The model's learned attention patterns are invalid, causing incoherent output. The model is 'out-of-distribution' at every generation step"},
+        {"id": "c", "text": "The model would become identical to BERT and stop generating"},
+        {"id": "d", "text": "No problem — the model would just attend to padding tokens at positions t+1..N"}
+      ],
+      "correct": ["b"],
+      "explanation": "Train-inference mismatch: during training with bidirectional attention, each token's representation is computed using all other tokens (past AND future). The model's weights encode the assumption 'future tokens are visible'. At inference, when generating token t, positions t+1..N are either empty or padded — the future tokens the model expects aren't there. Every attention head's weights are miscalibrated for this unidirectional state. This is fundamentally why BERT-style models (bidirectional) require all input tokens upfront and cannot generate autoregressively — they weren't trained with the causal constraint that matches autoregressive generation.",
+      "tags": ["causal-mask", "bidirectional", "inference", "train-test-mismatch"]
+    },
+    {
+      "id": "ae-041",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "L1.6 — Transformer Internals",
+      "topic": "residual-initialization",
+      "timeBudgetSec": 60,
+      "tracks": ["turing", "andela"],
+      "prompt": "At initialization, a Transformer's sublayer weights are near-zero and residual connections output x + sublayer(x) ≈ x + 0 = x. Why is this initialization property advantageous for training deep models?",
+      "options": [
+        {"id": "a", "text": "Near-zero initialization prevents the model from memorizing the training data"},
+        {"id": "b", "text": "The model starts as an approximate identity function — all layers output their input unchanged. Gradients flow through the residual path (gradient = 1 per block), so all layers receive strong gradient signal from the start. Deep models train effectively without vanishing gradients even at 96+ layers"},
+        {"id": "c", "text": "Near-zero weights reduce memory usage during the first training epoch"},
+        {"id": "d", "text": "The model is initialized to the optimal solution if the task requires no transformation"}
+      ],
+      "correct": ["b"],
+      "explanation": "With zero sublayer output at init: ∂(x + sublayer(x))/∂x = 1 + 0 = 1. The gradient through a block is exactly 1 — no shrinking, no explosion. For 96 blocks: gradient product = 1^96 = 1. Compare to a 96-layer network without residuals: gradient must pass through 96 Jacobians that could each be <1, leading to vanishing gradients. This is why GPT-4 (96+ layers) trains stably from random initialization. The 'zero initialization' trick: final projection in attention (W_O) and FFN output layer are initialized to zero or very small values, making the initial residual block truly an identity. As training progresses, sublayers learn meaningful transformations incrementally.",
+      "tags": ["residual", "initialization", "gradient-flow", "deep-networks"]
+    },
+    {
+      "id": "ae-042",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L1.7 — Training Pipeline",
+      "topic": "catastrophic-forgetting",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "Full fine-tuning a pretrained LLM on a medical Q&A dataset causes it to lose much of its general language ability ('catastrophic forgetting'). How does LoRA specifically mitigate this?",
+      "options": [
+        {"id": "a", "text": "LoRA uses a smaller learning rate, which reduces forgetting"},
+        {"id": "b", "text": "LoRA freezes ALL original pretrained weights — only the small low-rank delta matrices (BA) are trained. The pretrained knowledge is structurally preserved in the frozen weights; the LoRA delta adds task-specific adaptation on top without overwriting the base"},
+        {"id": "c", "text": "LoRA adds dropout to prevent overfitting to the new task"},
+        {"id": "d", "text": "LoRA uses elastic weight consolidation (EWC) to protect important weights"}
+      ],
+      "correct": ["b"],
+      "explanation": "Catastrophic forgetting in full fine-tuning: gradient descent on medical Q&A pushes all 7B weights toward medical knowledge, overwriting weights that encoded general language, reasoning, and world knowledge. LoRA's structural solution: W_adapted = W_frozen + BA. W_frozen never changes — its 7B parameters are untouched, preserving all pretrained knowledge. BA (≈16M params) absorbs the task-specific adaptation. The final model uses both: general ability from W_frozen, medical specialization from BA. At inference, merge W = W_frozen + BA for zero-overhead deployment. Multiple domains: train separate B_medical·A, B_legal·A adapters on the same frozen base — hot-swap for different use cases without forgetting.",
+      "tags": ["catastrophic-forgetting", "lora", "fine-tuning", "frozen-weights"]
+    },
+    {
+      "id": "ae-043",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L1.7 — Training Pipeline",
+      "topic": "qlora-nf4",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "QLoRA uses NF4 (Normal Float 4-bit) format for the frozen base model. Why NF4 instead of standard INT4?",
+      "options": [
+        {"id": "a", "text": "NF4 uses 4.5 bits of actual precision, more than INT4"},
+        {"id": "b", "text": "LLM weights follow a roughly normal distribution. NF4 places quantization bins at equal-probability intervals of the normal distribution (not equal-spaced like INT4), minimizing quantization error for normally-distributed data — 15-20% lower perplexity degradation vs INT4 at the same bit-width"},
+        {"id": "c", "text": "NF4 is faster to compute on modern GPUs which have native support for it"},
+        {"id": "d", "text": "NF4 stores the sign bit separately, allowing larger magnitude representation"}
+      ],
+      "correct": ["b"],
+      "explanation": "Standard INT4 uses 16 equally-spaced quantization levels from [-max, max] — uniform bins. But pretrained LLM weights follow a nearly normal distribution (most weights clustered near zero, few large outliers). Uniform bins waste most precision on the tails and under-represent the dense region near zero. NF4: compute the 16 quantile thresholds of N(0,1) — bins are narrow where weights are dense (near 0) and wide where they're sparse (in tails). This is information-theoretically optimal for normally distributed data. Dettmers et al. (2023) showed NF4 reduces perplexity degradation by ~35% vs uniform INT4 on LLaMA-65B, with zero additional storage cost.",
+      "tags": ["qlora", "nf4", "quantization", "normal-distribution"]
+    },
+    {
+      "id": "ae-044",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L1.7 — Training Pipeline",
+      "topic": "gradient-checkpointing",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "Gradient checkpointing trades memory for compute during training. Concretely, what does it trade and what is the typical overhead?",
+      "options": [
+        {"id": "a", "text": "It trades compute for memory by caching more activations — 0% overhead"},
+        {"id": "b", "text": "During forward pass, only a subset of activations are saved (checkpoints); un-saved activations are recomputed from checkpoints during backward pass. This reduces activation memory from O(N×L) to O(N×√L) at the cost of ~33% more forward pass computation"},
+        {"id": "c", "text": "It trades parameter memory for computation by quantizing weights during backprop"},
+        {"id": "d", "text": "It reduces memory by 50% with no computation overhead by using fp16 activations"}
+      ],
+      "correct": ["b"],
+      "explanation": "Standard backprop: all activations from all L layers must be stored during the forward pass for use in the backward pass. For a 70B model with batch_size=1, sequence=4k: activations ≈ 70GB. Gradient checkpointing: save activations only at L^(0.5) checkpoint layers. During backward pass, recompute un-saved activations from the nearest saved checkpoint. Memory: O(N × √L) instead of O(N × L). Cost: one additional forward computation through each un-checkpointed region — roughly 33% extra compute. This enables fine-tuning 70B models on 40GB A100s that would otherwise OOM. FSDP + gradient checkpointing is the standard recipe for large model fine-tuning.",
+      "tags": ["gradient-checkpointing", "memory", "compute-tradeoff", "training"]
+    },
+    {
+      "id": "ae-045",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L1.8 — Alignment",
+      "topic": "rlhf-kl-penalty",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "RLHF uses a KL divergence penalty: total_reward = R_model(x,y) − β·KL(π_θ || π_SFT). What happens if β=0 (no penalty)?",
+      "options": [
+        {"id": "a", "text": "Training is faster — the model converges to the optimal reward policy"},
+        {"id": "b", "text": "Reward hacking: the model finds degenerate outputs that maximize reward scores without being genuinely helpful. It exploits weaknesses in the reward model — e.g. very long outputs, repetitive praise, or specific patterns the reward model overvalues"},
+        {"id": "c", "text": "The model forgets all SFT training and returns to base model behavior"},
+        {"id": "d", "text": "Nothing changes — the KL penalty is redundant with the reward model"}
+      ],
+      "correct": ["b"],
+      "explanation": "The KL penalty KL(π_θ || π_SFT) penalizes the policy for diverging too far from the SFT model. Without it (β=0): pure reward maximization. The reward model is an imperfect proxy for human preference — it has blind spots and exploitable patterns. Without the KL anchor, PPO finds these exploits: generating very long outputs (reward models often prefer longer answers), inserting repetitive affirmations, producing text that matches specific patterns in the reward model's training data. This is 'Goodhart's Law': when a measure becomes a target, it ceases to be a good measure. β controls the exploration-exploitation tradeoff: β=0.02 (InstructGPT) allows some adaptation while preventing extreme reward hacking.",
+      "tags": ["rlhf", "kl-penalty", "reward-hacking", "goodharts-law"]
+    },
+    {
+      "id": "ae-046",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L1.8 — Alignment",
+      "topic": "reward-hacking",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "A chatbot RLHF-trained on 'helpfulness' rewards starts generating very long responses that repeat the user's question back before answering. What alignment failure is this?",
+      "options": [
+        {"id": "a", "text": "Catastrophic forgetting — the model forgot how to be concise"},
+        {"id": "b", "text": "Reward hacking / specification gaming: the reward model learned to associate length + question repetition with higher helpfulness ratings (correlations in training data), so the policy exploits this without actually being more helpful"},
+        {"id": "c", "text": "Mode collapse — the model collapsed to a single response pattern"},
+        {"id": "d", "text": "Overfitting — the model memorized training prompts"}
+      ],
+      "correct": ["b"],
+      "explanation": "Human raters may have subconsciously rewarded responses that (1) showed the model 'understood' the question (repetition) and (2) were thorough (length). The reward model learned length and repetition as proxies for helpfulness. Under PPO without sufficient KL penalty, the policy optimizes these proxies maximally — not actual user value. This is specification gaming (the AI found a way to score high on the metric without achieving the intended goal). Fixes: (1) evaluate on a held-out human preference test set not used in reward training; (2) add explicit penalties for repetition/length in reward; (3) use a separate 'skeptic' reward model; (4) increase KL penalty β.",
+      "tags": ["reward-hacking", "rlhf", "alignment", "specification-gaming"]
+    },
+    {
+      "id": "ae-047",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L1.8 — Alignment",
+      "topic": "constitutional-ai",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "Constitutional AI (Anthropic) replaces human labelers in RLHF's reward modeling step with AI self-critique. What is the key scalability advantage?",
+      "options": [
+        {"id": "a", "text": "Constitutional AI requires no compute — principles are hard-coded rules"},
+        {"id": "b", "text": "Human labeling is the bottleneck in RLHF — thousands of labelers, weeks of work, inconsistency. Constitutional AI uses the model to critique its own responses against a written constitution, generating synthetic preference data at scale. One constitution document replaces months of human labeling"},
+        {"id": "c", "text": "Constitutional AI uses a smaller model for labeling, reducing GPU cost"},
+        {"id": "d", "text": "Constitutional AI eliminates the need for SFT entirely"}
+      ],
+      "correct": ["b"],
+      "explanation": "Standard RLHF reward model training: collect 50k-500k human preference pairs (chosen > rejected) from trained contractors → expensive, slow (~$50/hr labor), inconsistent between raters. Constitutional AI (CAI): (1) Generate model responses, (2) Prompt the model to critique each response against constitutional principles ('Is this response harmful?', 'Is this honest?'), (3) The model revises its response based on the critique, (4) Use (original, revised) as preference pairs for reward model training. The constitution is a text document — updating it takes hours, not months. This scales alignment to arbitrary criteria without hiring more labelers. Claude's constitution includes principles around harmlessness, honesty, and helpfulness.",
+      "tags": ["constitutional-ai", "rlhf", "scalable-oversight", "claude"]
+    },
+    {
+      "id": "ae-048",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "L1.9 — Inference Optimization",
+      "topic": "quantization-size",
+      "timeBudgetSec": 60,
+      "tracks": ["turing", "andela", "toptal"],
+      "prompt": "A LLaMA-3 70B model in bfloat16 requires ~140GB of VRAM. After INT4 quantization, approximately how much VRAM is needed?",
+      "options": [
+        {"id": "a", "text": "~70GB — int4 halves the memory vs bfloat16"},
+        {"id": "b", "text": "~35GB — bfloat16 is 16-bit (2 bytes/param), int4 is 4-bit (0.5 bytes/param) — 4× reduction: 140GB/4 = 35GB"},
+        {"id": "c", "text": "~10GB — int4 provides 14× compression"},
+        {"id": "d", "text": "~140GB — quantization only affects activations, not weight storage"}
+      ],
+      "correct": ["b"],
+      "explanation": "Memory per parameter: fp32=4 bytes, bfloat16/fp16=2 bytes, int8=1 byte, int4=0.5 bytes. LLaMA-3 70B: 70×10⁹ params × 2 bytes (bf16) = 140GB. INT4 quantization: 70×10⁹ × 0.5 bytes = 35GB. In practice, INT4 quantization frameworks (GPTQ, AWQ, GGUF) also store quantization scales and zero-points per group (typically group_size=128) — adding ~5-10% overhead. Real-world: LLaMA-3 70B AWQ ≈ 38-42GB — fits on a single 80GB A100 or 2× 24GB consumer GPUs. Note: some layers (embeddings, lm_head) may remain in fp16 for quality — total may be slightly above 35GB.",
+      "tags": ["quantization", "int4", "vram", "model-size", "bfloat16"]
+    },
+    {
+      "id": "ae-049",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L1.9 — Inference Optimization",
+      "topic": "quantization-sensitivity",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "AWQ (Activation-Aware Weight Quantization) achieves better quality than naive INT4 by protecting a small subset of weights. Which weights does AWQ protect and why?",
+      "options": [
+        {"id": "a", "text": "Weights with the largest absolute values — they cause the most numerical error when quantized"},
+        {"id": "b", "text": "Weights corresponding to channels with the largest input activation magnitudes — quantization error on a weight w has output error proportional to activation_magnitude × quantization_error, so high-activation weights are the most sensitive"},
+        {"id": "c", "text": "The first and last layers — they interface with the embedding table and lm_head"},
+        {"id": "d", "text": "Attention weights — they are more sensitive than FFN weights"}
+      ],
+      "correct": ["b"],
+      "explanation": "The key insight: quantization error for weight w_i causes output error ≈ x_i × Δw_i (where x_i is the input activation). If activation magnitude x_i is large, even small quantization error Δw_i causes large output error. AWQ identifies the top 1% of input channels by activation magnitude across calibration data. For these 'salient' channels: instead of rounding the weight to the nearest int4 bin, AWQ scales the weights up (and compensates by scaling activations down) — placing more precision budget where it matters. This per-channel scaling costs zero additional storage. Result: 15-20% lower perplexity degradation vs uniform INT4, matching GPTQ quality with much faster quantization (no Hessian computation needed).",
+      "tags": ["awq", "quantization", "activation-aware", "salient-weights"]
+    },
+    {
+      "id": "ae-050",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L1.9 — Inference Optimization",
+      "topic": "prefill-decode",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela", "toptal"],
+      "prompt": "LLM inference has two phases: prefill and decode. Which statement correctly describes the difference in compute characteristics?",
+      "options": [
+        {"id": "a", "text": "Prefill is memory-bandwidth bound; decode is compute-bound"},
+        {"id": "b", "text": "Prefill: process all N prompt tokens in parallel (compute-bound — large matrix multiplications). Decode: generate one token at a time (memory-bandwidth bound — reading model weights for 1-token operations). Prefill is fast; decode is the latency bottleneck"},
+        {"id": "c", "text": "Both phases are identical in compute characteristics"},
+        {"id": "d", "text": "Prefill is slower because it must process input without KV cache; decode uses the cache so it's faster"}
+      ],
+      "correct": ["b"],
+      "explanation": "Prefill: N prompt tokens are processed in parallel as a single forward pass — attention is computed over an N×N matrix, FFN processes all N positions as a batch. GPU arithmetic units are fully utilized (compute-bound). Throughput: ~10,000 tokens/sec on A100 for LLaMA-70B. Decode: one new token generated per step. The attention operation is a 1×N vector-matrix product (query for 1 token against all cached keys). Reading 70B parameter weights from HBM for a 1-token operation: arithmetic intensity is low — memory-bandwidth bound. Throughput: ~20-50 tokens/sec on A100. This is why time-to-first-token (TTFT) and tokens-per-second are different metrics. Speculative decoding and continuous batching address the decode bottleneck.",
+      "tags": ["prefill", "decode", "memory-bandwidth", "compute-bound", "inference"]
+    },
+    {
+      "id": "ae-051",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "L1.10 — RAG & Retrieval",
+      "topic": "chunking-strategy",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela", "toptal"],
+      "prompt": "A RAG system chunks a 100-page PDF into fixed 512-token windows. Users complain that answers miss context when a key fact spans two chunks. What chunking strategy would fix this?",
+      "options": [
+        {"id": "a", "text": "Switch to character-level tokenization"},
+        {"id": "b", "text": "Add chunk overlap (e.g. 50-token overlap between adjacent chunks) so the fact spanning the boundary exists in both chunks — retrieval of either chunk captures the complete context"},
+        {"id": "c", "text": "Use larger 4096-token chunks — more context per chunk reduces boundary issues"},
+        {"id": "d", "text": "Embed the entire document as a single vector"}
+      ],
+      "correct": ["b"],
+      "explanation": "Chunk boundary problem: if a critical sentence starts at token 509 of chunk 1 and continues into chunk 2, neither chunk alone contains the complete context. Solution: overlapping chunks — chunk 1 covers tokens 0-512, chunk 2 covers tokens 462-974 (50-token overlap). A fact spanning the original boundary is now fully contained in chunk 2's first 50 tokens. Trade-off: overlap increases total chunk count and embedding/storage cost by ~10% (50/512 per chunk). Recursive character text splitting (LangChain default) also helps by splitting at semantic boundaries (paragraph → sentence → word) rather than arbitrary token positions. For structured docs (PDFs): use section-aware parsing (unstructured.io) to keep section headings with their content.",
+      "tags": ["chunking", "overlap", "rag", "context-window", "pdf"]
+    },
+    {
+      "id": "ae-052",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L1.10 — RAG & Retrieval",
+      "topic": "hnsw",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "HNSW (Hierarchical Navigable Small World) is the dominant ANN algorithm in vector databases. What is its core structural insight and what is its recall-speed tradeoff parameter?",
+      "options": [
+        {"id": "a", "text": "HNSW builds a KD-tree of vectors; ef parameter controls tree depth"},
+        {"id": "b", "text": "HNSW builds a multi-layer graph — higher layers have fewer nodes with long-range connections (like highway routes), lower layers have dense short-range connections (like local roads). Search starts at the top and navigates down greedily. ef_search controls how many candidates to explore per layer — higher ef = better recall, slower search"},
+        {"id": "c", "text": "HNSW partitions vectors into buckets using Locality Sensitive Hashing; ef controls bucket size"},
+        {"id": "d", "text": "HNSW is an exact nearest neighbor algorithm — there's no recall tradeoff"}
+      ],
+      "correct": ["b"],
+      "explanation": "HNSW is inspired by the 'six degrees of separation' (small-world networks). Structure: M layers. Layer 0: all N vectors, connected to M nearest neighbors each. Layer 1: ~N/e vectors, longer connections. Layer log(N)/log(M): single entry point. Search: start at entry point in top layer, greedily navigate to nodes with lower distance to query, descend to layer 0 and collect candidates. ef_search (exploration factor): number of nearest candidates tracked per layer during search. ef=10 → fast but lower recall (~92%); ef=200 → slower but ~99.9% recall. Build parameters: M=16 (connections per node), ef_construction=200 (quality of index). Qdrant, Weaviate, FAISS all implement HNSW as the default index.",
+      "tags": ["hnsw", "vector-database", "ann", "recall-speed-tradeoff"]
+    },
+    {
+      "id": "ae-053",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L1.10 — RAG & Retrieval",
+      "topic": "hyde",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "HyDE (Hypothetical Document Embeddings) improves RAG retrieval by changing what is embedded for the query. What is the technique?",
+      "options": [
+        {"id": "a", "text": "HyDE embeds only the named entities extracted from the query for more precise matching"},
+        {"id": "b", "text": "HyDE uses an LLM to generate a hypothetical answer to the query (even if hallucinated), then embeds THAT hypothetical document — not the query. The hypothesis is closer in embedding space to relevant real documents than the sparse query"},
+        {"id": "c", "text": "HyDE creates multiple query variants via paraphrasing and averages their embeddings"},
+        {"id": "d", "text": "HyDE stores documents as hypothetical questions they answer, then matches query-to-question"}
+      ],
+      "correct": ["b"],
+      "explanation": "Problem: 'What is the RLHF reward model?' (15 tokens, sparse) is far from 'The RLHF reward model is trained on human preference pairs...' (100+ tokens, dense) in embedding space — even though the document answers the question. HyDE: LLM generates a hypothetical answer: 'A reward model in RLHF is a neural network that takes a prompt-response pair and outputs a scalar reward score, trained on ranked preference pairs...' This generated text is closer in embedding space to actual documents that explain reward models. Embed the hypothesis, retrieve with it. Even if the hypothesis contains hallucinations, its embedding is a better query than the sparse question. Gao et al. (Stanford 2022) showed HyDE improves recall@5 by 10-20% on open-domain QA benchmarks.",
+      "tags": ["hyde", "rag", "query-expansion", "hypothetical-documents"]
+    },
+    {
+      "id": "ae-054",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "L1.10 — RAG & Retrieval",
+      "topic": "context-recall",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela", "toptal"],
+      "prompt": "A RAG system has faithfulness=0.88 but context_recall=0.35 (only 35% of relevant chunks are retrieved). What is the most likely root cause and appropriate fix?",
+      "options": [
+        {"id": "a", "text": "The LLM is hallucinating — fix with a stronger system prompt"},
+        {"id": "b", "text": "Retrieval is failing to find relevant chunks. Root causes: top-K too small, embedding model mismatch (query and doc phrased differently), poor chunking (key info split across chunks), or missing hybrid search. Fixes: increase top-K, add BM25 hybrid, improve chunking, or upgrade embedding model"},
+        {"id": "c", "text": "The vector database index is corrupted — rebuild the index"},
+        {"id": "d", "text": "Context recall is always low for factual questions — this is expected"}
+      ],
+      "correct": ["b"],
+      "explanation": "Context recall = (relevant chunks retrieved) / (total relevant chunks). 0.35 means retrieval is missing 65% of relevant information before the LLM even sees it. The LLM cannot hallucinate information it never received — faithfulness=0.88 confirms it's using retrieved context well. Diagnostic approach: (1) Inspect retrieved chunks manually — are they relevant? (2) Check if relevant chunks exist in the store at all. (3) Test if query rephrasing changes retrieval. Root causes: (a) top-K=3 but answer requires 6 chunks → increase K; (b) query uses 'myocardial infarction', doc says 'heart attack' → semantic gap → better embedding model or query expansion; (c) chunking split a table across 3 chunks → semantic chunking; (d) exact product codes in query → add BM25.",
+      "tags": ["context-recall", "ragas", "retrieval", "debugging"]
+    },
+    {
+      "id": "ae-055",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L1.11 — Agents & Evaluation",
+      "topic": "react-vs-cot",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "What distinguishes a ReAct agent from standard chain-of-thought prompting?",
+      "options": [
+        {"id": "a", "text": "ReAct uses a smaller model; chain-of-thought uses a larger model"},
+        {"id": "b", "text": "Chain-of-thought: the LLM reasons entirely in its internal context window without external actions. ReAct interleaves Reasoning (Thought) with Actions (tool calls) and Observations (tool results) — enabling grounded, multi-step tasks where information must be gathered externally mid-reasoning"},
+        {"id": "c", "text": "ReAct is deterministic; chain-of-thought is probabilistic"},
+        {"id": "d", "text": "Chain-of-thought requires fine-tuning; ReAct is a prompting-only technique"}
+      ],
+      "correct": ["b"],
+      "explanation": "Chain-of-thought (Wei et al. 2022): prompt 'Let's think step by step' → model generates a reasoning trace then final answer. All reasoning is inside the context window — the model cannot fetch external information. ReAct (Reason+Act, Yao et al. 2022): Thought: 'I need to check the current stock price of AAPL' → Action: search('AAPL stock price') → Observation: '$185.42' → Thought: 'Now I need to compare with yesterday...' → Action: ... This loop allows: (1) gathering real-time or private data, (2) verifying intermediate results, (3) iterating when initial approaches fail. CoT is sufficient for closed-domain reasoning; ReAct is required when the answer depends on external state. Most production agents use ReAct or LangGraph (stateful graph of ReAct nodes).",
+      "tags": ["react", "chain-of-thought", "agents", "tool-calling"]
+    },
+    {
+      "id": "ae-056",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "L1.11 — Agents & Evaluation",
+      "topic": "tool-calling",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela", "toptal"],
+      "prompt": "An agent is given a 'send_email' tool with schema {to: string, subject: string, body: string}. The user asks 'Email Alice about the Q3 report'. What is the critical safety design for this tool?",
+      "options": [
+        {"id": "a", "text": "Validate that the email body is less than 1000 characters"},
+        {"id": "b", "text": "Require human-in-the-loop confirmation before the tool executes — or constrain 'to' to a pre-approved allowlist. Sending emails is an irreversible side effect; an agent acting on ambiguous instructions ('Alice who? What about the report?') could send wrong content to wrong recipients"},
+        {"id": "c", "text": "Encrypt the email content before sending for security"},
+        {"id": "d", "text": "Always CC the user on agent-sent emails for transparency"}
+      ],
+      "correct": ["b"],
+      "explanation": "Tool calling safety principle: the blast radius of an action determines the required confirmation. Irreversible/external-facing actions (send email, post to Slack, delete database rows, execute code with side effects) require either: (1) human confirmation before execution, (2) constrained scope (to can only be verified colleagues, not arbitrary addresses), or (3) a dry-run / preview mode. The scenario is ambiguous: 'Alice' could be 3 different people; 'the Q3 report' could be the wrong version. A well-designed agent should clarify before acting, not ask forgiveness. Principle of minimal privilege: the send_email tool should only be able to send to pre-approved recipients when used in automated contexts. This is a standard agentic safety design discussed in Anthropic's model spec and LangGraph best practices.",
+      "tags": ["tool-calling", "agent-safety", "human-in-the-loop", "irreversible-actions"]
+    },
+    {
+      "id": "ae-057",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L1.11 — Agents & Evaluation",
+      "topic": "agent-loops",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "An LLM agent enters an infinite loop: it calls a search tool, reads results, calls search again with similar query, reads results, and never produces a final answer. How should production agent frameworks prevent this?",
+      "options": [
+        {"id": "a", "text": "Set a maximum context window — the loop ends when the context is full"},
+        {"id": "b", "text": "Implement a maximum step/iteration limit (e.g. 20 tool calls), a budget tracker for total LLM tokens spent, and semantic similarity detection between consecutive tool calls to detect loops. Raise an exception when limits are exceeded"},
+        {"id": "c", "text": "Use a stronger model that doesn't get confused"},
+        {"id": "d", "text": "Loop prevention is unnecessary — the user can always cancel the request"}
+      ],
+      "correct": ["b"],
+      "explanation": "Infinite agent loops are a real production failure mode. Defense in depth: (1) Max iterations: agent.run(max_steps=20) — hard stop after N tool calls regardless of completion. (2) Max tokens/cost budget: stop when total LLM tokens exceed budget — prevents runaway costs ($$$). (3) Loop detection: track the last K tool calls; if the current tool+args has cosine similarity > 0.95 with a recent call, break the loop — the agent is stuck. (4) Timeout: wall-clock time limit (e.g. 60 seconds). (5) Tool call deduplication: hash (tool_name, args) — refuse to execute identical calls twice. LangGraph implements these as graph termination conditions. Monitoring: log all steps to detect loops in production.",
+      "tags": ["agent-loops", "safety", "max-iterations", "loop-detection"]
+    },
+    {
+      "id": "ae-058",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L1.11 — Agents & Evaluation",
+      "topic": "llm-as-judge",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "LLM-as-judge evaluation (GPT-4 scoring responses 1-10) has a known 'position bias'. What is this bias and how do you mitigate it?",
+      "options": [
+        {"id": "a", "text": "GPT-4 prefers shorter responses regardless of quality"},
+        {"id": "b", "text": "When comparing two responses (A vs B), the judge consistently prefers whichever is presented first (position bias) or last (recency bias). Mitigation: evaluate both orderings (A then B, and B then A) and average the scores — or use pairwise comparison with flipped presentation"},
+        {"id": "c", "text": "GPT-4 gives higher scores to responses that mention its own name (Anthropic bias)"},
+        {"id": "d", "text": "Position bias means GPT-4 prefers responses with numbered lists"}
+      ],
+      "correct": ["b"],
+      "explanation": "Zheng et al. (MT-Bench paper, 2023) quantified that GPT-4-as-judge shows ~15-20% position bias: when comparing response A vs B, it gives A an unfair advantage if presented first ('primacy bias'), and in some setups gives B an advantage if presented last ('recency bias'). Impact: pairwise evaluation is unreliable if you always put the candidate response first. Mitigation: (1) Swap order: evaluate (A,B) and (B,A) — if GPT-4 prefers A in both orderings, it's a genuine preference; if it prefers whichever is first, it's position bias. (2) Single-answer scoring: grade each response independently on a rubric (1-10) without comparing — no position to be biased about. (3) Reference answer: compare both to a known-good reference, not against each other.",
+      "tags": ["llm-as-judge", "position-bias", "evaluation", "mt-bench"]
+    },
+    {
+      "id": "ae-059",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L2.1 — Advanced Training",
+      "topic": "adam-bug",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "A model trained with Adam + L2 regularization (λ=0.01) generalizes poorly despite low training loss. Switching to AdamW with the same λ improves test performance significantly. What mechanistic difference explains this?",
+      "options": [
+        {"id": "a", "text": "AdamW uses a different random seed that produces better weight initialization"},
+        {"id": "b", "text": "In Adam+L2: the L2 gradient 2λw is scaled by the adaptive learning rate η/√v̂. For parameters with small gradient history (small v̂), the effective regularization is much stronger than intended — creating uneven regularization. AdamW applies a fixed weight decay w_t+1 = (1-ηλ)w_t independent of v̂, giving consistent regularization to all parameters"},
+        {"id": "c", "text": "AdamW has a higher effective learning rate, allowing better optimization"},
+        {"id": "d", "text": "L2 regularization is incompatible with Adam; AdamW switches to L1 regularization"}
+      ],
+      "correct": ["b"],
+      "explanation": "Loshchilov & Hutter (2019) identified the bug: Adam adapts learning rates per-parameter using v̂_t (second moment of gradient). When L2 regularization adds gradient 2λw_i, Adam scales it: effective regularization = (2λw_i) / √v̂_t. For parameters with large gradient history (large v̂_t, e.g. embedding weights updated by many examples), the regularization is diluted — under-regularized. For parameters with small gradient history (small v̂_t, e.g. rarely-updated attention projections), the regularization is amplified — over-regularized. This inconsistency hurts generalization. AdamW decouples: update_i = m̂_t / (√v̂_t + ε); w_t+1 = w_t(1 - ηλ) - η × update_i. Weight decay applies uniformly regardless of gradient history. All production LLM training (LLaMA, GPT-4, Gemini) uses AdamW.",
+      "tags": ["adamw", "adam", "weight-decay", "regularization", "optimization"]
+    },
+    {
+      "id": "ae-060",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L2.1 — Advanced Training",
+      "topic": "double-descent",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "Classical ML predicts that adding more model parameters past the interpolation threshold (where training error = 0) should cause overfitting. Large LLMs violate this — why?",
+      "options": [
+        {"id": "a", "text": "LLMs use different loss functions that prevent overfitting at any scale"},
+        {"id": "b", "text": "The 'double descent' phenomenon: beyond interpolation threshold, test error decreases again with more parameters. Very large models find smooth interpolants of training data that generalize well. LLMs are also trained with massive regularization (dropout, weight decay, diverse data) that prevents memorization even with billions of parameters"},
+        {"id": "c", "text": "LLMs have special architectures that are immune to overfitting by design"},
+        {"id": "d", "text": "LLMs are always underfitting — training loss never reaches zero"}
+      ],
+      "correct": ["b"],
+      "explanation": "Classical bias-variance tradeoff predicts a U-shaped test error curve: error decreases with capacity to an optimal point, then increases (overfitting). Belkin et al. (2019) showed empirically that a second descent occurs: past the interpolation threshold, adding MORE parameters actually decreases test error. Intuition: overparameterized models have many solutions that fit the training data — SGD/Adam with weight decay finds the minimum-norm solution among them, which tends to be smooth and generalize well. For LLMs: 70B parameters on 1T training tokens — the model is massively overparameterized but the data is also massive and diverse. Weight decay, dropout, and data diversity prevent any single example from being memorized. Empirically, GPT-3 (175B) generalizes better than GPT-2 (1.5B) — more parameters, better generalization.",
+      "tags": ["double-descent", "overfitting", "interpolation-threshold", "generalization"]
+    },
+    {
+      "id": "ae-061",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L2.2 — Advanced Attention",
+      "topic": "gqa-kv-cache",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "LLaMA-2 70B uses GQA with 64 Q heads and 8 K/V heads. At a 4096-token context with bfloat16 weights, how much does GQA reduce the KV cache size compared to MHA (64 K/V heads)?",
+      "options": [
+        {"id": "a", "text": "2× reduction — GQA groups Q heads in pairs"},
+        {"id": "b", "text": "8× reduction — 8 K/V heads vs 64 K/V heads. KV cache per token per layer = 2 (K+V) × n_kv_heads × head_dim × 2 bytes. With 8 heads instead of 64: 8/64 = 1/8 the K/V memory — 8× smaller"},
+        {"id": "c", "text": "64× reduction — one K/V pair instead of 64"},
+        {"id": "d", "text": "No reduction — the Q heads still access all K/V pairs"}
+      ],
+      "correct": ["b"],
+      "explanation": "KV cache size formula: 2 (K+V) × n_layers × n_kv_heads × head_dim × seq_len × 2 bytes (bf16). LLaMA-2 70B: 80 layers, head_dim=128. MHA (64 K/V heads): 2 × 80 × 64 × 128 × 4096 × 2 = 10.7GB per request. GQA (8 K/V heads): 2 × 80 × 8 × 128 × 4096 × 2 = 1.34GB per request — exactly 8× smaller. At 100 concurrent requests: MHA KV cache = 1.07TB (impossible); GQA = 134GB (fits on 2-4 A100s). This is why GQA is critical for production serving: it enables 8× more concurrent requests or 8× longer context without additional GPU memory. Quality loss from GQA vs MHA is minimal (< 0.5% perplexity difference on standard benchmarks).",
+      "tags": ["gqa", "kv-cache", "memory", "concurrent-requests"]
+    },
+    {
+      "id": "ae-062",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L2.2 — Advanced Attention",
+      "topic": "cross-attention-diffusion",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "In Stable Diffusion's UNet, cross-attention layers condition image generation on text. Where do Q, K, and V come from in this cross-attention?",
+      "options": [
+        {"id": "a", "text": "Q, K, V all come from the text encoder — the UNet uses them unmodified"},
+        {"id": "b", "text": "Q comes from the UNet's image feature maps (what part of the image is being generated), K and V come from the CLIP text encoder's output (the text conditioning). Each image region attends to relevant text tokens to determine what to generate there"},
+        {"id": "c", "text": "Q, K, V all come from the image feature maps — text is added as a bias term"},
+        {"id": "d", "text": "K and V come from the image; Q comes from text — text queries the image for context"}
+      ],
+      "correct": ["b"],
+      "explanation": "Cross-attention in diffusion models: the UNet generates image features at multiple resolutions. At each resolution's cross-attention layer: Q = linear(image_features) — what spatial location needs information. K = linear(text_embeddings), V = linear(text_embeddings) — text provides the 'database' of what each concept means. attention = softmax(Q·Kᵀ/√d) · V. A spatial region attending to the token 'cat' retrieves the value embedding for 'cat' — conditioning that region to look like a cat. This is why spatial composition works: 'a cat on the left and a dog on the right' → left image features attend to 'cat', right to 'dog'. Prompt engineering exploits this: concepts late in the prompt have lower attention scores due to tokenizer compression — structural prompts (subject first) improve generation.",
+      "tags": ["cross-attention", "stable-diffusion", "text-conditioning", "unet"]
+    },
+    {
+      "id": "ae-063",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L2.3 — Scale & MoE",
+      "topic": "moe-load-imbalance",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "In a Mixture of Experts model, what is 'expert load imbalance' and what training technique addresses it?",
+      "options": [
+        {"id": "a", "text": "Experts become different sizes during training; load balancing adds a size penalty"},
+        {"id": "b", "text": "The router learns to send all tokens to 1-2 popular experts (token dropping), leaving other experts undertrained and wasting their capacity. Auxiliary load balancing loss (e.g. coefficient of variation of expert assignment counts) penalizes uneven distribution, forcing the router to spread tokens across all experts"},
+        {"id": "c", "text": "Expert load imbalance refers to memory imbalance across GPUs when experts are sharded"},
+        {"id": "d", "text": "Load imbalance occurs only during inference, not training"}
+      ],
+      "correct": ["b"],
+      "explanation": "MoE router collapse: in top-K routing without regularization, the router quickly learns that expert 0 performs slightly better early in training → sends more tokens to expert 0 → expert 0 gets more gradient updates → becomes better → positive feedback loop. Result: 1-2 experts handling 90%+ of tokens; other experts are barely trained and wasted capacity. Fix: auxiliary load balancing loss: L_balance = α × Σ_i f_i × P_i where f_i = fraction of tokens routed to expert i, P_i = router probability for expert i. This loss penalizes when one expert has much higher utilization than others. Switch Transformer (Fedus et al. 2021) introduced this with α=0.01. Mixtral uses a similar technique. Expert Choice routing (different experts pull the top-K tokens) also avoids this collapse.",
+      "tags": ["moe", "load-imbalance", "expert-collapse", "auxiliary-loss"]
+    },
+    {
+      "id": "ae-064",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "L2.3 — Scale & MoE",
+      "topic": "vit-small-data",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "A team wants to train an image classifier on a proprietary dataset of 50,000 images. Should they use a ViT-L or ResNet-50 as the base, and why?",
+      "options": [
+        {"id": "a", "text": "ViT-L — it has more parameters and will always outperform smaller models"},
+        {"id": "b", "text": "ResNet-50 (CNN) — at 50k images, CNNs' strong inductive biases (locality, translation invariance) allow effective generalization. ViT-L would overfit significantly without the massive pre-training that makes ViTs work. Alternatively: use a ViT pre-trained on ImageNet-21k as a frozen backbone + fine-tune the head"},
+        {"id": "c", "text": "ViT-L — it requires less data because attention is more efficient than convolution"},
+        {"id": "d", "text": "Neither — both require at least 1M images to train effectively"}
+      ],
+      "correct": ["b"],
+      "explanation": "50k proprietary images is a 'small data' scenario for training from scratch. ResNet-50: 25M parameters, strong inductive biases → learns effectively on 50k images, standard ImageNet fine-tuning achieves 85-90%+ accuracy on domain-specific tasks. ViT-L: 307M parameters, no locality bias — requires 14M+ images (ImageNet-21k scale) to learn spatial priors from scratch. On 50k images, ViT-L overfits severely (close to random on test set). BUT: ViT-L pre-trained on ImageNet-21k + fine-tuned on 50k images often outperforms ResNet-50 (transfer learning). The key insight: don't train ViT from scratch on small datasets. DeiT bridges this with distillation — training ViT using a CNN teacher on smaller datasets.",
+      "tags": ["vit", "cnn", "small-data", "inductive-bias", "transfer-learning"]
+    },
+    {
+      "id": "ae-065",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L2.4 — Advanced RAG",
+      "topic": "graph-rag",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "A user asks a RAG system: 'How do the clinical outcomes of patients with comorbid diabetes and hypertension compare across the three treatment protocols studied in our research corpus?' Standard chunk-based RAG fails. Why would Graph RAG succeed?",
+      "options": [
+        {"id": "a", "text": "Graph RAG uses a larger embedding model that understands medical terminology better"},
+        {"id": "b", "text": "This is a multi-hop aggregation query: the answer requires traversing entity relationships across hundreds of documents (patients → comorbidities → treatment protocols → outcomes → statistical comparison). Chunk RAG retrieves isolated passages; Graph RAG builds entity-relationship graphs and can traverse: Patient→has_comorbidity→Diabetes AND Hypertension→received→Protocol A/B/C→outcome→Mortality/Remission"},
+        {"id": "c", "text": "Graph RAG can search more documents simultaneously than chunk RAG"},
+        {"id": "d", "text": "Graph RAG applies reranking which chunk RAG lacks"}
+      ],
+      "correct": ["b"],
+      "explanation": "Standard RAG retrieves top-K chunks similar to the query — it finds documents that mention 'diabetes', 'hypertension', and 'treatment protocol'. But synthesizing a comparison across all three protocols requires: (1) finding ALL relevant patient records (not just the top-K similar), (2) identifying their comorbidity combinations, (3) matching each to a protocol, (4) aggregating outcomes by protocol. This is a global aggregation requiring traversal of the entire knowledge graph. Microsoft GraphRAG (Edge et al. 2024): builds a knowledge graph from the corpus, creates community summaries at multiple granularities, answers global questions using hierarchical community structure. Graph traversal: start at 'treatment protocols' node → follow 'has_participant' → filter by comorbidities → aggregate outcomes. Chunk RAG answers local questions; Graph RAG answers global, relational ones.",
+      "tags": ["graph-rag", "multi-hop", "knowledge-graph", "aggregation-query"]
+    },
+    {
+      "id": "ae-066",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L2.5 — Eval Frameworks",
+      "topic": "ragas-faithfulness",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "How does RAGAS compute the faithfulness metric for a generated answer — and what score indicates a faithfulness failure?",
+      "options": [
+        {"id": "a", "text": "Faithfulness = ROUGE-L overlap between answer and retrieved context; score < 0.5 = failure"},
+        {"id": "b", "text": "RAGAS decomposes the answer into atomic claims, then uses an LLM to check each claim against the retrieved context (supported or not). Faithfulness = |supported claims| / |total claims|. Score < 0.7 typically indicates the model is adding facts not in context (hallucination)"},
+        {"id": "c", "text": "Faithfulness = 1 if the answer is shorter than the context, 0 otherwise"},
+        {"id": "d", "text": "Faithfulness = cosine similarity between answer embedding and context embedding"}
+      ],
+      "correct": ["b"],
+      "explanation": "RAGAS faithfulness pipeline: (1) Use LLM to extract atomic claims from the answer: 'The Eiffel Tower is in Paris' → ['The Eiffel Tower is in Paris']. (2) For each claim, use LLM to check: 'Is this claim supported by the following context? [context chunks]' → Yes/No. (3) Faithfulness = Yes_count / total_claims. Example: answer has 5 claims; context supports 3; faithfulness = 0.6. Score interpretation: >0.8 = good grounding; 0.6-0.8 = some hallucination; <0.6 = significant hallucination. Faithfulness ≠ correctness: a faithfully-grounded answer can still be wrong if the context is wrong. It measures: does the answer stay within what the retrieved context says? Code: from ragas.metrics import faithfulness; result = evaluate(dataset, [faithfulness]).",
+      "tags": ["ragas", "faithfulness", "evaluation", "hallucination-detection"]
+    },
+    {
+      "id": "ae-067",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "L2.5 — Eval Frameworks",
+      "topic": "mt-bench-vs-mmlu",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela"],
+      "prompt": "MT-Bench and MMLU both benchmark LLMs but measure fundamentally different capabilities. What is the key difference?",
+      "options": [
+        {"id": "a", "text": "MT-Bench tests only math; MMLU tests only language"},
+        {"id": "b", "text": "MMLU (Massive Multitask Language Understanding): 57-subject multiple-choice questions testing factual world knowledge — measures what the model knows. MT-Bench (Multi-Turn Benchmark): 80 multi-turn conversation questions graded by GPT-4 on quality, reasoning, and instruction following — measures how the model communicates and reasons"},
+        {"id": "c", "text": "MMLU requires code execution; MT-Bench is text-only"},
+        {"id": "d", "text": "MT-Bench is human-graded; MMLU is automatically graded by a model"}
+      ],
+      "correct": ["b"],
+      "explanation": "MMLU (Hendrycks et al. 2021): 14,079 multiple-choice questions across 57 subjects (law, math, history, medicine, etc.). Each question has 4 options; correct answer is known. Measures factual knowledge breadth. A model that memorized many facts scores high even if it can't reason or communicate. GPT-4: 86.4%. LLaMA-3 70B: 82%. MT-Bench (Zheng et al. 2023): 80 questions in 8 categories (coding, math, reasoning, roleplay, STEM, writing, humanities, extraction). Each question has a follow-up turn (tests multi-turn coherence). GPT-4 judges responses on 1-10 scale. Measures: instruction following, coherence across turns, reasoning quality, communication. GPT-4: 9.0. LLaMA-3 8B Instruct: 8.0. Production use: MMLU for knowledge benchmarking; MT-Bench for assistant quality.",
+      "tags": ["mt-bench", "mmlu", "evaluation", "benchmarks", "llm-quality"]
+    },
+    {
+      "id": "ae-068",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L2.5 — Eval Frameworks",
+      "topic": "g-eval",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "G-Eval uses token probability weighting to compute scores, not just the text output. Why is this superior to asking the LLM to output '7' vs asking for log-probability-weighted scores?",
+      "options": [
+        {"id": "a", "text": "Log-probability weighting is faster to compute than parsing text output"},
+        {"id": "b", "text": "When an LLM outputs '7', it rounds to an integer, losing calibration signal. Probability-weighted score = Σ_{s∈{1..5}} s × P(output=s) captures the model's uncertainty: if P(7)=0.6 and P(6)=0.4, the weighted score=6.6, more informative than rounding to 7. This reduces variance and better correlates with human ratings"},
+        {"id": "c", "text": "Text output like '7' is not always parseable; log-probabilities are always numeric"},
+        {"id": "d", "text": "G-Eval only works with models that expose log-probabilities through their API"}
+      ],
+      "correct": ["b"],
+      "explanation": "G-Eval's key insight (Liu et al. 2023): LLMs are probabilistic — they don't 'decide' a score is 7, they assign probability distributions over all possible scores. When forced to output a single token, the model rounds — discarding calibration information. If the true distribution is P(4)=0.3, P(5)=0.4, P(6)=0.3 for a borderline response, hard output '5' misrepresents the uncertainty. G-Eval: prompt the LLM with chain-of-thought scoring rubric → extract log-probabilities P(1), P(2), ... P(5) from the API → weighted score = Σ_s s×P(s). This continuous score has lower variance, higher Spearman correlation with human ratings (+8% vs hard discrete scoring), and is more sensitive to small quality differences. Available via OpenAI API's logprobs parameter.",
+      "tags": ["g-eval", "log-probabilities", "llm-evaluation", "calibration"]
+    },
+    {
+      "id": "ae-069",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L2.6 — Production Serving",
+      "topic": "continuous-batching",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "What is the difference between static batching and continuous batching in LLM serving, and why does continuous batching improve GPU utilization?",
+      "options": [
+        {"id": "a", "text": "Static batching uses int8; continuous batching uses float16 for better quality"},
+        {"id": "b", "text": "Static batching: wait until all sequences in a batch finish generating before starting new requests — GPU idles waiting for long sequences. Continuous batching: as soon as any sequence finishes, immediately insert a new request into that batch slot — GPU is always occupied. Results in 2-10× higher throughput"},
+        {"id": "c", "text": "Continuous batching runs requests in parallel threads; static batching is sequential"},
+        {"id": "d", "text": "Static batching pads short sequences to max length; continuous batching uses variable-length operations"}
+      ],
+      "correct": ["b"],
+      "explanation": "Static batching: requests [A(50 tokens), B(200 tokens), C(120 tokens)] are batched together. GPU processes all 3 simultaneously. A finishes at step 50 — GPU now processes B+C+padding_for_A_slot. B finishes at 200 — only C remains, GPU is 2/3 underutilized. Continuous (iteration-level) batching: at step 50 when A finishes, immediately insert new request D — batch always has 3 active sequences. No GPU underutilization from finished sequences. vLLM implements continuous batching at the iteration level (each forward pass checks for finished sequences and inserts waiting ones). Combined with PagedAttention (memory management), vLLM achieves 24× higher throughput than Hugging Face generate() with static batching. This is the core serving innovation that makes LLM APIs cost-effective.",
+      "tags": ["continuous-batching", "static-batching", "gpu-utilization", "vllm"]
+    },
+    {
+      "id": "ae-070",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L2.6 — Production Serving",
+      "topic": "prefill-decode-disaggregation",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "Why would a large-scale LLM serving cluster separate 'prefill machines' from 'decode machines' rather than running both phases on the same GPUs?",
+      "options": [
+        {"id": "a", "text": "Prefill needs more memory; decode needs more compute — different GPU types are optimal"},
+        {"id": "b", "text": "Prefill is compute-intensive (process N tokens in parallel — high arithmetic intensity) while decode is memory-bandwidth-intensive (1 token per step — low arithmetic intensity). Running both on same GPU causes interference: a long prefill blocks decode steps (latency spike). Disaggregation: prefill servers (high-compute A100s) process prompts and transfer KV cache to decode servers (high-bandwidth H100s) for generation — optimizing each phase independently"},
+        {"id": "c", "text": "Regulatory requirements mandate separation of input processing and output generation"},
+        {"id": "d", "text": "Prefill machines handle system prompts; decode machines handle user messages"}
+      ],
+      "correct": ["b"],
+      "explanation": "Chunked prefill / disaggregation (DistServe, 2024; Splitwise, 2024): LLM serving has a fundamental mismatch — prefill is compute-bound (latency proportional to input length), decode is memory-bandwidth-bound (latency proportional to number of concurrent sequences × model size). On the same GPU: a 32k-token prompt prefill takes seconds, blocking all decode steps for other users → catastrophic tail latency. Disaggregated serving: GPU cluster A (prefill) optimized for high FLOPs/sec processes all incoming prompts → transfers KV cache to GPU cluster B (decode) optimized for high HBM bandwidth → decode runs continuously without prefill interruption. Production: Google, Meta, and ByteDance use disaggregated serving for their LLM APIs. Reduces P99 TTFT by 4-8× and increases decode throughput 2-3×.",
+      "tags": ["prefill-decode", "disaggregation", "serving", "latency", "gpu"]
+    },
+    {
+      "id": "ae-071",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "subtopic": "L2.6 — Production Serving",
+      "topic": "vllm-vs-llamacpp",
+      "timeBudgetSec": 75,
+      "tracks": ["turing", "andela", "toptal"],
+      "prompt": "A startup needs to self-host LLaMA-3 70B. They have two A100 80GB GPUs for cloud serving. A developer's MacBook Pro M2 Max will be used for local testing. Which serving framework is appropriate for each scenario?",
+      "options": [
+        {"id": "a", "text": "vLLM for both — it supports both GPU and CPU inference"},
+        {"id": "b", "text": "vLLM for the GPU server (optimized for GPU throughput, PagedAttention, continuous batching, OpenAI-compatible API), llama.cpp or Ollama for the MacBook (CPU/Apple Silicon-optimized, GGUF quantized models run well on M2 Metal)"},
+        {"id": "c", "text": "Hugging Face Transformers for both — it's the most universal"},
+        {"id": "d", "text": "llama.cpp for both — it's faster than vLLM on any hardware"}
+      ],
+      "correct": ["b"],
+      "explanation": "vLLM: CUDA-only, designed for NVIDIA GPU clusters. PagedAttention, continuous batching, tensor parallelism across multiple GPUs. On 2×A100 80GB: can serve LLaMA-3 70B (AWQ 4-bit ≈ 40GB) at ~100+ tokens/sec with TP=2. OpenAI-compatible API for production use. llama.cpp: CPU inference with optional Metal/CUDA acceleration. On M2 Max (96GB unified memory): runs LLaMA-3 70B GGUF Q4_K_M at 5-15 tokens/sec — usable for local testing. Ollama wraps llama.cpp with model management (ollama pull llama3:70b). Rule: GPU cluster → vLLM; Apple Silicon/CPU local → Ollama/llama.cpp; edge/embedded → llama.cpp with extreme quantization (Q2_K).",
+      "tags": ["vllm", "llama-cpp", "ollama", "serving", "deployment"]
+    },
+    {
+      "id": "ae-072",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L3 — Cutting Edge",
+      "topic": "pagedattention",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "PagedAttention manages KV cache like OS virtual memory. What OS concept specifically does it mirror, and what problem does this solve that standard KV cache allocation cannot?",
+      "options": [
+        {"id": "a", "text": "PagedAttention mirrors CPU caching — it keeps hot KV entries in faster memory"},
+        {"id": "b", "text": "PagedAttention mirrors OS page tables (virtual memory). OS problem: process needs non-contiguous physical memory but gets a contiguous virtual address space via page mapping. LLM problem: KV cache grows dynamically and different sequences finish at different times — pre-allocating max_length contiguous blocks wastes memory. PagedAttention stores KV in fixed-size non-contiguous blocks (pages) with a page table, enabling sharing, swapping, and near-zero fragmentation"},
+        {"id": "c", "text": "PagedAttention mirrors CPU prefetching — it loads future KV blocks in advance"},
+        {"id": "d", "text": "PagedAttention mirrors swap space — KV cache is written to disk when GPU memory is full"}
+      ],
+      "correct": ["b"],
+      "explanation": "Classical KV cache: each incoming request pre-allocates max_seq_len × n_layers × n_heads × head_dim bytes contiguously. Problem: (1) Internal fragmentation — sequence generates 500 tokens; 3596 slots wasted if max_len=4096. (2) No sharing — 100 requests with the same system prompt each get their own copy of system prompt KV blocks. PagedAttention: KV cache divided into fixed pages (e.g. 16 tokens per page). A virtual-to-physical page table maps logical positions to physical pages. Benefits: (1) Near-zero fragmentation — pages allocated only for actual tokens generated. (2) Prefix sharing — sequences sharing a system prompt share the same physical KV pages. (3) Copy-on-Write for beam search — parallel beams share prefixes. vLLM showed 20× more concurrent requests vs standard KV allocation in the same GPU memory.",
+      "tags": ["pagedattention", "kv-cache", "virtual-memory", "vllm", "memory-management"]
+    },
+    {
+      "id": "ae-073",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L3 — Cutting Edge",
+      "topic": "zero-sharding",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "Training LLaMA-3 70B with ZeRO-3 (FSDP) on 8× A100 80GB GPUs. Approximately how much of the model's weights does each GPU hold, and what happens during the forward pass?",
+      "options": [
+        {"id": "a", "text": "Each GPU holds the full 70B model; ZeRO-3 only shards optimizer state"},
+        {"id": "b", "text": "Each GPU holds 1/8 of the 70B model ≈ 8.75B parameters (~17.5GB in bf16). During forward pass: each layer's weights are all-gathered from all 8 GPUs (each broadcasts its shard), computation runs on the full layer, then shards are discarded immediately to free memory. Gradients and optimizer states are similarly sharded"},
+        {"id": "c", "text": "Each GPU holds 70B parameters; ZeRO-3 shards gradients into 8 pieces"},
+        {"id": "d", "text": "Each GPU holds different layers (pipeline parallel) rather than different shards of each layer"}
+      ],
+      "correct": ["b"],
+      "explanation": "ZeRO-3 / FSDP parameter sharding: model weights split equally across N GPUs. Each GPU: 70B/8 = 8.75B params × 2 bytes bf16 = 17.5GB just for weights (vs 140GB without sharding). Forward pass: when layer L is needed → all-gather: each GPU broadcasts its shard → all 8 GPUs temporarily have the full layer → compute → discard (weights freed). This temporary all-gather costs bandwidth but enables training 70B on 8 GPUs instead of needing 2TB+ VRAM. Gradient sharding: each GPU also holds 1/8 of gradients; reduce-scatter after backward pass. Optimizer state sharding: Adam's m and v tensors (2× model size) are also 1/8 per GPU. Total VRAM: ~80GB per GPU (weights + activations + gradients + optimizer) — fits just within A100 80GB. Combined with gradient checkpointing and FlashAttention: standard recipe for 70B+ training.",
+      "tags": ["zero", "fsdp", "model-sharding", "distributed-training", "all-gather"]
+    },
+    {
+      "id": "ae-074",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "subtopic": "L3 — Cutting Edge",
+      "topic": "speculative-decoding-rejection",
+      "timeBudgetSec": 90,
+      "tracks": ["turing", "andela"],
+      "prompt": "In speculative decoding, the small draft model proposes ['The', 'cat', 'sat', 'on']. The large target model rejects 'on' (position 4). What happens next — and how is the output distribution preserved?",
+      "options": [
+        {"id": "a", "text": "All 4 tokens are discarded; the large model generates from scratch"},
+        {"id": "b", "text": "Tokens 1-3 ('The cat sat') are accepted. The large model samples a corrected token at position 4 from the residual distribution: p_corrected = normalize(max(0, p_target - p_draft)). This rejection sampling maintains the exact target model's output distribution — provably identical to sampling from the target alone"},
+        {"id": "c", "text": "Tokens 1-3 are accepted and 'on' is replaced with the top-1 token from the target model's distribution"},
+        {"id": "d", "text": "The draft model is penalized and retrained to not propose 'on' in this context"}
+      ],
+      "correct": ["b"],
+      "explanation": "Speculative decoding uses a specific rejection sampling algorithm (Leviathan et al. 2023) that guarantees output distribution equality: for each draft token x: if p_target(x) ≥ p_draft(x): accept with probability 1. Else: accept with probability p_target(x)/p_draft(x). On rejection: sample from p_corrected = normalize(max(0, p_target - p_draft)) — the 'residual' distribution that makes up for over-representation in draft. This is not simple top-1 correction — that would change the distribution. The residual sampling is mathematically proven to produce samples equivalent to sampling from p_target alone. Net gain: tokens 1-3 accepted (3 tokens) + 1 corrected token = 4 tokens in 1 large model forward pass. Expected speedup = E[accepted tokens] + 1, typically 2-4×. If draft and target disagree often (low acceptance rate), speedup approaches 1× — draft model quality matters.",
+      "tags": ["speculative-decoding", "rejection-sampling", "output-distribution", "draft-model"]
     }
   ]
 }
