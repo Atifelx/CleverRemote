@@ -90,10 +90,10 @@ export const SYLLABUS: SyllabusEntry[] = [
     testStages: ["turing-t1-hm", "andela-a5-epic", "toptal-tp1-screen", "toptal-tp4-trial"] },
 
   { num: 26, id: "project-deep-dive", title: "Project Deep Dive",
-    blurb: "Résumé drilling, 'I not we' audit, project story templates.",
+    blurb: "Résumé drilling, 'I not we' audit, project story templates, async client communication drills.",
     targetQs: 20, status: "built", moduleId: "project-deep-dive", isCore: true,
     tracks: ["turing", "andela", "toptal"],
-    testStages: ["turing-t1-hm", "andela-a3-screen", "toptal-tp1-screen"] },
+    testStages: ["turing-t1-hm", "andela-a3-screen", "toptal-tp1-screen", "toptal-tp4-trial"] },
 
   { num: 30, id: "oop-design-patterns", title: "OOP & Design Patterns (All 23 GoF)",
     blurb: "All 23 Gang of Four patterns with JS/TS examples. SOLID deep dive. Composition vs inheritance, DRY, YAGNI, LoD.",

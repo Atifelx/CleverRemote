@@ -510,6 +510,341 @@
       "explanation": "Cache + lifecycle bookkeeping you'd otherwise write by hand.",
       "tags": ["data-fetching", "react-query"],
       "sourcePlatforms": ["turing-mcq", "fde-loop"]
+    },
+    {
+      "id": "rx-031",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "useCallback",
+      "prompt": "When is `useCallback` actually beneficial?",
+      "options": [
+        {"id": "a", "text": "Every time you pass a function as a prop — always use it"},
+        {"id": "b", "text": "When passing the function to a child wrapped in React.memo, or as a dependency of useEffect/useMemo — otherwise it adds cost without benefit"},
+        {"id": "c", "text": "Only in class components"},
+        {"id": "d", "text": "Whenever the function makes an API call"}
+      ],
+      "correct": ["b"],
+      "explanation": "`useCallback` memoizes the function reference so it doesn't change on every render. This only matters when: (1) a child wrapped in `React.memo` receives the function as prop — without `useCallback`, the child re-renders anyway because the function reference is new; (2) the function is listed in a `useEffect` dependency array — without `useCallback`, the effect runs on every render. Outside these cases, `useCallback` has overhead (extra comparison) with no benefit.",
+      "tags": ["useCallback", "performance", "memo"],
+      "sourcePlatforms": ["turing-mcq", "toptal-live"]
+    },
+    {
+      "id": "rx-032",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "code-splitting",
+      "prompt": "`React.lazy(() => import('./HeavyChart'))` paired with `<Suspense>` does what at the bundle level?",
+      "options": [
+        {"id": "a", "text": "Eliminates the HeavyChart component from the bundle entirely"},
+        {"id": "b", "text": "Moves HeavyChart into a separate chunk downloaded only when the component is first rendered"},
+        {"id": "c", "text": "Compresses HeavyChart code using tree-shaking"},
+        {"id": "d", "text": "Renders HeavyChart on the server instead of the client"}
+      ],
+      "correct": ["b"],
+      "explanation": "Dynamic `import()` tells the bundler (Webpack/Vite) to emit `HeavyChart` in its own chunk file. That chunk is fetched from the network only when the component is first needed — not on initial page load. `<Suspense fallback={<Spinner/>}>` shows the fallback while the chunk downloads. This is the primary technique for reducing initial bundle size: route-level or feature-level lazy loading.",
+      "tags": ["code-splitting", "lazy", "suspense", "performance"],
+      "sourcePlatforms": ["turing-mcq", "toptal-live"]
+    },
+    {
+      "id": "rx-033",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "forwardRef",
+      "prompt": "A parent component wants to call `.focus()` on an `<input>` inside a custom `TextInput` component. What does `TextInput` need to do?",
+      "options": [
+        {"id": "a", "text": "Export a global variable holding the input ref"},
+        {"id": "b", "text": "Use `React.forwardRef` so the parent's ref is forwarded to the underlying `<input>` DOM element"},
+        {"id": "c", "text": "Convert to a class component to expose `this.inputRef`"},
+        {"id": "d", "text": "Call `ReactDOM.findDOMNode` from the parent"}
+      ],
+      "correct": ["b"],
+      "explanation": "`React.forwardRef((props, ref) => <input ref={ref} {...props} />)` passes the parent's ref through to the inner DOM node. Without `forwardRef`, the ref placed on `<TextInput>` points to nothing (functional components have no instance). Use with `useImperativeHandle` when you want to expose only specific methods rather than the raw DOM node.",
+      "tags": ["forwardRef", "refs", "dom"],
+      "sourcePlatforms": ["turing-mcq", "toptal-live"]
+    },
+    {
+      "id": "rx-034",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "useImperativeHandle",
+      "prompt": "`useImperativeHandle(ref, () => ({ focus, clear }))` — what is the intended use case?",
+      "options": [
+        {"id": "a", "text": "To replace useEffect for DOM mutations"},
+        {"id": "b", "text": "To expose a controlled, minimal API to a parent ref rather than the raw DOM node"},
+        {"id": "c", "text": "To make state accessible from outside the component tree"},
+        {"id": "d", "text": "To cache expensive DOM reads"}
+      ],
+      "correct": ["b"],
+      "explanation": "By default, `forwardRef` exposes the raw DOM node to the parent — the parent can call any DOM method. `useImperativeHandle` replaces that with a curated object (`{ focus, clear }`), so the parent's API surface is controlled. Useful for component libraries where you want to expose `focus()` and `reset()` but hide the underlying `<textarea>` structure.",
+      "tags": ["useImperativeHandle", "forwardRef", "refs"],
+      "sourcePlatforms": ["turing-mcq", "toptal-live"]
+    },
+    {
+      "id": "rx-035",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "virtualization",
+      "prompt": "A list renders 50,000 rows. Users report the initial render takes 4 seconds and scrolling is janky. The correct fix is:",
+      "options": [
+        {"id": "a", "text": "Wrap all rows in React.memo to prevent re-renders"},
+        {"id": "b", "text": "Use a virtualized list (react-window or react-virtual) — render only the ~20 visible rows and recycle DOM nodes as the user scrolls"},
+        {"id": "c", "text": "Use useMemo to memoize the array"},
+        {"id": "d", "text": "Use a Web Worker to compute rows off the main thread"}
+      ],
+      "correct": ["b"],
+      "explanation": "Rendering 50,000 DOM nodes is the problem — `React.memo` only prevents re-renders, it doesn't reduce the initial DOM size. Virtualization (windowing) renders only the rows visible in the viewport (typically 20–50) plus a small overscan buffer. As the user scrolls, DOM nodes are recycled. `react-window` is the standard library (lightweight); `react-virtual` (TanStack) supports variable-size rows. This reduces initial render from O(N) DOM nodes to O(viewport) nodes.",
+      "tags": ["virtualization", "performance", "lists"],
+      "sourcePlatforms": ["toptal-live", "turing-mcq"]
+    },
+    {
+      "id": "rx-036",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "react-devtools",
+      "prompt": "In React DevTools Profiler, a component shows 'Why did this render? — props changed (onClick)'. The `onClick` is an inline arrow function. What is the fix?",
+      "options": [
+        {"id": "a", "text": "Move the component to a separate file"},
+        {"id": "b", "text": "Wrap the arrow function in `useCallback` with the correct dependency array, then wrap the child in `React.memo`"},
+        {"id": "c", "text": "Use `useMemo` to memoize the component itself"},
+        {"id": "d", "text": "Convert to a class component"}
+      ],
+      "correct": ["b"],
+      "explanation": "An inline `onClick={() => handleClick(id)}` creates a new function reference on every parent render. Even if the child is wrapped in `React.memo`, `memo` does a shallow comparison — the new function reference fails the equality check, forcing a re-render. Fix: `const handleClick = useCallback((id) => { ... }, [dependencies])` creates a stable reference; `React.memo` on the child then successfully skips the re-render when nothing meaningful changed. The DevTools Profiler flame graph and 'Why did this render?' are the primary tools to locate these issues.",
+      "tags": ["react-devtools", "performance", "useCallback"],
+      "sourcePlatforms": ["toptal-live", "turing-mcq"]
+    },
+    {
+      "id": "rx-037",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "context-performance",
+      "prompt": "A Context holds `{ theme, user, cart }`. Every context update causes ALL consumers to re-render even if they only use `theme`. How do you fix this?",
+      "options": [
+        {"id": "a", "text": "Use `React.memo` on the Provider component"},
+        {"id": "b", "text": "Split into separate Contexts — `ThemeContext`, `UserContext`, `CartContext` — so consumers subscribe only to what they need"},
+        {"id": "c", "text": "Add `useMemo` inside every consumer"},
+        {"id": "d", "text": "Switch to Redux — Context doesn't support selective subscriptions"}
+      ],
+      "correct": ["b"],
+      "explanation": "Context has no built-in selective subscription — every consumer re-renders when ANY value in the context changes. The idiomatic fix is to split the context: a component that only needs `theme` subscribes to `ThemeContext` and ignores `CartContext` updates entirely. An alternative is `use-context-selector` (library) or using a state manager like Zustand that supports granular subscriptions. Redux is not required — the split-context pattern is sufficient for most apps.",
+      "tags": ["context", "performance", "split-context"],
+      "sourcePlatforms": ["turing-mcq", "toptal-live"]
+    },
+    {
+      "id": "rx-038",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "testing",
+      "prompt": "In React Testing Library, what is the recommended query priority order?",
+      "options": [
+        {"id": "a", "text": "getByTestId → getByRole → getByText"},
+        {"id": "b", "text": "getByRole → getByLabelText → getByText → getByTestId (data-testid is the last resort)"},
+        {"id": "c", "text": "getByClassName → getByRole → getByText"},
+        {"id": "d", "text": "getByRole and getByTestId are equivalent — use whichever is simpler"}
+      ],
+      "correct": ["b"],
+      "explanation": "RTL's guiding principle: queries should reflect what the user sees, not implementation details. `getByRole` is first because it tests accessibility (a button with `role='button'` and an accessible name). `getByLabelText` tests that inputs are properly labelled. `getByText` tests visible copy. `data-testid` is the last resort — it has no accessibility meaning and couples tests to implementation. Tests that use only `getByRole`/`getByLabelText` also verify that the component is accessible.",
+      "tags": ["testing", "react-testing-library", "a11y"],
+      "sourcePlatforms": ["turing-mcq", "toptal-live"]
+    },
+    {
+      "id": "rx-039",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "a11y",
+      "prompt": "Which of these is a WCAG accessibility violation in a React component?",
+      "options": [
+        {"id": "a", "text": "`<button onClick={handleClick}>Delete</button>`"},
+        {"id": "b", "text": "`<div onClick={handleClick}>Delete</div>` with no role or keyboard handler"},
+        {"id": "c", "text": "`<img src='icon.png' alt='Delete item' />`"},
+        {"id": "d", "text": "`<input aria-label='Search' type='text' />`"}
+      ],
+      "correct": ["b"],
+      "explanation": "A `<div>` with an `onClick` is not keyboard accessible — it can't be reached by Tab key and doesn't respond to Enter/Space. Screen readers won't announce it as interactive. Fix options: (1) Use `<button>` — the semantic HTML element; (2) If `<div>` is required for styling, add `role='button'`, `tabIndex={0}`, and `onKeyDown` handlers for Enter/Space. React's `eslint-plugin-jsx-a11y` catches this as `click-events-have-key-events` and `interactive-supports-focus`.",
+      "tags": ["a11y", "accessibility", "wcag"],
+      "sourcePlatforms": ["toptal-live", "toptal-project"]
+    },
+    {
+      "id": "rx-040",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "a11y",
+      "prompt": "Which `aria-*` attribute should an icon-only button have?",
+      "options": [
+        {"id": "a", "text": "`aria-hidden='true'`"},
+        {"id": "b", "text": "`aria-label='Close dialog'` (or equivalent descriptive text)"},
+        {"id": "c", "text": "`aria-disabled='false'`"},
+        {"id": "d", "text": "`aria-pressed='false'`"}
+      ],
+      "correct": ["b"],
+      "explanation": "An icon-only button (e.g. an ✕ close button) has no visible text. Without an `aria-label`, screen readers announce 'button' with no context — the user has no idea what clicking it does. `aria-label='Close dialog'` provides the accessible name. If the icon SVG is inside the button, also add `aria-hidden='true'` to the SVG itself so the icon isn't read twice. `aria-pressed` is for toggle buttons (on/off state).",
+      "tags": ["a11y", "aria", "accessibility"],
+      "sourcePlatforms": ["toptal-live", "toptal-project"]
+    },
+    {
+      "id": "rx-041",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "css-strategy",
+      "prompt": "When would you choose CSS Modules over Tailwind CSS in a React project?",
+      "options": [
+        {"id": "a", "text": "CSS Modules are always better — Tailwind pollutes JSX with utility classes"},
+        {"id": "b", "text": "When you have complex dynamic styles that depend on many JS variables, or when the design system has bespoke components that don't map to utility classes"},
+        {"id": "c", "text": "Tailwind is only for prototypes; CSS Modules are for production"},
+        {"id": "d", "text": "Never — CSS-in-JS (styled-components) is always superior to both"}
+      ],
+      "correct": ["b"],
+      "explanation": "Tailwind excels for rapid UI composition with utility classes — great for layout, spacing, color tokens. CSS Modules excel when: (1) styles have complex conditional logic based on many JS props; (2) you need CSS-native features (complex selectors, media queries scoped to a component) without the build overhead of CSS-in-JS; (3) the component's visual identity is highly unique. In practice, many teams use Tailwind for layout/spacing and CSS Modules (or vanilla CSS) for component-specific styles. CSS-in-JS adds runtime cost and hydration complexity in SSR contexts.",
+      "tags": ["css", "tailwind", "css-modules", "styling"],
+      "sourcePlatforms": ["toptal-project", "turing-mcq"]
+    },
+    {
+      "id": "rx-042",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "compound-components",
+      "prompt": "What is the Compound Component pattern in React?",
+      "options": [
+        {"id": "a", "text": "A component that renders more than 3 child components"},
+        {"id": "b", "text": "A group of components that share implicit state via Context, used together to build a cohesive UI — like `<Select>`, `<Select.Option>`, `<Select.Group>`"},
+        {"id": "c", "text": "A component that wraps two different render strategies (SSR + CSR)"},
+        {"id": "d", "text": "Any component that uses multiple custom hooks internally"}
+      ],
+      "correct": ["b"],
+      "explanation": "Compound components share internal state through Context so the consumer doesn't manage it. Example: `<Tabs>` manages the active tab index internally; `<Tabs.List>`, `<Tabs.Tab>`, and `<Tabs.Panel>` read from that context. The consumer writes `<Tabs><Tabs.Tab>...</Tabs.Tab></Tabs>` without needing to pass `activeTab` and `setActiveTab` everywhere. This pattern is used in Radix UI, Headless UI, and React Aria. It's better than prop-drilling for UI primitives, and more flexible than a single monolithic `tabs={[...]}` prop API.",
+      "tags": ["compound-components", "patterns", "context"],
+      "sourcePlatforms": ["toptal-live", "toptal-project"]
+    },
+    {
+      "id": "rx-043",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "streaming-ssr",
+      "prompt": "React 18 Streaming SSR with `renderToPipeableStream` allows what that the old `renderToString` did not?",
+      "options": [
+        {"id": "a", "text": "Rendering on the client instead of the server"},
+        {"id": "b", "text": "Sending HTML to the browser in chunks — the shell renders and streams immediately while suspended subtrees stream as they resolve"},
+        {"id": "c", "text": "Skipping hydration entirely on the client"},
+        {"id": "d", "text": "Using WebSockets instead of HTTP for the page response"}
+      ],
+      "correct": ["b"],
+      "explanation": "`renderToString` blocks until the entire tree is ready — a slow data fetch delays the first byte. `renderToPipeableStream` sends the HTML shell (nav, layout) immediately as a stream, then flushes each Suspense boundary as its data resolves. The browser can start rendering and hydrating earlier portions while slower parts are still loading. Next.js App Router's streaming uses this under the hood — each `loading.tsx` boundary is a Suspense fallback that streams.",
+      "tags": ["streaming-ssr", "react-18", "suspense", "nextjs"],
+      "sourcePlatforms": ["turing-mcq", "toptal-live"]
+    },
+    {
+      "id": "rx-044",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "state-management",
+      "prompt": "Your app has a shopping cart used by 5 unrelated components across the tree. Which state management approach has the LOWEST complexity while remaining correct?",
+      "options": [
+        {"id": "a", "text": "useState lifted to the root App component, passed down as props"},
+        {"id": "b", "text": "A CartContext with CartProvider near the root, consuming with useContext(CartContext)"},
+        {"id": "c", "text": "Redux Toolkit with a cartSlice"},
+        {"id": "d", "text": "Zustand store with a `useCartStore` hook"}
+      ],
+      "correct": ["b"],
+      "explanation": "Context is the lowest-complexity solution when the data is app-wide and update frequency is low (cart items don't change dozens of times per second). Props down 5 levels is prop-drilling hell. Redux adds boilerplate (slice, actions, selectors). Zustand is excellent but adds a dependency. Context is built-in and sufficient. If the cart state changes very frequently (real-time price updates), Zustand becomes worth it because it avoids the Context re-render-all-consumers problem. Choose the simplest tool that's correct for the update pattern.",
+      "tags": ["state-management", "context", "zustand", "redux"],
+      "sourcePlatforms": ["turing-mcq", "toptal-live"]
+    },
+    {
+      "id": "rx-045",
+      "type": "short-code",
+      "difficulty": "medium",
+      "topic": "forwardRef",
+      "prompt": "Write a `TextInput` component that accepts a `ref` from its parent and forwards it to the underlying `<input>` element. The parent wants to call `inputRef.current.focus()`.",
+      "options": [],
+      "correct": [],
+      "explanation": "```tsx\nconst TextInput = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(\n  (props, ref) => <input ref={ref} {...props} />\n);\n\n// Usage in parent:\nconst ref = useRef<HTMLInputElement>(null);\n<TextInput ref={ref} />\nref.current?.focus();\n```\nKey points: `forwardRef` wraps the component and injects `ref` as the second argument. TypeScript generic: first type is the ref element type (`HTMLInputElement`), second is the props type.",
+      "tags": ["forwardRef", "refs", "typescript"],
+      "sourcePlatforms": ["toptal-live", "turing-mcq"]
+    },
+    {
+      "id": "rx-046",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "concurrent",
+      "prompt": "`useDeferredValue(searchQuery)` vs `useTransition` — when do you use which?",
+      "options": [
+        {"id": "a", "text": "They are identical — use whichever is more readable"},
+        {"id": "b", "text": "`useTransition` wraps the state update to mark it as non-urgent (`startTransition(() => setState(...))`). `useDeferredValue` defers a value you receive but don't control the setter for (e.g. a prop or URL param)."},
+        {"id": "c", "text": "`useTransition` is for server transitions; `useDeferredValue` is for client transitions"},
+        {"id": "d", "text": "`useDeferredValue` cancels updates; `useTransition` queues them"}
+      ],
+      "correct": ["b"],
+      "explanation": "Both allow React to deprioritise a render. Use `useTransition` when you control the state setter: `const [isPending, startTransition] = useTransition(); startTransition(() => setFilter(value))`. Use `useDeferredValue` when you receive a value you can't control the setter for: `const deferred = useDeferredValue(props.searchQuery)` — React will keep showing the old value while the new render is in progress. Practical example: type-ahead search — defer the expensive filtered list render while showing the typed character immediately.",
+      "tags": ["concurrent", "useDeferredValue", "useTransition", "react-18"],
+      "sourcePlatforms": ["turing-mcq", "toptal-live"]
+    },
+    {
+      "id": "rx-047",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "patterns",
+      "prompt": "Render Props vs Higher-Order Components (HOC) vs Custom Hooks — which is the modern idiomatic React choice for sharing stateful logic?",
+      "options": [
+        {"id": "a", "text": "Render Props — most flexible"},
+        {"id": "b", "text": "HOC — most reusable"},
+        {"id": "c", "text": "Custom Hooks — no wrapper component, no name collision, composes cleanly with other hooks"},
+        {"id": "d", "text": "All three are equivalent — just pick one"}
+      ],
+      "correct": ["c"],
+      "explanation": "Custom hooks are the modern answer for shared logic. HOCs and render props still work but have drawbacks: HOCs wrap the component tree (extra React nodes, prop collision risk, hard to type in TS), render props create nesting ('callback hell'). Custom hooks extract logic without touching the component tree — `useWindowSize`, `useLocalStorage`, `useDebounce` are all zero-wrapper additions. The React docs explicitly recommend custom hooks over HOCs/render props for new code.",
+      "tags": ["patterns", "custom-hooks", "hoc", "render-props"],
+      "sourcePlatforms": ["turing-mcq", "toptal-live"]
+    },
+    {
+      "id": "rx-048",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "testing",
+      "prompt": "What does `userEvent.click()` do differently from `fireEvent.click()` in React Testing Library?",
+      "options": [
+        {"id": "a", "text": "`userEvent` is asynchronous; `fireEvent` is synchronous — otherwise identical"},
+        {"id": "b", "text": "`userEvent` simulates the full browser interaction sequence (pointerover, pointerenter, mouseover, mousedown, focus, mouseup, click); `fireEvent` dispatches only the single named event"},
+        {"id": "c", "text": "`fireEvent` works in jsdom; `userEvent` requires a real browser"},
+        {"id": "d", "text": "They are identical — `userEvent` is just an alias"}
+      ],
+      "correct": ["b"],
+      "explanation": "`userEvent` from `@testing-library/user-event` simulates realistic browser interactions — a click dispatches pointerover → pointerenter → mouseover → mouseenter → pointerdown → mousedown → focus → pointerup → mouseup → click in sequence, which is what the real browser does. Components that rely on `onFocus`, `onMouseEnter`, or `onPointerDown` will behave correctly only with `userEvent`. `fireEvent.click` dispatches only the `click` event. Always prefer `userEvent` for test realism; use `fireEvent` only for events with no `userEvent` equivalent.",
+      "tags": ["testing", "userEvent", "react-testing-library"],
+      "sourcePlatforms": ["toptal-project", "turing-mcq"]
+    },
+    {
+      "id": "rx-049",
+      "type": "mcq-single",
+      "difficulty": "hard",
+      "topic": "next-js",
+      "prompt": "In Next.js App Router, when would you choose `generateStaticParams` + static rendering over dynamic rendering (`cookies()`, `headers()`, dynamic data fetch)?",
+      "options": [
+        {"id": "a", "text": "Always — static is faster so always prefer it"},
+        {"id": "b", "text": "For pages whose content is the same for all users and doesn't change per-request (e.g. blog posts, product detail pages with ISR) — static is served from CDN edge, zero server latency"},
+        {"id": "c", "text": "Only for pages with no JavaScript"},
+        {"id": "d", "text": "When the page has a login wall — authenticated pages must be static"}
+      ],
+      "correct": ["b"],
+      "explanation": "Static rendering runs at build time (or ISR revalidation) and serves from CDN edge — TTFB is ~5-20ms anywhere. Dynamic rendering runs per-request on the server — useful when the page depends on cookies (user session), headers (Accept-Language), or real-time data. Rule of thumb: static for public marketing/content pages, dynamic for personalised/auth-gated pages. `generateStaticParams` pre-renders all known `[slug]` paths at build time. `revalidate` on a fetch enables ISR — cached but re-rendered at most every N seconds.",
+      "tags": ["next-js", "static", "dynamic", "isr", "app-router"],
+      "sourcePlatforms": ["turing-mcq", "toptal-project"]
+    },
+    {
+      "id": "rx-050",
+      "type": "mcq-single",
+      "difficulty": "medium",
+      "topic": "patterns",
+      "prompt": "What is the main problem that `react-hook-form` solves compared to fully controlled inputs (`useState` per field)?",
+      "options": [
+        {"id": "a", "text": "Controlled inputs can't do validation"},
+        {"id": "b", "text": "Every keystroke in a controlled input triggers a re-render of the entire form; react-hook-form uses uncontrolled inputs with a ref, so re-renders only happen on blur/submit or explicit validation triggers"},
+        {"id": "c", "text": "react-hook-form is required for multi-step forms"},
+        {"id": "d", "text": "useState doesn't support string values"}
+      ],
+      "correct": ["b"],
+      "explanation": "`useState` per field triggers a re-render on every keystroke for every watched value. In a 20-field form with complex conditional logic, this causes hundreds of wasted renders per second of typing. `react-hook-form` registers inputs as uncontrolled refs (`register('email')`), reads values on demand (on blur, on submit), and triggers re-renders only when validation state changes. The result: dramatically fewer renders and better performance on large forms. `zod` + `zodResolver` pairs cleanly with it for schema validation.",
+      "tags": ["forms", "react-hook-form", "performance", "controlled"],
+      "sourcePlatforms": ["turing-mcq", "toptal-project"]
     }
   ]
 }
