@@ -90,6 +90,12 @@ export default async function Home({ searchParams }: { searchParams: Promise<SP>
         >
           All topics
         </Link>
+        <Link
+          href="/questions"
+          className="px-3 py-2 rounded-lg border border-[rgb(var(--accent))] text-[12px] text-[rgb(var(--accent))] font-medium hover:bg-[rgb(var(--accent))]/10 transition"
+        >
+          📋 Browse All Questions
+        </Link>
       </div>
 
       {/* ── Journey overview strip ── */}
@@ -444,6 +450,9 @@ function AllTopicsView() {
         <Link href="/?platform=andela" className="px-4 py-2 rounded-lg border border-[rgb(var(--border))] text-[13px] text-[rgb(var(--fg-soft))] hover:border-[rgb(var(--border-strong))] transition">🌍 Andela</Link>
         <Link href="/?platform=toptal" className="px-4 py-2 rounded-lg border border-[rgb(var(--border))] text-[13px] text-[rgb(var(--fg-soft))] hover:border-[rgb(var(--border-strong))] transition">🏆 Toptal</Link>
         <Link href="/?platform=core" className="px-4 py-2 rounded-lg border border-amber-400 text-[13px] text-amber-600 font-medium hover:bg-amber-50 dark:hover:bg-amber-950 transition">⭐ Universal Core</Link>
+        <Link href="/questions" className="px-4 py-2 rounded-lg border border-[rgb(var(--accent))] text-[13px] text-[rgb(var(--accent))] font-medium hover:bg-[rgb(var(--accent))]/10 transition">
+          📋 Browse All Questions
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">

@@ -27,6 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <div className="w-px h-4 bg-[rgb(var(--border))] mx-1" />
                 <NavTab href="/plans/60-day" label="Study Plans" />
                 <NavTab href="/?platform=all" label="All Topics" />
+                <NavTab href="/questions" label="📋 Questions" />
               </nav>
             </div>
 
