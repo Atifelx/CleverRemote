@@ -25,6 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <NavTab href="/?platform=turing" label="⚡ Turing" />
                 <NavTab href="/?platform=andela" label="🌍 Andela" />
                 <NavTab href="/learn" label="🧠 Learn ML" />
+                <NavTab href="/interview" label="📝 Interview Prep" />
                 <NavTab href="/module/ai-engineering-deep" label="🤖 AI Fundamentals" />
                 <div className="w-px h-4 bg-[rgb(var(--border))] mx-1" />
                 <NavTab href="/plans/60-day" label="Study Plans" />
