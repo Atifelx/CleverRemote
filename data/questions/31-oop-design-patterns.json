@@ -358,10 +358,13 @@
       "type": "open-rubric",
       "tags": ["behavioral"],
       "prompt": "Implement the Observer pattern in TypeScript with a generic `EventEmitter<T>` class supporting `on(event, callback)` and `emit(event, payload)`. Then explain how this differs from Node.js's built-in EventEmitter.",
-      "rubric": {
-        "mustMention": ["Map<string, Set<Function>> or similar to store subscribers", "on() adds listener to event's set", "emit() calls all listeners for that event", "type parameter T constrains payload type"],
-        "bonusPoints": ["off() to unsubscribe", "once() for single-fire listeners", "Node's EventEmitter lacks TypeScript generics by default, requires @types/node or typed-emitter wrapper"]
-      },
+      "rubric": [
+        { "criterion": "Uses Map<string, Set<Function>> or similar to store listeners per event", "weight": 3 },
+        { "criterion": "on() correctly adds listener to the event's set", "weight": 2 },
+        { "criterion": "emit() iterates and calls all listeners for that event", "weight": 2 },
+        { "criterion": "Generic type parameter T constrains the payload type", "weight": 2 },
+        { "criterion": "Explains Node EventEmitter lacks generics by default / needs typed-emitter", "weight": 1 }
+      ],
       "timeSeconds": 150
     },
     {
@@ -369,10 +372,13 @@
       "type": "open-rubric",
       "tags": ["creational"],
       "prompt": "Design a Builder for creating a complex `DatabaseQuery` object that supports: table name (required), where clauses (array), order by (optional), limit (optional). Show the fluent interface and explain why Builder is better than a config object parameter here.",
-      "rubric": {
-        "mustMention": ["method chaining returning `this`", "separate build() step that validates required fields", "each method validates or processes its input"],
-        "bonusPoints": ["immutability — build() returns a frozen/readonly object", "Builder vs options object: Builder validates at build-time and provides IDE autocomplete via method names, options object is simpler for few params"]
-      },
+      "rubric": [
+        { "criterion": "Each method returns `this` for fluent chaining", "weight": 2 },
+        { "criterion": "Separate build() or execute() step that validates required fields", "weight": 3 },
+        { "criterion": "Required field (table) validated at build time, not silently ignored", "weight": 2 },
+        { "criterion": "Explains Builder advantage: compile-time method names vs stringly-typed config object", "weight": 2 },
+        { "criterion": "Handles optional fields correctly (not set = omitted from query)", "weight": 1 }
+      ],
       "timeSeconds": 150
     },
     {
@@ -380,10 +386,13 @@
       "type": "open-rubric",
       "tags": ["behavioral"],
       "prompt": "Explain the Strategy pattern and implement it in TypeScript: a `PaymentProcessor` that can use either `StripeStrategy` or `PayPalStrategy`. Show how you'd switch strategies at runtime and why this is better than if/else branching.",
-      "rubric": {
-        "mustMention": ["IPaymentStrategy interface with processPayment(amount) method", "PaymentProcessor holds a reference to IPaymentStrategy", "setStrategy() method to swap at runtime", "concrete strategies implement the interface"],
-        "bonusPoints": ["explain how adding PaypalV2 requires only a new class, not modifying PaymentProcessor (OCP)", "show dependency injection of strategy via constructor"]
-      },
+      "rubric": [
+        { "criterion": "Defines IPaymentStrategy interface with processPayment(amount) method", "weight": 2 },
+        { "criterion": "PaymentProcessor holds a private reference to IPaymentStrategy", "weight": 2 },
+        { "criterion": "setStrategy() method allows runtime swap", "weight": 2 },
+        { "criterion": "Concrete classes (StripeStrategy, PayPalStrategy) implement the interface", "weight": 2 },
+        { "criterion": "Explains OCP benefit: adding new payment provider = new class only, no modification to PaymentProcessor", "weight": 2 }
+      ],
       "timeSeconds": 150
     },
     {
@@ -441,10 +450,12 @@
       "type": "open-rubric",
       "tags": ["structural"],
       "prompt": "Explain when you would use a Proxy vs a Decorator. Give a real backend example of each (not a toy example).",
-      "rubric": {
-        "mustMention": ["Proxy controls access or adds cross-cutting concerns transparently (client doesn't know it's there) — e.g., API client with automatic retry/circuit breaking", "Decorator adds or changes behaviour that the client is aware of and opted into — e.g., a logging wrapper the caller explicitly wraps their function in", "Proxy same interface as real object; Decorator extends interface or wraps it explicitly"],
-        "bonusPoints": ["JavaScript Proxy object for runtime interception", "Proxy for memoization/caching is a valid example", "Mention that many 'Proxy' uses in web are actually transparent — client code unchanged"]
-      },
+      "rubric": [
+        { "criterion": "Proxy: adds cross-cutting concern transparently — client code doesn't change (e.g., API client with automatic retry/circuit breaking)", "weight": 3 },
+        { "criterion": "Decorator: caller explicitly opts in — e.g., logging wrapper the caller wraps their function with knowingly", "weight": 3 },
+        { "criterion": "Proxy implements the exact same interface as the real object; client can't tell the difference", "weight": 2 },
+        { "criterion": "Decorator typically extends the interface or is explicitly composed by the caller", "weight": 2 }
+      ],
       "timeSeconds": 150
     },
     {

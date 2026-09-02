@@ -358,10 +358,13 @@
       "type": "open-rubric",
       "tags": ["caterpillar"],
       "prompt": "Write a JavaScript function using the caterpillar (two-pointer) method to find the count of subarrays whose sum equals a target value K. Array contains only positive integers.",
-      "rubric": {
-        "mustMention": ["left and right pointers", "expand right when sum < K", "shrink left when sum > K", "increment count when sum == K", "O(n) time"],
-        "bonusPoints": ["handles empty array", "explains why positive-only enables caterpillar (no negative values mean shrinking always reduces sum)"]
-      },
+      "rubric": [
+        { "criterion": "Uses left and right pointer variables", "weight": 2 },
+        { "criterion": "Expands right when currentSum < K, shrinks left when > K", "weight": 3 },
+        { "criterion": "Increments count when sum == K", "weight": 2 },
+        { "criterion": "O(n) time — each pointer moves at most n steps total", "weight": 2 },
+        { "criterion": "Explains why positive-only array enables caterpillar (no negatives means shrinking always reduces sum)", "weight": 1 }
+      ],
       "timeSeconds": 120
     },
     {
@@ -369,10 +372,14 @@
       "type": "open-rubric",
       "tags": ["sieve"],
       "prompt": "Implement the Sieve of Eratosthenes in JavaScript to return all primes up to N. Explain the time and space complexity.",
-      "rubric": {
-        "mustMention": ["boolean array of size N+1, initialized true", "start marking from p²", "iterate p from 2 to √N", "O(N log log N) time", "O(N) space"],
-        "bonusPoints": ["optimization: start inner loop at p*p not 2*p", "mention that p*p overflow for large N requires BigInt or careful bound"]
-      },
+      "rubric": [
+        { "criterion": "Creates boolean array of size N+1, initialized true", "weight": 2 },
+        { "criterion": "Outer loop iterates p from 2 to √N only", "weight": 2 },
+        { "criterion": "Inner loop starts marking from p² (not 2p)", "weight": 2 },
+        { "criterion": "States O(N log log N) time complexity", "weight": 2 },
+        { "criterion": "States O(N) space complexity", "weight": 1 },
+        { "criterion": "Handles edge cases (N < 2)", "weight": 1 }
+      ],
       "timeSeconds": 120
     },
     {
@@ -380,10 +387,13 @@
       "type": "open-rubric",
       "tags": ["max-slice"],
       "prompt": "Implement Kadane's algorithm in JavaScript. Also handle the case where all numbers are negative (return the largest single element, not 0).",
-      "rubric": {
-        "mustMention": ["maxEndingHere tracks current subarray sum", "maxSoFar tracks global best", "reset maxEndingHere to current element when it goes below the element itself", "initialize both to A[0] not 0"],
-        "bonusPoints": ["explains why initializing to 0 fails for all-negative arrays", "tracks start/end indices of the optimal subarray"]
-      },
+      "rubric": [
+        { "criterion": "Initializes maxEndingHere and maxSoFar to A[0] (not 0)", "weight": 3 },
+        { "criterion": "Resets maxEndingHere to A[i] when maxEndingHere + A[i] < A[i]", "weight": 2 },
+        { "criterion": "Updates maxSoFar = max(maxSoFar, maxEndingHere) each iteration", "weight": 2 },
+        { "criterion": "Correctly handles all-negative arrays (returns largest element, not 0)", "weight": 2 },
+        { "criterion": "O(n) time, O(1) space", "weight": 1 }
+      ],
       "timeSeconds": 120
     }
   ]

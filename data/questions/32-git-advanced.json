@@ -348,10 +348,13 @@
       "type": "open-rubric",
       "tags": ["workflows"],
       "prompt": "A teammate force-pushed to `main` and teammates now have diverged history. Walk through the steps to recover without losing anyone's work.",
-      "rubric": {
-        "mustMention": ["git reflog to find the SHA before the force push", "coordinate with team — everyone stops pushing", "git fetch to get new remote state", "each dev checks git log to find their unpushed commits", "cherry-pick or rebase unpushed commits onto new main", "alternative: the person who force-pushed can reset to the pre-push SHA and force-push again to restore (if no one else pushed new commits)"],
-        "bonusPoints": ["prefer --force-with-lease going forward", "protect main branch with push restrictions on GitHub/GitLab", "communication is key — announce the incident in Slack before anyone makes it worse"]
-      },
+      "rubric": [
+        { "criterion": "Immediate action: coordinate with team — freeze all pushes", "weight": 2 },
+        { "criterion": "Use git reflog to find the pre-force-push SHA", "weight": 2 },
+        { "criterion": "Each affected dev identifies their unpushed commits (git log origin/main..HEAD)", "weight": 2 },
+        { "criterion": "Cherry-pick or rebase unpushed commits onto updated main", "weight": 2 },
+        { "criterion": "Prevention: use --force-with-lease and protect main on GitHub/GitLab", "weight": 2 }
+      ],
       "timeSeconds": 180
     },
     {
@@ -359,10 +362,13 @@
       "type": "open-rubric",
       "tags": ["git-internals"],
       "prompt": "Explain what happens under the hood when you run `git commit -m 'fix: null check'`. Describe each Git object created and how HEAD is updated.",
-      "rubric": {
-        "mustMention": ["staged files are turned into blob objects (if not already in object store)", "a tree object is created representing the root directory with updated file references", "a commit object is created pointing to the tree, parent commit(s), and containing author/committer/message", "HEAD (or the branch HEAD points to) is updated to point to the new commit SHA"],
-        "bonusPoints": ["SHA is content hash — same content = same SHA (deduplication)", "commit object is immutable — amending creates a NEW object", "pack files consolidate loose objects over time via git gc"]
-      },
+      "rubric": [
+        { "criterion": "Staged files become blob objects in the object store (content-addressed by SHA)", "weight": 2 },
+        { "criterion": "A tree object is created representing the directory with updated blob references", "weight": 2 },
+        { "criterion": "A commit object is created pointing to the root tree, parent commit SHA, and containing author/committer/message", "weight": 3 },
+        { "criterion": "HEAD (or the branch it points to) is updated to point to the new commit SHA", "weight": 2 },
+        { "criterion": "Explains SHA is a content hash — identical content = same SHA, enabling deduplication", "weight": 1 }
+      ],
       "timeSeconds": 180
     }
   ]
