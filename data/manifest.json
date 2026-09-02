@@ -54,7 +54,10 @@
     { "id": "enterprise-integrations", "file": "questions/23-enterprise-integrations.json", "priority": 1, "estimatedHours": 6 },
     { "id": "fde-customer-engineering", "file": "questions/24-fde-customer-engineering.json", "priority": 1, "estimatedHours": 6 },
     { "id": "behavioral", "file": "questions/25-behavioral.json", "priority": 1, "estimatedHours": 4 },
-    { "id": "live-coding-take-home", "file": "questions/27-live-coding-take-home.json", "priority": 1, "estimatedHours": 4 }
+    { "id": "live-coding-take-home", "file": "questions/27-live-coding-take-home.json", "priority": 1, "estimatedHours": 4 },
+    { "id": "codility-patterns", "file": "questions/30-codility-patterns.json", "priority": 1, "estimatedHours": 6 },
+    { "id": "oop-design-patterns", "file": "questions/31-oop-design-patterns.json", "priority": 1, "estimatedHours": 7 },
+    { "id": "git-advanced", "file": "questions/32-git-advanced.json", "priority": 1, "estimatedHours": 4 }
   ],
   "plans": {
     "60-day": {

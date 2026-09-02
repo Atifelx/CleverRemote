@@ -1,0 +1,390 @@
+{
+  "module": "codility-patterns",
+  "title": "Codility Patterns (T2 OA Prep)",
+  "description": "All 17 Codility lesson categories: prefix sums, sieve, Euclidean, caterpillar, Kadane's, leader, counting, binary search on answer, Fibonacci DP. These patterns map directly to Turing's T2 Online Assessment.",
+  "questions": [
+    {
+      "id": "cp-001",
+      "type": "mcq-single",
+      "tags": ["time-complexity"],
+      "prompt": "What is the time complexity of this function?\n```js\nfunction mystery(n) {\n  let result = 0;\n  for (let i = 0; i < n; i++)\n    for (let j = i; j < n; j++)\n      result += i + j;\n  return result;\n}\n```",
+      "options": ["O(n)", "O(n log n)", "O(n²)", "O(n³)"],
+      "answer": 2,
+      "explanation": "Two nested loops where the inner starts at `i`. Total iterations = n + (n-1) + ... + 1 = n(n+1)/2 → O(n²).",
+      "timeSeconds": 45
+    },
+    {
+      "id": "cp-002",
+      "type": "mcq-single",
+      "tags": ["time-complexity"],
+      "prompt": "A function runs in O(log n) time. If n doubles, approximately how does the runtime change?",
+      "options": ["It doubles", "It increases by 1 unit", "It quadruples", "It stays the same"],
+      "answer": 1,
+      "explanation": "log₂(2n) = log₂(2) + log₂(n) = 1 + log₂(n). Doubling n adds exactly one constant step to the runtime.",
+      "timeSeconds": 40
+    },
+    {
+      "id": "cp-003",
+      "type": "mcq-single",
+      "tags": ["arrays"],
+      "prompt": "The Codility `CyclicRotation` problem: rotate array [3,8,9,7,6] to the right by 3 positions. What is the result?",
+      "options": ["[9,7,6,3,8]", "[7,6,3,8,9]", "[8,9,7,6,3]", "[6,3,8,9,7]"],
+      "answer": 1,
+      "explanation": "Right rotate by k: take last k elements and prepend. k=3 → last 3 = [9,7,6] but rotating right means each element moves right. [3,8,9,7,6] → right by 1 → [6,3,8,9,7] → right by 2 → [7,6,3,8,9] → right by 3 → [9,7,6,3,8]. Answer: [9,7,6,3,8] at index 0.",
+      "timeSeconds": 60
+    },
+    {
+      "id": "cp-004",
+      "type": "mcq-single",
+      "tags": ["arrays"],
+      "prompt": "The Codility `OddOccurrencesInArray` problem: find the unpaired element in [9,3,9,3,9,7,9]. The XOR trick works because:",
+      "options": ["XOR of identical numbers is 0; XOR with 0 returns the number", "XOR is commutative only for odd numbers", "XOR sums all values modulo 2", "XOR is faster than a hash map for all inputs"],
+      "answer": 0,
+      "explanation": "a XOR a = 0 and a XOR 0 = a. XORing all elements cancels paired values, leaving the lone element. For [9,3,9,3,9,7,9]: 9^3^9^3^9^7^9 = 7.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "cp-005",
+      "type": "mcq-single",
+      "tags": ["counting-elements"],
+      "prompt": "Codility `FrogRiverOne`: leaf falls at each second; frog can cross when all positions 1..X are covered. Best algorithm is:",
+      "options": ["Nested loop O(n²)", "Hash set — track covered positions, decrement uncovered count", "Sort then scan O(n log n)", "BFS over positions"],
+      "answer": 1,
+      "explanation": "Maintain a count of uncovered positions (initially X). Add each leaf to a Set; if new, decrement count. Return current second when count == 0. O(n) time, O(X) space.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "cp-006",
+      "type": "mcq-single",
+      "tags": ["counting-elements"],
+      "prompt": "Codility `MissingInteger`: find the smallest positive integer missing from [1,3,6,4,1,2]. The most time-efficient approach is:",
+      "options": ["Sort and scan", "Hash set: add all positives, scan from 1 upward", "XOR all values 1..n+1", "Count sort then scan"],
+      "answer": 1,
+      "explanation": "Add all positive values to a Set (O(n)). Then scan 1, 2, 3... until a value isn't in the Set. O(n) time, O(n) space. Sort-and-scan is O(n log n).",
+      "timeSeconds": 50
+    },
+    {
+      "id": "cp-007",
+      "type": "mcq-single",
+      "tags": ["prefix-sums"],
+      "prompt": "You have an array P of prefix sums where P[i] = A[0] + A[1] + ... + A[i-1] (P[0] = 0). The sum of A[l..r] (inclusive) in O(1) is:",
+      "options": ["P[r] - P[l]", "P[r+1] - P[l]", "P[r] - P[l-1]", "P[r+1] + P[l]"],
+      "answer": 1,
+      "explanation": "With P[i] = A[0..i-1], sum A[l..r] = P[r+1] - P[l]. This is the standard prefix sum range query formula.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "cp-008",
+      "type": "mcq-single",
+      "tags": ["prefix-sums"],
+      "prompt": "Codility `GenomicRangeQuery`: given a DNA string and Q queries (l, r), return the minimum nucleotide impact factor (A=1, C=2, G=3, T=4) in the slice. What technique achieves O(n + m) for n string length and m queries?",
+      "options": ["Segment tree", "Prefix sum arrays — one per nucleotide type", "Binary search on sorted indices", "Trie of genomic substrings"],
+      "answer": 1,
+      "explanation": "Build 4 prefix sum arrays (one per nucleotide). For each query, check in order A,C,G,T: if the prefix sum difference > 0, that nucleotide appears in the range. O(n) build, O(1) per query.",
+      "timeSeconds": 55
+    },
+    {
+      "id": "cp-009",
+      "type": "mcq-single",
+      "tags": ["prefix-sums"],
+      "prompt": "Codility `PassingCars`: cars face East (0) or West (1). A passing pair is (East car, West car) where East has lower index. Which prefix sum approach is correct?",
+      "options": ["Prefix count of West cars; for each East car, add prefix West count at that position", "Prefix count of East cars; for each West car, add prefix East count at that position", "Sort by position then count inversions", "Two-pointer scan"],
+      "answer": 1,
+      "explanation": "Scan left to right. Each time we see a West car (1), add the count of East cars (0) seen so far. That count equals all valid (East, West) pairs where East comes before West.",
+      "timeSeconds": 55
+    },
+    {
+      "id": "cp-010",
+      "type": "mcq-single",
+      "tags": ["sorting"],
+      "prompt": "Codility `Triangle`: given array A, check if any triplet (P,Q,R) forms a triangle (A[P]+A[Q] > A[R] for all orderings). The O(n log n) trick is:",
+      "options": ["Check all O(n³) triples", "Sort then check only adjacent triples — if max is < sum of two smallest, triplet is valid", "Check only pairs with max element", "Greedy: keep the two largest, always valid"],
+      "answer": 1,
+      "explanation": "After sorting, if A[i] + A[i+1] > A[i+2] for any adjacent triplet, a triangle exists. Sorting ensures the two smaller elements are adjacent to the largest, so only that check is needed.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "cp-011",
+      "type": "mcq-single",
+      "tags": ["stacks-queues"],
+      "prompt": "Codility `Brackets`: determine if '{[()]}' is properly nested. The stack-based solution is O(n) because:",
+      "options": ["Stacks are O(1) push/pop; we do at most n operations total", "We sort the brackets first", "We use two passes — one for opens, one for closes", "We count opens and closes and check equality"],
+      "answer": 0,
+      "explanation": "Push opens, pop and match on closes. If stack is empty at close or mismatch, return false. Total work: exactly n push or pop operations → O(n). Simple count check fails for '{)]('.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "cp-012",
+      "type": "mcq-single",
+      "tags": ["stacks-queues"],
+      "prompt": "Codility `StoneWall`: a wall has height profile H. A rectangle block can span multiple positions. Minimum number of blocks needed for [8,8,5,7,9,8,7,4,8]:",
+      "options": ["7", "9", "5", "8"],
+      "answer": 0,
+      "explanation": "Use a stack of current block heights. When current height < stack top, pop (block ends). When height > stack top, push (new block starts). When equal, block continues. Count each push. Answer: 7 blocks.",
+      "timeSeconds": 60
+    },
+    {
+      "id": "cp-013",
+      "type": "mcq-single",
+      "tags": ["leader"],
+      "prompt": "The Boyer-Moore voting algorithm finds a majority element (appears > n/2 times). After one pass through [2,2,3,3,2,2,3], candidate = 3, count = 1. Is 3 guaranteed to be the majority?",
+      "options": ["Yes, the algorithm guarantees correctness if a majority exists", "No — need a second pass to verify", "Yes — count > 0 always means majority", "No — the algorithm is probabilistic"],
+      "answer": 1,
+      "explanation": "Boyer-Moore produces a CANDIDATE. A second pass is required to count occurrences and verify it appears > n/2 times. If no majority exists, the candidate is meaningless.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "cp-014",
+      "type": "mcq-single",
+      "tags": ["leader"],
+      "prompt": "Codility `EquiLeader`: find all indices where splitting array creates two halves each with the same leader. Prerequisite condition for a split at index i to have equal leaders on both sides is:",
+      "options": ["The left leader equals the right leader, which only holds if both halves share the overall array's majority element", "Each half's most frequent element is the same", "The element appears more than i/2 times in the left and more than (n-i-1)/2 times in the right", "Both (a) and (c) — they're equivalent"],
+      "answer": 3,
+      "explanation": "If the overall leader appears > n/2 times, it's the only possible leader on either side. A split is equi if the overall leader count in the left half > (i+1)/2 AND count in right > (n-i-1)/2. Both statements are equivalent ways to express the same constraint.",
+      "timeSeconds": 60
+    },
+    {
+      "id": "cp-015",
+      "type": "mcq-single",
+      "tags": ["max-slice"],
+      "prompt": "Kadane's algorithm for maximum subarray sum. Given [-2,1,-3,4,-1,2,1,-5,4], what does Kadane's return?",
+      "options": ["4", "6", "5", "7"],
+      "answer": 1,
+      "explanation": "Track maxEndingHere and maxSoFar. At index 3 (value 4): maxEndingHere = 4. At 5 (2): 5. At 6 (1): 6. At 7 (-5): 1. At 8 (4): 5. maxSoFar = 6 (subarray [4,-1,2,1]).",
+      "timeSeconds": 55
+    },
+    {
+      "id": "cp-016",
+      "type": "mcq-single",
+      "tags": ["max-slice"],
+      "prompt": "Codility `MaxProfit`: given stock prices over days, find max single buy-sell profit. O(n²) checks all pairs; the O(n) approach is:",
+      "options": ["Sort prices then take last minus first", "Track minimum price seen so far; at each day, profit = price - minSoFar; track max profit", "Two-pointer expand from both ends", "Divide array in half, solve each side"],
+      "answer": 1,
+      "explanation": "One pass: maintain minPrice seen. At each index, compute price[i] - minPrice. Update maxProfit. Update minPrice. This is effectively Kadane's on the daily difference array.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "cp-017",
+      "type": "mcq-single",
+      "tags": ["prime-composite"],
+      "prompt": "How many prime factors does 360 have (with multiplicity)?",
+      "options": ["4", "5", "6", "3"],
+      "answer": 2,
+      "explanation": "360 = 2³ × 3² × 5¹. Total prime factors with multiplicity: 3+2+1 = 6. The Codility `CountFactors` problem uses trial division up to √n: O(√n).",
+      "timeSeconds": 50
+    },
+    {
+      "id": "cp-018",
+      "type": "mcq-single",
+      "tags": ["prime-composite"],
+      "prompt": "Codility `MinPerimeterRectangle`: given area A, find rectangle with integer sides and minimum perimeter. The O(√A) approach is:",
+      "options": ["Try all divisor pairs up to √A, track pair with smallest perimeter", "Factorize A then use smallest factor", "Binary search on side length", "Always use 1 × A rectangle"],
+      "answer": 0,
+      "explanation": "For each i from 1 to √A where A%i==0: sides are i and A/i, perimeter = 2*(i + A/i). Track minimum. The closest factors to √A minimize the perimeter (square is optimal).",
+      "timeSeconds": 50
+    },
+    {
+      "id": "cp-019",
+      "type": "mcq-single",
+      "tags": ["sieve"],
+      "prompt": "The Sieve of Eratosthenes marks primes up to N. Time complexity is:",
+      "options": ["O(N)", "O(N log log N)", "O(N log N)", "O(√N)"],
+      "answer": 1,
+      "explanation": "The sieve does N/2 + N/3 + N/5 + ... ≈ N × sum of 1/p for primes p ≤ N. By Mertens' theorem, this sum is O(log log N). Total: O(N log log N).",
+      "timeSeconds": 45
+    },
+    {
+      "id": "cp-020",
+      "type": "mcq-single",
+      "tags": ["sieve"],
+      "prompt": "Codility `CountSemiprimes`: a semiprime is a product of exactly two (not necessarily distinct) primes. To count semiprimes in range [l, r] efficiently across many queries, you should:",
+      "options": ["For each query, trial-divide every number in [l,r]", "Pre-build sieve, then for each number find its smallest prime factor (SPF); number is semiprime if SPF(n) is prime and n/SPF(n) is prime", "Pre-build prefix array of semiprime counts using the SPF sieve, then answer queries in O(1)", "Both (b) and (c) — build SPF sieve first, then prefix sum for O(1) queries"],
+      "answer": 3,
+      "explanation": "Build smallest-prime-factor (SPF) sieve O(N log log N). Mark each number as semiprime: number n is semiprime if n/SPF[n] is prime (verify via sieve). Build prefix sum of semiprimes for O(1) range queries.",
+      "timeSeconds": 60
+    },
+    {
+      "id": "cp-021",
+      "type": "mcq-single",
+      "tags": ["euclidean"],
+      "prompt": "GCD(48, 18) using the Euclidean algorithm step by step:",
+      "options": ["GCD(48,18) → GCD(18,12) → GCD(12,6) → GCD(6,0) = 6", "GCD(48,18) → GCD(18,48) → GCD(48,30) = 30", "GCD(48,18) → GCD(30,18) → GCD(12,18) = 6", "GCD(48,18) = 18 because 18 divides 48 with remainder 12"],
+      "answer": 0,
+      "explanation": "GCD(a,b) = GCD(b, a mod b). GCD(48,18): 48%18=12 → GCD(18,12): 18%12=6 → GCD(12,6): 12%6=0 → GCD(6,0) = 6.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "cp-022",
+      "type": "mcq-single",
+      "tags": ["euclidean"],
+      "prompt": "LCM(a, b) in terms of GCD is:",
+      "options": ["a * b / GCD(a, b)", "a + b - GCD(a, b)", "a * b * GCD(a, b)", "(a + b) / GCD(a, b)"],
+      "answer": 0,
+      "explanation": "LCM(a,b) = a*b / GCD(a,b). This avoids computing full factorization. For large numbers, compute GCD first to keep values small: LCM = a / GCD(a,b) * b to avoid overflow.",
+      "timeSeconds": 40
+    },
+    {
+      "id": "cp-023",
+      "type": "mcq-single",
+      "tags": ["fibonacci"],
+      "prompt": "Codility `FibFrog`: frog jumps across stones using Fibonacci-length jumps. The key insight for efficiency is:",
+      "options": ["Fibonacci numbers grow exponentially, so there are only ~log_φ(N) ≈ 87 Fibonacci values ≤ 10⁵", "DP with all Fibonacci values as states", "BFS using only Fibonacci step sizes — the graph is small because few Fibonacci values exist below N", "Both (a) and (c)"],
+      "answer": 3,
+      "explanation": "F(87) > 10^18, so for N ≤ 100,000, there are at most ~25 relevant Fibonacci values. BFS where each node has at most 25 neighbors → very sparse graph. Complexity O(N × F) where F is small.",
+      "timeSeconds": 60
+    },
+    {
+      "id": "cp-024",
+      "type": "mcq-single",
+      "tags": ["binary-search-on-answer"],
+      "prompt": "Codility `MinMaxDivision`: split array into K blocks to minimise the maximum block sum. Binary search on the answer means:",
+      "options": ["Binary search on the array indices", "Binary search on the possible values of the maximum block sum (from max element to total sum), checking feasibility at each midpoint", "Binary search on K", "Binary search on array length"],
+      "answer": 1,
+      "explanation": "The answer (maximum block sum) lies in [max(A), sum(A)]. Binary search this range. For each candidate midpoint M, greedily check if K blocks all ≤ M is possible (greedy check: expand each block until adding next element would exceed M). O(n log(sum-max)) time.",
+      "timeSeconds": 60
+    },
+    {
+      "id": "cp-025",
+      "type": "mcq-single",
+      "tags": ["binary-search-on-answer"],
+      "prompt": "When should you use binary search on the answer (rather than on the input)?",
+      "options": ["When the input array is sorted", "When you can define a monotonic predicate: 'is value X achievable?' flips exactly once from false to true (or vice versa)", "When the problem asks for a minimum spanning tree", "When the array has duplicate values"],
+      "answer": 1,
+      "explanation": "Binary search on answer works when the feasibility function is monotone: e.g., if max block sum M is achievable, then M+1 is also achievable. The transition point is your answer. Classic problems: minimum maximum, k-th smallest, waiting time.",
+      "timeSeconds": 55
+    },
+    {
+      "id": "cp-026",
+      "type": "mcq-single",
+      "tags": ["caterpillar"],
+      "prompt": "The caterpillar (two-pointer) method works efficiently when the array is:",
+      "options": ["Unsorted — pointers can advance independently", "Sorted or has a monotone property — shrinking the window always increases the minimum, expanding always decreases it", "Contains only positive integers", "Has length ≥ 100"],
+      "answer": 1,
+      "explanation": "The caterpillar assumes: if [l,r] satisfies a condition, [l,r-1] also does (monotone). The right pointer only advances, the left only follows. Both pointers move at most n steps total → O(n). Without monotonicity, you'd need O(n²).",
+      "timeSeconds": 50
+    },
+    {
+      "id": "cp-027",
+      "type": "mcq-single",
+      "tags": ["caterpillar"],
+      "prompt": "Codility `CountDistinctSlices`: count slices [l,r] with all distinct elements. The caterpillar approach:",
+      "options": ["Fix l, binary search for max r using a set", "Expand r while A[r] not in set; when duplicate found, shrink l; count += (r - l + 1) for each valid r", "Fix r, scan all l values", "Sliding window of fixed size k"],
+      "answer": 1,
+      "explanation": "Maintain a Set. Advance r; if A[r] is new, add to set and count slices ending at r: there are (r - l + 1) such slices. If A[r] is duplicate, advance l (remove A[l] from set) until no duplicate. O(n) total since each pointer moves ≤ n steps.",
+      "timeSeconds": 60
+    },
+    {
+      "id": "cp-028",
+      "type": "mcq-single",
+      "tags": ["greedy"],
+      "prompt": "Codility `MaxNonoverlappingSegments`: given n segments sorted by end time, find maximum non-overlapping count. Greedy strategy:",
+      "options": ["Sort by start time, pick longest non-overlapping segment", "Always pick segment with earliest end time that doesn't overlap the last picked", "Pick all segments that start after the midpoint", "Dynamic programming over all pairs"],
+      "answer": 1,
+      "explanation": "Classic interval scheduling: sort by end time, greedily pick each segment that starts after the last picked segment's end. This maximises count. O(n log n) for sort, O(n) for greedy scan.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "cp-029",
+      "type": "mcq-single",
+      "tags": ["greedy"],
+      "prompt": "Codility `TieRopes`: given ropes, tie adjacent ones until each rope is ≥ K. Greedy approach counting maximum groups:",
+      "options": ["Sort ropes, then greedily group from largest", "Scan left to right: accumulate sum; when sum ≥ K, count a group and reset sum to 0", "Sliding window of size K", "DP over all rope lengths"],
+      "answer": 1,
+      "explanation": "Ropes must be tied in order (adjacent). Greedily accumulate from left; the moment the running sum reaches K, we have a valid rope — increment count and reset. O(n) time.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "cp-030",
+      "type": "mcq-single",
+      "tags": ["dp"],
+      "prompt": "Codility `NumberSolitaire`: on a number line with dice (1–6 steps), find max sum path from position 0 to N. DP recurrence:",
+      "options": ["dp[i] = A[i] + max(dp[i-6], ..., dp[i-1])", "dp[i] = A[i] + min(dp[i-6], ..., dp[i-1])", "dp[i] = dp[i-1] + A[i] always", "dp[i] = max(dp[i-1], dp[i-2]) + A[i]"],
+      "answer": 0,
+      "explanation": "dp[i] = A[i] + max(dp[j]) for j in [max(0, i-6), i-1]. We maximise the path sum. Base case: dp[0] = A[0]. Answer: dp[N]. O(n) time since each step looks back at most 6 positions.",
+      "timeSeconds": 55
+    },
+    {
+      "id": "cp-031",
+      "type": "mcq-single",
+      "tags": ["dp"],
+      "prompt": "Codility `MinAbsSum`: given array A, split into two groups P and Q to minimise |sum(P) - sum(Q)|. This reduces to the subset-sum problem. If total sum = S, you want:",
+      "options": ["Find largest subset sum ≤ S/2, then answer is S - 2 × that sum", "Find smallest subset sum > S/2", "Maximise sum(P) × sum(Q)", "Sort A, alternate assignment to P and Q"],
+      "answer": 0,
+      "explanation": "Minimising |sum(P) - sum(Q)| with sum(P)+sum(Q)=S means finding sum(P) as close to S/2 as possible. Use DP subset-sum to find all reachable sums ≤ S/2. Best answer = S - 2×best. O(n × S) with element count optimisation.",
+      "timeSeconds": 60
+    },
+    {
+      "id": "cp-032",
+      "type": "mcq-single",
+      "tags": ["counting-elements"],
+      "prompt": "Codility `MaxCounters`: N counters, two operations — increment counter X, or set all counters to current maximum. The naive O(n×m) becomes O(n+m) by:",
+      "options": ["Using a segment tree for range updates", "Tracking lastAppliedMax; apply the max lazily only when reading a specific counter — defer bulk updates", "Using a Fenwick tree for prefix sums", "Sorting operations by type before processing"],
+      "answer": 1,
+      "explanation": "Instead of updating all N counters on 'max counter' op (O(N)), record lastMax. For increment ops: if counter[X] < lastMax, set it to lastMax first. After all ops, do one final pass: for each counter < lastMax, set it to lastMax. Total O(N+M).",
+      "timeSeconds": 55
+    },
+    {
+      "id": "cp-033",
+      "type": "mcq-single",
+      "tags": ["prefix-sums"],
+      "prompt": "Codility `MinAvgTwoSlice`: find the index of the slice with the lowest average. Minimum-average slices have length:",
+      "options": ["Any length from 2 to n", "Either 2 or 3 — longer slices are always composed of 2- or 3-element slices", "Always 2", "Only prime lengths"],
+      "answer": 1,
+      "explanation": "Mathematical proof: any slice of length ≥ 4 can be split into smaller slices where at least one has a smaller or equal average. Therefore the global minimum-average slice has length exactly 2 or 3. Check all adjacent pairs and triples: O(n).",
+      "timeSeconds": 55
+    },
+    {
+      "id": "cp-034",
+      "type": "mcq-single",
+      "tags": ["sorting"],
+      "prompt": "Codility `NumberOfDiscIntersections`: N discs centred at i with radius A[i]. Count intersecting pairs. The O(n log n) approach is:",
+      "options": ["Check all O(n²) pairs", "Convert each disc to [i-A[i], i+A[i]] interval; sort start and end points; count overlapping intervals using a sweep line", "Binary search for each disc's overlapping discs", "Merge sort on radii then count"],
+      "answer": 1,
+      "explanation": "Disc i and j intersect if |i-j| ≤ A[i]+A[j], i.e., their intervals overlap. Use a sweep line: sort start points, for each disc's end, count how many discs have started (using sorted start array with binary search). O(n log n).",
+      "timeSeconds": 60
+    },
+    {
+      "id": "cp-035",
+      "type": "mcq-single",
+      "tags": ["time-complexity"],
+      "prompt": "You have an O(n²) solution that times out. The input constraint is n ≤ 10⁶. You need to reach at most:",
+      "options": ["O(n log n)", "O(n)", "Either O(n) or O(n log n) would both pass", "O(n√n)"],
+      "answer": 2,
+      "explanation": "At n=10⁶: O(n) ≈ 10⁶ ops, O(n log n) ≈ 2×10⁷ ops — both fast enough. O(n√n) ≈ 10⁹ — likely too slow. O(n²) = 10¹² — definitely too slow. The target is to break below O(n√n).",
+      "timeSeconds": 45
+    },
+    {
+      "id": "cp-036",
+      "type": "open-rubric",
+      "tags": ["caterpillar"],
+      "prompt": "Write a JavaScript function using the caterpillar (two-pointer) method to find the count of subarrays whose sum equals a target value K. Array contains only positive integers.",
+      "rubric": {
+        "mustMention": ["left and right pointers", "expand right when sum < K", "shrink left when sum > K", "increment count when sum == K", "O(n) time"],
+        "bonusPoints": ["handles empty array", "explains why positive-only enables caterpillar (no negative values mean shrinking always reduces sum)"]
+      },
+      "timeSeconds": 120
+    },
+    {
+      "id": "cp-037",
+      "type": "open-rubric",
+      "tags": ["sieve"],
+      "prompt": "Implement the Sieve of Eratosthenes in JavaScript to return all primes up to N. Explain the time and space complexity.",
+      "rubric": {
+        "mustMention": ["boolean array of size N+1, initialized true", "start marking from p²", "iterate p from 2 to √N", "O(N log log N) time", "O(N) space"],
+        "bonusPoints": ["optimization: start inner loop at p*p not 2*p", "mention that p*p overflow for large N requires BigInt or careful bound"]
+      },
+      "timeSeconds": 120
+    },
+    {
+      "id": "cp-038",
+      "type": "open-rubric",
+      "tags": ["max-slice"],
+      "prompt": "Implement Kadane's algorithm in JavaScript. Also handle the case where all numbers are negative (return the largest single element, not 0).",
+      "rubric": {
+        "mustMention": ["maxEndingHere tracks current subarray sum", "maxSoFar tracks global best", "reset maxEndingHere to current element when it goes below the element itself", "initialize both to A[0] not 0"],
+        "bonusPoints": ["explains why initializing to 0 fails for all-negative arrays", "tracks start/end indices of the optimal subarray"]
+      },
+      "timeSeconds": 120
+    }
+  ]
+}

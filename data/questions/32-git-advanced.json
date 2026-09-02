@@ -1,0 +1,369 @@
+{
+  "module": "git-advanced",
+  "title": "Git — Deep Dive (Pro Git Book Coverage)",
+  "description": "Git internals (objects, refs, DAG), rebase/merge, bisect, stash, hooks, cherry-pick, workflows (GitFlow, trunk-based, squash merge), conflict resolution, monorepo, LFS. Covers the full Pro Git book as listed by Turing.",
+  "questions": [
+    {
+      "id": "ga-001",
+      "type": "mcq-single",
+      "tags": ["git-internals"],
+      "prompt": "Git stores data as a content-addressed object store. The four object types are:",
+      "options": ["commit, tree, blob, tag", "commit, branch, blob, ref", "commit, file, directory, snapshot", "push, pull, merge, rebase"],
+      "answer": 0,
+      "explanation": "Git's object database stores: blob (file content), tree (directory listing of blobs/trees + filenames), commit (snapshot = pointer to root tree + parent commits + metadata), and tag (annotated tag object pointing to a commit). All are content-addressed by SHA-1/SHA-256.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "ga-002",
+      "type": "mcq-single",
+      "tags": ["git-internals"],
+      "prompt": "`git cat-file -t abc1234` returns 'blob'. This means abc1234 is:",
+      "options": ["A commit object", "The raw content of a file stored in Git's object DB", "A reference to a branch", "A tag object"],
+      "answer": 1,
+      "explanation": "Blob objects store raw file contents — no filename, no metadata. The filename is in the tree object that references this blob. Two files with identical content share one blob (content deduplication is automatic in Git).",
+      "timeSeconds": 45
+    },
+    {
+      "id": "ga-003",
+      "type": "mcq-single",
+      "tags": ["git-internals"],
+      "prompt": "In Git, `HEAD` is:",
+      "options": ["Always a SHA pointing to the latest commit", "A symbolic ref pointing to the currently checked-out branch (or detached to a commit SHA)", "The first commit in the repository", "A special branch that can't be deleted"],
+      "answer": 1,
+      "explanation": "`HEAD` usually points to the current branch ref (e.g., `ref: refs/heads/main`). When you `git checkout abc1234`, HEAD becomes 'detached' — pointing directly to a SHA. `git branch` shows which branch HEAD tracks.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "ga-004",
+      "type": "mcq-single",
+      "tags": ["git-internals"],
+      "prompt": "What does `git gc` do and when is it needed?",
+      "options": ["Garbage-collects unreachable objects (orphaned commits, blobs) and repacks loose objects into packfiles for efficiency", "Removes all untracked files from the working tree", "Cleans the local cache of remote branches", "Resets the index to match HEAD"],
+      "answer": 0,
+      "explanation": "`git gc` (garbage collect): removes objects not reachable from any ref (orphaned by force-push, rebase, etc.) and packs loose objects. Run automatically by Git over time. Useful after aggressive history rewriting to reclaim disk space.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "ga-005",
+      "type": "mcq-single",
+      "tags": ["branching"],
+      "prompt": "Difference between `git merge` (non-fast-forward) and `git rebase`:",
+      "options": ["Merge creates a merge commit preserving history topology; rebase rewrites commits onto the target branch tip, creating a linear history", "Rebase is always safer for shared branches; merge is for local branches only", "Merge rewrites history; rebase preserves it", "They produce identical results in all cases"],
+      "answer": 0,
+      "explanation": "Merge: preserves full history including branch topology with a merge commit (good for audit trails). Rebase: replays commits on top of the target, creating new SHAs and linear history (cleaner log, but rewrites history — NEVER rebase shared public branches).",
+      "timeSeconds": 50
+    },
+    {
+      "id": "ga-006",
+      "type": "mcq-single",
+      "tags": ["branching"],
+      "prompt": "Why should you NEVER `git push --force` to a shared branch like `main`?",
+      "options": ["It deletes the branch", "It rewrites the remote's history — teammates who have already fetched the old history now have diverged refs and must force-pull or reset, potentially losing work", "It requires admin permissions and fails silently", "Force push is fine; you just need to notify teammates"],
+      "answer": 1,
+      "explanation": "Force push overwrites the remote ref. Anyone who fetched before the rewrite now has commits that no longer exist on remote — their local branch has diverged. They must `git reset --hard origin/main` or lose unpushed work. Prefer `--force-with-lease` which fails if the remote changed since your last fetch.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "ga-007",
+      "type": "mcq-single",
+      "tags": ["rebase"],
+      "prompt": "`git rebase -i HEAD~3` lets you:",
+      "options": ["Merge the last 3 commits into main", "Interactively rewrite the last 3 commits: reorder, squash, fixup, edit, or drop them", "Revert the last 3 commits", "Cherry-pick 3 commits from another branch"],
+      "answer": 1,
+      "explanation": "Interactive rebase opens an editor with the last 3 commits. Commands: `pick` (keep), `squash`/`s` (combine with previous commit), `fixup`/`f` (squash but discard this message), `edit`/`e` (pause to amend), `drop`/`d` (remove commit), `reword`/`r` (change message).",
+      "timeSeconds": 50
+    },
+    {
+      "id": "ga-008",
+      "type": "mcq-single",
+      "tags": ["rebase"],
+      "prompt": "After `git rebase -i` you have a conflict. To continue after resolving:",
+      "options": ["`git rebase --continue` after staging resolved files", "`git rebase --skip` always", "`git commit` then `git rebase --continue`", "`git merge --continue`"],
+      "answer": 0,
+      "explanation": "Resolve conflicts in the editor, `git add` the resolved files (don't commit), then `git rebase --continue`. Git replays the next commit. `--skip` skips the conflicting commit entirely. `--abort` cancels the whole rebase and returns to the pre-rebase state.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "ga-009",
+      "type": "mcq-single",
+      "tags": ["cherry-pick"],
+      "prompt": "`git cherry-pick abc123` does what?",
+      "options": ["Merges the branch containing abc123", "Applies the diff introduced by commit abc123 onto the current branch as a new commit (new SHA, same changes)", "Reverts commit abc123", "Moves abc123 to the current branch, removing it from its original branch"],
+      "answer": 1,
+      "explanation": "Cherry-pick copies the *changes* from a specific commit (the diff of parent → commit) and applies them as a new commit on the current branch. The new commit has a different SHA. Original commit is untouched. Useful for backporting hotfixes to release branches.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "ga-010",
+      "type": "mcq-single",
+      "tags": ["bisect"],
+      "prompt": "`git bisect` is used to:",
+      "options": ["Split a large commit into smaller commits", "Binary search through commit history to find the first commit that introduced a bug", "Compare two branches for differences", "Merge two divergent branches with conflict detection"],
+      "answer": 1,
+      "explanation": "Workflow: `git bisect start`, mark a bad commit (`git bisect bad`) and a known-good commit (`git bisect good SHA`). Git checks out the midpoint. You test, mark good/bad, repeat. Git binary-searches to find the first bad commit in O(log n) steps.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "ga-011",
+      "type": "mcq-single",
+      "tags": ["bisect"],
+      "prompt": "You have 1000 commits to search with `git bisect`. Maximum number of test steps needed:",
+      "options": ["1000", "500", "~10 (log₂ 1000 ≈ 9.97)", "~31 (log₂ of log₂ 1000)"],
+      "answer": 2,
+      "explanation": "Binary search: each step halves the search space. log₂(1000) ≈ 10. Compare to linear search which would require up to 1000 steps. Git bisect shows you: 'Bisecting: 499 revisions left to test after this (roughly 9 steps)'.",
+      "timeSeconds": 40
+    },
+    {
+      "id": "ga-012",
+      "type": "mcq-single",
+      "tags": ["stash"],
+      "prompt": "`git stash` saves uncommitted changes. `git stash pop` vs `git stash apply` differ in:",
+      "options": ["`pop` removes the stash after applying; `apply` keeps the stash in the stash list", "`pop` applies to a new branch; `apply` applies to current branch", "`apply` is only for staged changes; `pop` handles all changes", "They are identical"],
+      "answer": 0,
+      "explanation": "`git stash pop` = apply + drop (remove from stash list). `git stash apply stash@{0}` applies but keeps the stash entry, so you can apply it to multiple branches. Use `git stash list` to see all stashes; `git stash drop` to manually remove.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "ga-013",
+      "type": "mcq-single",
+      "tags": ["stash"],
+      "prompt": "To stash untracked new files as well as modified tracked files:",
+      "options": ["`git stash`", "`git stash -u` or `git stash --include-untracked`", "`git stash --all`", "`git stash --new`"],
+      "answer": 1,
+      "explanation": "`git stash` only stashes changes to tracked files. `-u` (--include-untracked) also stashes new untracked files. `--all` includes ignored files too. Know this because missing new files in a stash is a common surprise.",
+      "timeSeconds": 40
+    },
+    {
+      "id": "ga-014",
+      "type": "mcq-single",
+      "tags": ["reset"],
+      "prompt": "`git reset --soft HEAD~1`, `--mixed HEAD~1`, and `--hard HEAD~1` differ in what they do to the working tree and staging area:",
+      "options": [
+        "soft: moves HEAD only (staged changes preserved, working tree untouched); mixed: moves HEAD + clears staging (changes in working tree); hard: moves HEAD + clears staging + discards working tree changes",
+        "hard: moves HEAD only; mixed: clears staging; soft: discards everything",
+        "All three do the same thing to history; difference is only in speed",
+        "soft and mixed are identical; hard also deletes the commit from history"
+      ],
+      "answer": 0,
+      "explanation": "soft = HEAD moves, index (stage) unchanged → changes still staged. mixed = HEAD moves, index reset to HEAD → changes appear as unstaged modifications. hard = HEAD moves, index reset, working tree reset → changes GONE (destructive). All three rewrite history — never use on shared branches.",
+      "timeSeconds": 55
+    },
+    {
+      "id": "ga-015",
+      "type": "mcq-single",
+      "tags": ["reflog"],
+      "prompt": "`git reflog` is your safety net because:",
+      "options": ["It backs up your repository to a remote server", "It records every position HEAD has pointed to, allowing recovery of commits after reset --hard, rebase, or accidental branch deletion", "It shows the diff of every commit", "It logs all `git push` operations"],
+      "answer": 1,
+      "explanation": "Reflog keeps a local history of all ref updates (HEAD moves) for 90 days. After `git reset --hard` or a bad rebase, `git reflog` shows previous SHAs. `git checkout -b recovery SHA` restores the lost state. The reflog is purely local — not shared.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "ga-016",
+      "type": "mcq-single",
+      "tags": ["hooks"],
+      "prompt": "Git hooks are stored in `.git/hooks/`. Which hook prevents a commit if tests fail?",
+      "options": ["pre-receive", "pre-commit", "commit-msg", "post-commit"],
+      "answer": 1,
+      "explanation": "`pre-commit` runs before the commit message editor opens. If it exits non-zero, the commit is aborted. Used for: running linters, type-check, tests. `commit-msg` validates the commit message format. `pre-push` runs before pushing. `post-commit` runs after — for notifications, cannot cancel.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "ga-017",
+      "type": "mcq-single",
+      "tags": ["hooks"],
+      "prompt": "Husky is a popular npm package for Git hooks. It works by:",
+      "options": ["Modifying `.git/hooks/` scripts to invoke npm scripts defined in package.json", "Running hooks inside Docker containers", "Replacing Git's hook system with a separate daemon", "Only working with GitHub Actions — not local hooks"],
+      "answer": 0,
+      "explanation": "Husky sets up `.git/hooks/pre-commit` (etc.) to call `npx husky` which then runs the scripts configured in package.json or `.husky/` directory. Combined with lint-staged (runs linters only on staged files), it's the standard setup for JS/TS projects.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "ga-018",
+      "type": "mcq-single",
+      "tags": ["workflows"],
+      "prompt": "GitFlow defines these long-lived branches:",
+      "options": ["main and develop, with feature/, release/, and hotfix/ short-lived branches off them", "main only, with feature branches off it", "main, staging, and develop as permanent branches", "One branch per environment (dev, qa, staging, prod)"],
+      "answer": 0,
+      "explanation": "GitFlow: `main` (production), `develop` (integration). Feature branches from develop; merged back to develop. Release branches from develop; merged to both main and develop. Hotfix branches from main; merged to both main and develop. Heavy process — less popular now vs trunk-based.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "ga-019",
+      "type": "mcq-single",
+      "tags": ["workflows"],
+      "prompt": "Trunk-based development (TBD) recommendation for teams over 4 developers is:",
+      "options": ["All developers commit directly to main, multiple times per day", "Short-lived feature branches (< 2 days) merged via PR to main; feature flags gate incomplete features", "Long-lived feature branches with monthly merges", "Each developer has a personal long-lived branch"],
+      "answer": 1,
+      "explanation": "TBD: branches are short-lived (1–2 days max) to avoid merge hell. Feature flags (LaunchDarkly, etc.) decouple deployment from release — code can be in production but hidden. Enables CI/CD: every push to main is deployable. Contrast with GitFlow's heavy release process.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "ga-020",
+      "type": "mcq-single",
+      "tags": ["workflows"],
+      "prompt": "Squash merge on a PR: you merge 12 commits from a feature branch into main as one commit. Trade-off:",
+      "options": [
+        "Pro: clean linear history on main, easier to revert the entire feature; Con: loses granular commit history from the branch",
+        "Pro: preserves all 12 commits on main; Con: requires force push",
+        "Pro: faster than regular merge; Con: creates merge conflicts",
+        "No trade-off — squash is always better than merge commit"
+      ],
+      "answer": 0,
+      "explanation": "Squash merge: main stays clean with one logical commit per feature (easy to `git revert` the whole feature). Trade-off: `git blame` on main only shows the squash commit, not which of the 12 sub-commits introduced each line. GitHub/GitLab offer this as a PR merge strategy.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "ga-021",
+      "type": "mcq-single",
+      "tags": ["conflict-resolution"],
+      "prompt": "A merge conflict appears when:",
+      "options": ["Two branches added the same file", "Two branches modified the same lines of the same file in incompatible ways (or one branch deleted a file the other modified)", "A branch is more than 100 commits behind main", "The file size exceeds Git's limit"],
+      "answer": 1,
+      "explanation": "Git auto-merges changes to different lines. Conflicts occur when: same lines changed differently on both sides, or one side deleted a file the other modified. Git marks conflicts with `<<<<<<< HEAD`, `=======`, `>>>>>>> branch`. Three-way merge uses the common ancestor to understand each side's intent.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "ga-022",
+      "type": "mcq-single",
+      "tags": ["conflict-resolution"],
+      "prompt": "`git merge -X ours` resolves all conflicts by:",
+      "options": ["Keeping only your branch's changes on conflicts", "Keeping only the incoming branch's changes on conflicts", "Interactively prompting for each conflict", "Using a 3-way merge algorithm"],
+      "answer": 0,
+      "explanation": "`-X ours` (ours strategy eXtension): on conflict, automatically take the current branch's version. `-X theirs` takes the incoming branch's version. These are dangerous — they silently discard the other side. Use only when you're certain one side's changes are correct (e.g., generated files).",
+      "timeSeconds": 45
+    },
+    {
+      "id": "ga-023",
+      "type": "mcq-single",
+      "tags": ["submodules"],
+      "prompt": "Git submodules: a project that includes another Git repository as a subdirectory. The parent repo stores:",
+      "options": ["A copy of the submodule's files at the time of addition", "A pointer (SHA) to a specific commit in the submodule's repository, not the files themselves", "A symlink to the submodule's local path", "The submodule's latest main branch always"],
+      "answer": 1,
+      "explanation": "Submodules store a reference: which repo URL + which commit SHA. `git clone --recurse-submodules` clones the parent AND checks out the pinned commit of each submodule. The submodule is NOT automatically updated — you explicitly update to a new commit and commit that pointer change.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "ga-024",
+      "type": "mcq-single",
+      "tags": ["git-lfs"],
+      "prompt": "Git LFS (Large File Storage) replaces large binary files in the repo with:",
+      "options": ["Compressed zlib streams", "Pointer files containing the file's SHA and size; actual content stored on a separate LFS server", "Base64-encoded file contents in commits", "Delta-compressed binary patches"],
+      "answer": 1,
+      "explanation": "Git LFS: tracked files (e.g., `*.psd`, `*.mp4`) are replaced with text pointer files in commits. Actual binary content is uploaded to an LFS server (GitHub/GitLab host one). During checkout, Git LFS downloads the real files. Keeps repo size small; large files don't slow clone.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "ga-025",
+      "type": "mcq-single",
+      "tags": ["blame-log"],
+      "prompt": "`git blame -L 42,55 src/api.ts` shows:",
+      "options": ["Who changed lines 42–55, in which commit, and when", "All commits that touched the file between dates 42 and 55", "The diff of lines 42–55 between two commits", "The merge history of lines 42–55"],
+      "answer": 0,
+      "explanation": "`git blame` annotates each line with: commit SHA, author, date, and original line number. `-L 42,55` limits to lines 42–55. Useful for tracking when a specific line was introduced. Follow renames: `git blame --follow -C` detects code moved from other files.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "ga-026",
+      "type": "mcq-single",
+      "tags": ["branching"],
+      "prompt": "`git branch -d feature/login` vs `git branch -D feature/login`:",
+      "options": ["-d deletes only if branch is fully merged into current branch; -D force-deletes regardless", "-D deletes from remote; -d deletes locally", "-d is for detached HEAD branches; -D is for normal branches", "They are identical"],
+      "answer": 0,
+      "explanation": "`-d` (safe delete): refuses to delete if the branch has unmerged commits — Git protects you from losing work. `-D` force deletes even with unmerged commits. Always prefer `-d`; use `-D` only when you're certain you don't need the branch (e.g., after squash-merging via PR).",
+      "timeSeconds": 45
+    },
+    {
+      "id": "ga-027",
+      "type": "mcq-single",
+      "tags": ["tags"],
+      "prompt": "Lightweight tags vs annotated tags (`git tag -a v1.0 -m 'release'`) in Git:",
+      "options": ["Lightweight: just a pointer (ref) to a commit; Annotated: full Git object with tagger, date, message — can be signed with GPG", "Annotated tags are deleted on push; lightweight are permanent", "Lightweight tags are pushed automatically; annotated require --tags flag", "They behave identically — just different syntax"],
+      "answer": 0,
+      "explanation": "Lightweight tags = a named ref to a commit SHA (like a branch that doesn't move). Annotated tags are first-class Git objects with full metadata and can be GPG-signed for verification. Best practice: use annotated tags for releases; lightweight for temporary local markers.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "ga-028",
+      "type": "mcq-single",
+      "tags": ["monorepo"],
+      "prompt": "In a monorepo (all services in one Git repo), `git sparse-checkout` helps by:",
+      "options": ["Preventing all developers from seeing other services' code", "Checking out only a subset of directories — developers only download the parts of the repo they work on", "Combining multiple repos into one", "Running Git operations only on changed files"],
+      "answer": 1,
+      "explanation": "Sparse checkout: define which paths to materialise in the working tree. A backend dev working on `/services/api` doesn't need `/services/mobile` on disk. Critical for large monorepos (Google/Meta scale) where the full tree would be gigabytes. Combined with partial clone (`--filter=blob:none`) for fast initial clones.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "ga-029",
+      "type": "mcq-single",
+      "tags": ["git-internals"],
+      "prompt": "`git fetch` vs `git pull` difference:",
+      "options": ["fetch downloads all remote objects and updates remote-tracking refs but does NOT change the working branch; pull = fetch + merge (or rebase) into the current branch", "fetch only lists what's new; pull downloads", "They are identical — just aliases", "pull is safer than fetch because it shows a diff before merging"],
+      "answer": 0,
+      "explanation": "`fetch` is always safe: updates `origin/main` (remote-tracking ref) without touching your local `main`. You review changes before merging. `pull` = `fetch` + `merge` (or `--rebase`), which immediately changes your local branch. Best practice: `git fetch` then inspect, then `git merge origin/main`.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "ga-030",
+      "type": "mcq-single",
+      "tags": ["workflows"],
+      "prompt": "Conventional Commits format (`feat:`, `fix:`, `chore:`, `BREAKING CHANGE:`) enables:",
+      "options": ["Automatic semantic version bumping and CHANGELOG generation by tooling that reads commit types", "Enforced code review workflows", "Automatic PR creation for each commit", "Faster git log performance"],
+      "answer": 0,
+      "explanation": "Conventional Commits is a specification for commit messages. Tools like `semantic-release` or `release-please` read commit types: `fix:` → patch bump, `feat:` → minor bump, `BREAKING CHANGE:` → major bump. Enables fully automated versioning and changelog generation in CI.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "ga-031",
+      "type": "mcq-single",
+      "tags": ["conflict-resolution"],
+      "prompt": "When rebasing and you have conflicts in 5 consecutive commits, you must:",
+      "options": ["Resolve all 5 at once", "Resolve each conflict one-by-one as rebase replays each commit — git stops after each conflicting commit", "Abort and use merge instead", "Use --skip to skip all conflicting commits"],
+      "answer": 1,
+      "explanation": "Interactive rebase replays commits one at a time. If commit 3 conflicts, Git stops. You resolve, `git add`, `git rebase --continue`. Then commit 4 may conflict — you resolve again. This is why rebasing many old commits onto a branch with lots of divergence can be painful — each commit may conflict.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "ga-032",
+      "type": "mcq-single",
+      "tags": ["blame-log"],
+      "prompt": "`git log --oneline --graph --all` shows:",
+      "options": ["Only the current branch's history", "A visual ASCII-art DAG of all branches' commit histories in the terminal", "All commits by a specific author", "The diff of each commit"],
+      "answer": 1,
+      "explanation": "`--graph` draws branch/merge topology as ASCII. `--all` includes all branches and tags (not just current). `--oneline` condenses each commit to one line (SHA + message). This is the quickest way to visualise the full repository topology.",
+      "timeSeconds": 40
+    },
+    {
+      "id": "ga-033",
+      "type": "mcq-single",
+      "tags": ["hooks"],
+      "prompt": "The `pre-push` hook is useful for:",
+      "options": ["Preventing pushes if integration tests fail — more thorough than pre-commit but runs just before pushing to remote", "Formatting commit messages before push", "Auto-rebasing before pushing", "Checking remote permissions"],
+      "answer": 0,
+      "explanation": "`pre-push` receives the remote name and URL. It can run heavier checks (integration tests, build) that are too slow for `pre-commit`. If it exits non-zero, the push is aborted. Trade-off: slower push workflow, but catches issues before they reach CI.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "ga-034",
+      "type": "open-rubric",
+      "tags": ["workflows"],
+      "prompt": "A teammate force-pushed to `main` and teammates now have diverged history. Walk through the steps to recover without losing anyone's work.",
+      "rubric": {
+        "mustMention": ["git reflog to find the SHA before the force push", "coordinate with team — everyone stops pushing", "git fetch to get new remote state", "each dev checks git log to find their unpushed commits", "cherry-pick or rebase unpushed commits onto new main", "alternative: the person who force-pushed can reset to the pre-push SHA and force-push again to restore (if no one else pushed new commits)"],
+        "bonusPoints": ["prefer --force-with-lease going forward", "protect main branch with push restrictions on GitHub/GitLab", "communication is key — announce the incident in Slack before anyone makes it worse"]
+      },
+      "timeSeconds": 180
+    },
+    {
+      "id": "ga-035",
+      "type": "open-rubric",
+      "tags": ["git-internals"],
+      "prompt": "Explain what happens under the hood when you run `git commit -m 'fix: null check'`. Describe each Git object created and how HEAD is updated.",
+      "rubric": {
+        "mustMention": ["staged files are turned into blob objects (if not already in object store)", "a tree object is created representing the root directory with updated file references", "a commit object is created pointing to the tree, parent commit(s), and containing author/committer/message", "HEAD (or the branch HEAD points to) is updated to point to the new commit SHA"],
+        "bonusPoints": ["SHA is content hash — same content = same SHA (deduplication)", "commit object is immutable — amending creates a NEW object", "pack files consolidate loose objects over time via git gc"]
+      },
+      "timeSeconds": 180
+    }
+  ]
+}

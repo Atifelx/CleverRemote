@@ -1,0 +1,461 @@
+{
+  "module": "oop-design-patterns",
+  "title": "OOP & Design Patterns (All 23 GoF)",
+  "description": "All 23 Gang of Four patterns (Creational, Structural, Behavioral) with JS/TS code examples + SOLID deep dive. Maps to Turing T1 MCQ, T3 Live, T4 FDE.",
+  "questions": [
+    {
+      "id": "dp-001",
+      "type": "mcq-single",
+      "tags": ["solid"],
+      "prompt": "Which SOLID principle is violated here?\n```ts\nclass UserService {\n  getUser(id: string) { ... }\n  sendWelcomeEmail(user: User) { ... }\n  logUserActivity(user: User) { ... }\n}\n```",
+      "options": ["Open/Closed Principle", "Single Responsibility Principle", "Liskov Substitution Principle", "Dependency Inversion Principle"],
+      "answer": 1,
+      "explanation": "UserService has 3 reasons to change: user retrieval logic, email sending, and logging. SRP says a class should have only one reason to change. Fix: split into UserRepository, EmailService, ActivityLogger.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "dp-002",
+      "type": "mcq-single",
+      "tags": ["solid"],
+      "prompt": "The Open/Closed Principle states code should be open for __ and closed for __.",
+      "options": ["modification; extension", "extension; modification", "testing; deployment", "inheritance; composition"],
+      "answer": 1,
+      "explanation": "OCP: open for extension (new behaviour via new classes or interfaces), closed for modification (existing code shouldn't change). Classic implementation: Strategy pattern, template method, polymorphism.",
+      "timeSeconds": 40
+    },
+    {
+      "id": "dp-003",
+      "type": "mcq-single",
+      "tags": ["solid"],
+      "prompt": "Liskov Substitution Principle violation: a `Square` extends `Rectangle` and overrides `setWidth` to also set `setHeight`. The violation is:",
+      "options": ["Square has extra methods Rectangle doesn't", "Substituting Square for Rectangle breaks code that changes width independently of height", "Square is immutable but Rectangle is mutable", "Square overrides a method it shouldn't"],
+      "answer": 1,
+      "explanation": "Code like `r.setWidth(5); r.setHeight(10); assert(r.area() == 50)` passes for Rectangle but fails for Square (area = 100). LSP: subtype must be substitutable for its base type without changing program correctness.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "dp-004",
+      "type": "mcq-single",
+      "tags": ["solid"],
+      "prompt": "Interface Segregation Principle applied: instead of one fat `IWorker` interface with `work()`, `eat()`, `sleep()`, you should:",
+      "options": ["Add default implementations for unused methods", "Split into IWorkable, IFeedable, ISleepable so classes only implement what they need", "Make all methods optional using TypeScript's Partial<T>", "Use a single abstract class with all methods"],
+      "answer": 1,
+      "explanation": "ISP: no class should be forced to depend on methods it doesn't use. A Robot implements IWorkable but shouldn't implement IFeedable. Split interfaces keep implementations lean and tests focused.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "dp-005",
+      "type": "mcq-single",
+      "tags": ["solid"],
+      "prompt": "Dependency Inversion Principle: high-level modules should depend on __, not on __.",
+      "options": ["abstractions; concrete implementations", "concrete implementations; abstractions", "interfaces; classes", "functions; objects"],
+      "answer": 0,
+      "explanation": "DIP: both high-level (business logic) and low-level (infrastructure) modules should depend on abstractions (interfaces). This enables swapping implementations without changing business logic. Achieved via constructor injection.",
+      "timeSeconds": 40
+    },
+    {
+      "id": "dp-006",
+      "type": "mcq-single",
+      "tags": ["creational"],
+      "prompt": "Singleton pattern ensures a class has exactly one instance. The thread-safety issue in lazy initialization is solved in JS/TS by:",
+      "options": ["Using a mutex lock around the constructor", "Module-level singleton (Node's module cache ensures single evaluation per process)", "Double-checked locking pattern", "Using WeakMap to store instances"],
+      "answer": 1,
+      "explanation": "In Node.js, `require()` / ES module `import` caches the module after first execution. Exporting a single instance at module level is inherently singleton — the module is only evaluated once. No explicit locking needed unlike Java.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "dp-007",
+      "type": "mcq-single",
+      "tags": ["creational"],
+      "prompt": "Factory Method vs Abstract Factory: the key difference is:",
+      "options": ["Factory Method creates one product; Abstract Factory creates families of related products", "Abstract Factory is always faster", "Factory Method uses inheritance; Abstract Factory uses composition only", "They are identical — just different names"],
+      "answer": 0,
+      "explanation": "Factory Method: one interface, one product type, subclasses decide which class to instantiate. Abstract Factory: creates families of related objects (e.g., Button+Dialog for Win vs Mac) without specifying concrete classes.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "dp-008",
+      "type": "mcq-single",
+      "tags": ["creational"],
+      "prompt": "Builder pattern is most appropriate when:",
+      "options": ["A class has a single optional field", "Construction of an object requires many steps or optional parameters, and the same construction process should produce different representations", "You need to clone an existing object cheaply", "You want to control the number of instances"],
+      "answer": 1,
+      "explanation": "Builder separates construction from representation. Classic: building a complex HTTP request, a SQL query, or a UI component with many optional configurations. Avoids telescoping constructor anti-pattern.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "dp-009",
+      "type": "mcq-single",
+      "tags": ["creational"],
+      "prompt": "Prototype pattern in JavaScript is natural because:",
+      "options": ["JavaScript is prototype-based — every object can serve as a prototype via Object.create() or structuredClone()", "JavaScript has no classes so Prototype is the only creational option", "JavaScript's `new` keyword implements Prototype automatically", "Prototype is the fastest creational pattern in all languages"],
+      "answer": 0,
+      "explanation": "Prototype creates new objects by cloning existing ones. In JS, Object.create(proto) or structuredClone(obj) implement this. Useful when object initialization is expensive (e.g., DB-loaded config objects).",
+      "timeSeconds": 45
+    },
+    {
+      "id": "dp-010",
+      "type": "mcq-single",
+      "tags": ["structural"],
+      "prompt": "Adapter pattern purpose:",
+      "options": ["Simplifies a complex subsystem's interface", "Makes incompatible interfaces work together by wrapping one in a class that translates calls", "Adds new behaviour to an object without modifying its class", "Controls access to another object"],
+      "answer": 1,
+      "explanation": "Adapter wraps an existing class (Adaptee) to make it compatible with a Target interface. Example: wrapping a 3rd-party payment library (Stripe) behind your own IPaymentGateway interface so swapping providers requires only one new Adapter.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "dp-011",
+      "type": "mcq-single",
+      "tags": ["structural"],
+      "prompt": "Decorator pattern vs Inheritance for adding behaviour: decorators are preferred when:",
+      "options": ["You need to add behaviour at compile time only", "You need to add or combine behaviours at runtime without modifying the original class or creating a subclass explosion", "Behaviour can't be described as an interface", "You're working in a class-based OOP language only"],
+      "answer": 1,
+      "explanation": "Inheritance causes class explosion (LoggedUserService, CachedUserService, CachedLoggedUserService...). Decorator wraps objects at runtime and can be stacked. Node.js middleware pipeline is a real-world Decorator.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "dp-012",
+      "type": "mcq-single",
+      "tags": ["structural"],
+      "prompt": "Facade pattern in software: the express app's `app.use(cors()).use(json()).use(router)` is an example because:",
+      "options": ["It uses the Decorator pattern to add middleware", "app.use() provides a simple interface that hides the complex request processing pipeline underneath", "It's an Observer with multiple subscribers", "It uses the Command pattern to queue middleware"],
+      "answer": 1,
+      "explanation": "Facade provides a simple interface to a complex subsystem. The user calls app.use() without knowing how the middleware chain, request lifecycle, or error propagation work internally. Same applies to SDK wrappers around complex APIs.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "dp-013",
+      "type": "mcq-single",
+      "tags": ["structural"],
+      "prompt": "Proxy pattern has three main uses: virtual proxy (lazy loading), protection proxy (access control), and remote proxy. Which is most common in Node.js backends?",
+      "options": ["Remote proxy — using JavaScript Proxy to intercept property access for caching or validation", "Virtual proxy — loading heavy resources only on demand", "Protection proxy — wrapping service calls with auth checks", "All three are equally common"],
+      "answer": 2,
+      "explanation": "Protection proxies wrapping service calls with auth/rate-limiting checks are extremely common. But JavaScript's built-in `Proxy` object most directly implements the virtual/validation proxy. Answer (c) is the most architecturally impactful use in backend services.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "dp-014",
+      "type": "mcq-single",
+      "tags": ["structural"],
+      "prompt": "Composite pattern is used when you need to treat individual objects and compositions of objects uniformly. Classic example:",
+      "options": ["A filesystem where files and directories share the same interface (both have name, size, delete)", "A strategy pattern with multiple algorithms", "A chain of middleware handlers", "A factory that creates different types of nodes"],
+      "answer": 0,
+      "explanation": "Composite defines a tree structure of objects all sharing one Component interface. Both Leaf (File) and Composite (Directory) implement the same interface. Client code calls `component.getSize()` without knowing if it's a file or nested directory.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "dp-015",
+      "type": "mcq-single",
+      "tags": ["structural"],
+      "prompt": "Flyweight pattern reduces memory usage by sharing common state. In a text editor rendering 10,000 characters, Flyweight:",
+      "options": ["Creates one object per unique character type (glyph), sharing intrinsic state (font, style) — each rendered char only stores its extrinsic position", "Caches the last 100 character renders", "Renders all characters in one batch draw call", "Compresses the character buffer using run-length encoding"],
+      "answer": 0,
+      "explanation": "Flyweight separates intrinsic (shared: glyph shape, font) from extrinsic (unique: position, colour). 10,000 chars of 52 types → 52 Flyweight objects instead of 10,000. Same pattern used in game engines for particles/bullets.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "dp-016",
+      "type": "mcq-single",
+      "tags": ["structural"],
+      "prompt": "Bridge pattern separates abstraction from implementation so they can vary independently. Difference from Adapter:",
+      "options": ["Adapter makes existing incompatible classes work together (retrofit); Bridge is designed upfront to allow both sides to evolve independently", "Bridge is always bidirectional; Adapter is one-way", "They are functionally identical — just different intent", "Bridge requires an interface; Adapter works only with concrete classes"],
+      "answer": 0,
+      "explanation": "Adapter = retrofit (makes two incompatible things work). Bridge = design upfront (defines two independent hierarchies: e.g., Shape abstraction + Renderer implementation). You can add Shapes or Renderers independently without touching the other side.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "dp-017",
+      "type": "mcq-single",
+      "tags": ["behavioral"],
+      "prompt": "Observer pattern: when an event emitter in Node.js fires 'data', all listeners are called. The emitter is the __ and listeners are the __.",
+      "options": ["Observer; Subject", "Subject; Observer", "Publisher; Consumer", "Producer; Subscriber"],
+      "answer": 1,
+      "explanation": "Observer (GoF): Subject maintains a list of Observers and notifies them on state change. EventEmitter is the Subject; `.on('data', fn)` registers fn as an Observer. Publisher/Subscriber is a variation via a message broker.",
+      "timeSeconds": 40
+    },
+    {
+      "id": "dp-018",
+      "type": "mcq-single",
+      "tags": ["behavioral"],
+      "prompt": "Strategy pattern vs State pattern: the key difference is:",
+      "options": ["Strategy: client chooses algorithm at runtime; State: object changes its behaviour automatically based on internal state transitions", "State: client switches strategies; Strategy: internal state machine decides", "They are identical — just different naming conventions", "Strategy uses interfaces; State uses abstract classes"],
+      "answer": 0,
+      "explanation": "Strategy: client explicitly sets which algorithm to use (e.g., choose sorting algorithm). State: the object's behaviour changes as its internal state changes (e.g., traffic light — Red/Green/Yellow states each know their next state). State transitions are internal.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "dp-019",
+      "type": "mcq-single",
+      "tags": ["behavioral"],
+      "prompt": "Command pattern encapsulates a request as an object. This enables:",
+      "options": ["Queuing operations, logging, undo/redo — because commands are first-class objects that can be stored and replayed", "Faster request processing via memoization", "Distributing requests across multiple threads", "All of the above"],
+      "answer": 0,
+      "explanation": "Command decouples sender from receiver. Storing Command objects enables: undo/redo (reverse the command), queuing (send to a message queue), logging (replay on crash recovery), and macro recording (batch of commands). HTTP request objects are a real-world Command.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "dp-020",
+      "type": "mcq-single",
+      "tags": ["behavioral"],
+      "prompt": "Chain of Responsibility: an HTTP request passes through authentication → authorization → rate limiting → logging middleware. Each handler:",
+      "options": ["Processes the request and then passes it to the next handler, or short-circuits by returning early", "All handlers always run in parallel", "Only the first matching handler runs", "Handlers vote; majority decides if request proceeds"],
+      "answer": 0,
+      "explanation": "CoR: each handler decides to process and pass the request, or stop the chain (short-circuit). Express.js middleware (`next()` vs returning without calling `next`) is CoR. Each handler doesn't know which handler comes next.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "dp-021",
+      "type": "mcq-single",
+      "tags": ["behavioral"],
+      "prompt": "Template Method pattern: a base class defines the skeleton of an algorithm in a method, deferring some steps to subclasses. TypeScript example: abstract `DataProcessor` with `process()` calling `readData()` + `transformData()` + `writeData()`. The Template Method is:",
+      "options": ["readData()", "transformData()", "process()", "writeData()"],
+      "answer": 2,
+      "explanation": "`process()` is the Template Method — it defines the invariant algorithm skeleton. The abstract `readData()`, `transformData()`, `writeData()` are 'hooks' that subclasses override. The overall sequence never changes; only the hook implementations vary.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "dp-022",
+      "type": "mcq-single",
+      "tags": ["behavioral"],
+      "prompt": "Iterator pattern in JavaScript: which built-in mechanism implements the Iterator protocol?",
+      "options": ["Array.forEach()", "Symbol.iterator / for...of loops", "Array.map()", "Object.keys()"],
+      "answer": 1,
+      "explanation": "JS Iterator protocol: an object is iterable if it has `[Symbol.iterator]()` returning an object with `.next()` returning `{value, done}`. `for...of`, spread operator, and destructuring all use this. Custom iterators (for paginated DB cursors, lazy ranges) implement this protocol.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "dp-023",
+      "type": "mcq-single",
+      "tags": ["behavioral"],
+      "prompt": "Mediator pattern reduces chaos in systems where many objects communicate with each other. Instead of O(n²) connections:",
+      "options": ["Each object communicates only through a central Mediator — O(n) connections total", "Objects are grouped into pairs that communicate directly", "A shared event bus replaces the mediator", "Objects broadcast; others filter"],
+      "answer": 0,
+      "explanation": "Mediator: all objects reference one Mediator object. They send messages to the mediator; it routes to the right recipient. Air traffic control (planes ↔ ATC ↔ planes rather than plane-to-plane). Note: Event Bus can implement Mediator but is architecturally different (decentralised).",
+      "timeSeconds": 45
+    },
+    {
+      "id": "dp-024",
+      "type": "mcq-single",
+      "tags": ["behavioral"],
+      "prompt": "Memento pattern saves and restores an object's state without exposing internals. A text editor's Ctrl+Z (undo) uses Memento. The three roles are:",
+      "options": ["Originator (editor state), Memento (snapshot object), Caretaker (undo history stack)", "Producer, Snapshot, Consumer", "Source, Delta, Target", "Object, Clone, Repository"],
+      "answer": 0,
+      "explanation": "Originator creates snapshots (Mementos) of its own internal state. Caretaker (history stack) stores and manages Mementos. Restoration: Caretaker passes Memento back to Originator which restores itself. Originator's internal state is never exposed to Caretaker.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "dp-025",
+      "type": "mcq-single",
+      "tags": ["behavioral"],
+      "prompt": "Visitor pattern lets you add operations to objects without modifying their classes. Trade-off:",
+      "options": ["Easy to add new element types; hard to add new operations", "Easy to add new operations; hard to add new element types", "Both are equally easy to extend", "Visitor only works with immutable data structures"],
+      "answer": 1,
+      "explanation": "Adding a new Visitor (operation) requires only a new Visitor class — no change to element classes. But adding a new element type requires updating every existing Visitor. Contrast with normal OOP: easy to add element types, hard to add new operations without modifying existing classes.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "dp-026",
+      "type": "mcq-single",
+      "tags": ["behavioral"],
+      "prompt": "Interpreter pattern interprets sentences in a language. Where is it commonly used in modern software?",
+      "options": ["HTTP request routing", "Regular expressions, SQL query parsers, and rule engines", "Sorting algorithms", "Concurrency control"],
+      "answer": 1,
+      "explanation": "Interpreter defines a grammar and an interpreter for it. Regex engines, SQL parsers, expression evaluators (math formula engines), and DSL rule engines all implement Interpreter. Each grammar rule is a class with an `interpret()` method.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "dp-027",
+      "type": "mcq-single",
+      "tags": ["oop-principles"],
+      "prompt": "Composition over inheritance principle: why is it usually preferred?",
+      "options": ["Composition is always faster than inheritance at runtime", "Composition avoids fragile base class problem, allows behaviour mixing at runtime, and doesn't couple objects to deep inheritance trees", "Composition is easier to write", "Inheritance breaks encapsulation in all languages"],
+      "answer": 1,
+      "explanation": "Fragile base class: a change to a superclass can break all subclasses. Deep inheritance makes code hard to reason about. Composition (has-a) instead of inheritance (is-a) lets you mix behaviours, swap implementations, and test in isolation. GoF explicitly recommends 'favour composition over inheritance'.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "dp-028",
+      "type": "mcq-single",
+      "tags": ["oop-principles"],
+      "prompt": "The 'Law of Demeter' (principle of least knowledge) says a method should only talk to:",
+      "options": ["Its direct collaborators: itself, its parameters, objects it creates, and its direct fields — not objects returned by calling methods on those objects", "Any object in the same module", "Only pure functions", "Objects registered in a service locator"],
+      "answer": 0,
+      "explanation": "LoD: `user.getAddress().getCity().getZip()` violates LoD — you're calling methods on a chain of returned objects. Instead: `user.getZip()`. Violations create tight coupling — changes to `Address` break `User`'s callers. 'Don't talk to strangers.'",
+      "timeSeconds": 50
+    },
+    {
+      "id": "dp-029",
+      "type": "mcq-single",
+      "tags": ["oop-principles"],
+      "prompt": "DRY (Don't Repeat Yourself) specifically means:",
+      "options": ["Never copy-paste code", "Every piece of knowledge must have a single, unambiguous, authoritative representation in the system", "Use helper functions for any code over 3 lines", "Abstract everything into reusable utilities"],
+      "answer": 1,
+      "explanation": "DRY is about knowledge, not code. Two similar code snippets that represent different business rules are NOT DRY violations. Premature DRY abstraction (combining things that happen to look similar) creates wrong abstractions. The test: if you change the business rule, do you need to change it in exactly one place?",
+      "timeSeconds": 50
+    },
+    {
+      "id": "dp-030",
+      "type": "mcq-single",
+      "tags": ["creational"],
+      "prompt": "When should you prefer a Factory Method over directly calling `new MyService()`?",
+      "options": ["Always — direct instantiation is always bad", "When the type of object to create depends on context, configuration, or runtime conditions — the factory encapsulates that decision", "Only in strongly typed languages", "Only when using dependency injection frameworks"],
+      "answer": 1,
+      "explanation": "If you `new SqlDatabase()` everywhere, switching to `MongoDatabase` requires finding every usage. A factory method/function centralises this decision. Also enables returning different subtypes, caching instances, or logging creation without touching call sites.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "dp-031",
+      "type": "mcq-single",
+      "tags": ["structural"],
+      "prompt": "In a React app, `React.memo`, `useMemo`, and `useCallback` all implement which structural pattern concept?",
+      "options": ["Decorator", "Proxy — they intercept renders or function calls and return cached results if inputs haven't changed", "Flyweight — sharing component instances", "Facade — simplifying the React API"],
+      "answer": 1,
+      "explanation": "These are memoization proxies: they intercept the render/call, check if inputs changed, and return the cached result if not. The wrapped component/function has no knowledge of this caching layer — classic transparent proxy.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "dp-032",
+      "type": "mcq-single",
+      "tags": ["behavioral"],
+      "prompt": "Event sourcing stores state as a sequence of events rather than current state. This relates to which design pattern?",
+      "options": ["Command + Memento: Commands produce Events (immutable records); replaying them from the Memento (initial state) reconstructs current state", "Observer: events notify all subscribers", "Strategy: different event handlers pick different strategies", "State machine with event transitions"],
+      "answer": 0,
+      "explanation": "Event sourcing = Command pattern (events are Commands that happened) + Memento (each event snapshot can restore state). Replaying events from a snapshot is fundamentally Memento restoration. CQRS systems use this extensively.",
+      "timeSeconds": 55
+    },
+    {
+      "id": "dp-033",
+      "type": "mcq-single",
+      "tags": ["behavioral"],
+      "prompt": "Promise chaining in JavaScript (`.then().then().catch()`) most closely resembles which pattern?",
+      "options": ["Observer", "Chain of Responsibility", "Command", "Iterator"],
+      "answer": 1,
+      "explanation": "Each `.then()` handler is a link in the chain that either passes the result to the next handler or short-circuits into `.catch()`. This is Chain of Responsibility — each handler decides to process and pass, or stop the chain.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "dp-034",
+      "type": "mcq-single",
+      "tags": ["oop-principles"],
+      "prompt": "YAGNI principle applied: a developer adds a `sortOrder` parameter to a list endpoint 'because we'll need it someday'. YAGNI says:",
+      "options": ["Add it — backwards compatibility is important", "Don't add it — you aren't gonna need it yet. Build what's needed now; adding it later when actually required will cost less than maintaining unused code", "Add it behind a feature flag", "Discuss with the team first"],
+      "answer": 1,
+      "explanation": "YAGNI (You Aren't Gonna Need It): premature features add maintenance burden, test surface, API surface, and documentation overhead — often for requirements that change or never materialise. Build what's required now; extend when the use case is confirmed.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "dp-035",
+      "type": "mcq-single",
+      "tags": ["structural"],
+      "prompt": "The difference between a Service Locator and Dependency Injection:",
+      "options": ["Service Locator: class pulls dependencies from a global registry (hidden coupling); DI: dependencies are pushed in via constructor/interface (explicit coupling)", "Service Locator is always faster", "DI requires a framework; Service Locator doesn't", "They are architecturally equivalent"],
+      "answer": 0,
+      "explanation": "Service Locator hides dependencies — looking at a class's constructor doesn't tell you what it needs. DI makes dependencies explicit in the constructor/interface. Service Locator is now considered an anti-pattern because it makes classes harder to test and reason about.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "dp-036",
+      "type": "open-rubric",
+      "tags": ["behavioral"],
+      "prompt": "Implement the Observer pattern in TypeScript with a generic `EventEmitter<T>` class supporting `on(event, callback)` and `emit(event, payload)`. Then explain how this differs from Node.js's built-in EventEmitter.",
+      "rubric": {
+        "mustMention": ["Map<string, Set<Function>> or similar to store subscribers", "on() adds listener to event's set", "emit() calls all listeners for that event", "type parameter T constrains payload type"],
+        "bonusPoints": ["off() to unsubscribe", "once() for single-fire listeners", "Node's EventEmitter lacks TypeScript generics by default, requires @types/node or typed-emitter wrapper"]
+      },
+      "timeSeconds": 150
+    },
+    {
+      "id": "dp-037",
+      "type": "open-rubric",
+      "tags": ["creational"],
+      "prompt": "Design a Builder for creating a complex `DatabaseQuery` object that supports: table name (required), where clauses (array), order by (optional), limit (optional). Show the fluent interface and explain why Builder is better than a config object parameter here.",
+      "rubric": {
+        "mustMention": ["method chaining returning `this`", "separate build() step that validates required fields", "each method validates or processes its input"],
+        "bonusPoints": ["immutability — build() returns a frozen/readonly object", "Builder vs options object: Builder validates at build-time and provides IDE autocomplete via method names, options object is simpler for few params"]
+      },
+      "timeSeconds": 150
+    },
+    {
+      "id": "dp-038",
+      "type": "open-rubric",
+      "tags": ["behavioral"],
+      "prompt": "Explain the Strategy pattern and implement it in TypeScript: a `PaymentProcessor` that can use either `StripeStrategy` or `PayPalStrategy`. Show how you'd switch strategies at runtime and why this is better than if/else branching.",
+      "rubric": {
+        "mustMention": ["IPaymentStrategy interface with processPayment(amount) method", "PaymentProcessor holds a reference to IPaymentStrategy", "setStrategy() method to swap at runtime", "concrete strategies implement the interface"],
+        "bonusPoints": ["explain how adding PaypalV2 requires only a new class, not modifying PaymentProcessor (OCP)", "show dependency injection of strategy via constructor"]
+      },
+      "timeSeconds": 150
+    },
+    {
+      "id": "dp-039",
+      "type": "mcq-single",
+      "tags": ["behavioral"],
+      "prompt": "In a REST API, logging middleware that wraps every route handler — `logger(req, res, next) { log(req); next(); log(res); }` — implements which two patterns simultaneously?",
+      "options": ["Command + Observer", "Decorator + Chain of Responsibility", "Proxy + Factory", "Facade + Singleton"],
+      "answer": 1,
+      "explanation": "Decorator: wraps the route handler and adds logging behaviour without modifying the handler. Chain of Responsibility: the middleware chain passes the request through multiple handlers via `next()`. Express middleware is a canonical example of both patterns working together.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "dp-040",
+      "type": "mcq-single",
+      "tags": ["solid"],
+      "prompt": "A React component that fetches its own data, renders a form, validates input, and submits to an API violates SRP. The correct split is:",
+      "options": ["Keep it as one component — React components are allowed to have multiple concerns", "Split into: useDataFetching hook (data), FormUI component (render), useFormValidation hook (validate), submitService (API call)", "Split only if the component exceeds 200 lines", "Use context to manage all concerns centrally"],
+      "answer": 1,
+      "explanation": "SRP in React: each unit should have one reason to change. Data fetching logic should change when the API changes; rendering logic when design changes; validation when rules change. Hooks separate data/logic concerns; components handle rendering only.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "dp-041",
+      "type": "mcq-single",
+      "tags": ["oop-principles"],
+      "prompt": "Tell-Don't-Ask principle: instead of `if (account.getBalance() > amount) { account.debit(amount) }`, prefer:",
+      "options": ["Keep the check in the caller — it's clearer", "`account.debit(amount)` where Account internally checks balance and throws if insufficient — the object owns its own invariants", "Use a Validator class to centralise all checks", "Store balance as a public field for direct access"],
+      "answer": 1,
+      "explanation": "Tell-Don't-Ask: tell objects what to do, don't ask for their state to make decisions for them. Objects should enforce their own invariants. When callers inspect internal state to make decisions, they're doing the object's job and create duplication of business rules.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "dp-042",
+      "type": "mcq-single",
+      "tags": ["creational"],
+      "prompt": "Abstract Factory is used when building a UI library that must support both Material and Cupertino (iOS) themes. Calling `const factory = getFactory('ios'); factory.createButton(); factory.createDialog()` ensures:",
+      "options": ["All components come from the same theme family — you can't accidentally mix Material buttons with Cupertino dialogs", "Components are cached for performance", "Components are lazy-loaded", "Components share the same event bus"],
+      "answer": 0,
+      "explanation": "Abstract Factory's key guarantee: product consistency within a family. The CupertinoFactory only produces Cupertino components; MaterialFactory only Material. Switching themes = swap the factory. You can't mix families accidentally.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "dp-043",
+      "type": "mcq-single",
+      "tags": ["behavioral"],
+      "prompt": "Given: multiple microservices each publishing events independently, and multiple consumers subscribing to relevant events. This is best described as:",
+      "options": ["Mediator — services communicate via a central broker", "Observer — publishers and subscribers, but decoupled via a message broker (event bus)", "Command — each event is a command", "Both Mediator and Observer aspects are present"],
+      "answer": 3,
+      "explanation": "Event-driven microservices use Observer semantics (publish/subscribe) but route via a broker (Kafka, SNS) which acts as a Mediator. Architecturally, it's Pub/Sub (Observer variant) with a message broker playing the Mediator role. This is commonly called Event-Driven Architecture.",
+      "timeSeconds": 55
+    },
+    {
+      "id": "dp-044",
+      "type": "open-rubric",
+      "tags": ["structural"],
+      "prompt": "Explain when you would use a Proxy vs a Decorator. Give a real backend example of each (not a toy example).",
+      "rubric": {
+        "mustMention": ["Proxy controls access or adds cross-cutting concerns transparently (client doesn't know it's there) — e.g., API client with automatic retry/circuit breaking", "Decorator adds or changes behaviour that the client is aware of and opted into — e.g., a logging wrapper the caller explicitly wraps their function in", "Proxy same interface as real object; Decorator extends interface or wraps it explicitly"],
+        "bonusPoints": ["JavaScript Proxy object for runtime interception", "Proxy for memoization/caching is a valid example", "Mention that many 'Proxy' uses in web are actually transparent — client code unchanged"]
+      },
+      "timeSeconds": 150
+    },
+    {
+      "id": "dp-045",
+      "type": "mcq-single",
+      "tags": ["oop-principles"],
+      "prompt": "Coupling vs cohesion: ideal code has:",
+      "options": ["High coupling, high cohesion", "Low coupling, low cohesion", "Low coupling, high cohesion", "High coupling, low cohesion"],
+      "answer": 2,
+      "explanation": "Low coupling: modules depend on each other as little as possible (easy to change one without breaking others). High cohesion: each module focuses on a single well-defined responsibility. These are the two fundamental forces in software design — maximize both simultaneously.",
+      "timeSeconds": 40
+    }
+  ]
+}

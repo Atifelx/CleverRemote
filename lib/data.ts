@@ -29,10 +29,13 @@ import m22 from "@/data/questions/22-testing-debugging.json";
 import m26 from "@/data/questions/26-project-deep-dive.json";
 import m28 from "@/data/questions/28-software-engineering.json";
 import m29 from "@/data/questions/29-python.json";
+import m30 from "@/data/questions/30-codility-patterns.json";
+import m31 from "@/data/questions/31-oop-design-patterns.json";
+import m32 from "@/data/questions/32-git-advanced.json";
 import type { Manifest, Module } from "./types";
 
 const MODULES: Record<string, Module> = Object.fromEntries(
-  [m00, m01dsa, m01, m02, m03, m04, m05, m06, m07, m08, m09, m10, m11, m12, m14, m15, m16, m17, m18, m19, m20, m21, m22, m23, m24, m25, m26, m27, m28, m29].map(
+  [m00, m01dsa, m01, m02, m03, m04, m05, m06, m07, m08, m09, m10, m11, m12, m14, m15, m16, m17, m18, m19, m20, m21, m22, m23, m24, m25, m26, m27, m28, m29, m30, m31, m32].map(
     (m) => [m.module, m as unknown as Module]
   )
 );

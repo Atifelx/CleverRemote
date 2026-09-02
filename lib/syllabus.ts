@@ -83,6 +83,21 @@ export const SYLLABUS: SyllabusEntry[] = [
     targetQs: 40, status: "built", moduleId: "software-engineering",
     tracks: ["turing", "andela"], testStages: ["turing-t3-live", "andela-a2-qualified", "andela-a4-pair"] },
 
+  { num: 29, id: "codility-patterns", title: "Codility Patterns (T2 OA Prep)",
+    blurb: "All 17 Codility lesson categories: prefix sums, sieve, Euclidean GCD, caterpillar, Kadane's, leader, counting elements, binary search on answer, Fibonacci DP.",
+    targetQs: 40, status: "built", moduleId: "codility-patterns",
+    tracks: ["turing", "andela"], testStages: ["turing-t2-oa", "andela-a1-hackerrank"] },
+
+  { num: 30, id: "oop-design-patterns", title: "OOP & Design Patterns (All 23 GoF)",
+    blurb: "All 23 Gang of Four patterns with JS/TS examples. Creational, Structural, Behavioral. SOLID deep dive. Composition vs inheritance, DRY, YAGNI, LoD.",
+    targetQs: 45, status: "built", moduleId: "oop-design-patterns",
+    tracks: ["turing", "andela"], testStages: ["turing-t1-mcq", "turing-t3-live", "turing-t4-fde", "andela-a2-qualified"] },
+
+  { num: 31, id: "git-advanced", title: "Git — Deep Dive",
+    blurb: "Git internals (blob/tree/commit/tag), rebase interactive, bisect, stash, hooks, cherry-pick, reflog, sparse-checkout, LFS, GitFlow vs trunk-based, conventional commits.",
+    targetQs: 35, status: "built", moduleId: "git-advanced",
+    tracks: ["turing", "andela"], testStages: ["turing-t1-mcq", "turing-t3-live", "andela-a2-qualified", "andela-a4-pair"] },
+
   { num: 13, id: "testing-debugging", title: "Testing / Debugging",
     blurb: "Unit/integration/e2e/mocks/coverage/flaky-test playbook.",
     targetQs: 50, status: "built", moduleId: "testing-debugging",
