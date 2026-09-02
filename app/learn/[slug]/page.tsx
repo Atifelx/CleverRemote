@@ -658,6 +658,42 @@ export default async function ConceptPage({
         </div>
       </div>
 
+      {/* How it's used in 2026 */}
+      <div className="rounded-xl border border-[rgb(var(--medium))]/30 bg-[rgb(var(--medium))]/5 p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-[18px]">🚀</span>
+          <h2 className="text-[16px] font-semibold text-[rgb(var(--fg))]">How It&apos;s Used in 2026</h2>
+        </div>
+        <div className="text-[14px] text-[rgb(var(--fg-soft))] leading-relaxed space-y-2">
+          {concept.use2026.split("\n").map((line, i) => {
+            if (!line.trim()) return null;
+            const parts = line.split(/(\*\*[^*]+\*\*)/g);
+            return (
+              <p key={i} className={line.startsWith("- ") ? "flex gap-2" : ""}>
+                {line.startsWith("- ") ? (
+                  <>
+                    <span className="text-[rgb(var(--medium))] flex-shrink-0 mt-0.5">▸</span>
+                    <span>
+                      {parts.map((p, j) =>
+                        p.startsWith("**") ? (
+                          <strong key={j} className="text-[rgb(var(--fg))] font-semibold">{p.slice(2, -2)}</strong>
+                        ) : p.replace(/^- /, "")
+                      )}
+                    </span>
+                  </>
+                ) : (
+                  parts.map((p, j) =>
+                    p.startsWith("**") ? (
+                      <strong key={j} className="text-[rgb(var(--fg))] font-semibold">{p.slice(2, -2)}</strong>
+                    ) : p
+                  )
+                )}
+              </p>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Related concepts */}
       {relatedConcepts.length > 0 && (
         <div>
