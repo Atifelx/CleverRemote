@@ -30,7 +30,10 @@ export type Concept = {
     | "embedding"
     | "quantization"
     | "moe"
-    | "rlhf";
+    | "rlhf"
+    | "regression"
+    | "decision-tree"
+    | "clustering";
   relatedSlugs: string[];
 };
 
@@ -74,7 +77,193 @@ ML flips the approach: **let data write the rules**. This is why Gmail, self-dri
       },
     ],
     diagramType: "none",
-    relatedSlugs: ["neural-networks", "training-dynamics", "loss-functions"],
+    relatedSlugs: ["supervised-learning", "unsupervised-learning", "neural-networks"],
+  },
+  {
+    slug: "supervised-learning",
+    title: "Supervised Learning & Regression",
+    tagline: "Predict a number or a category by learning from labeled examples — the backbone of practical ML.",
+    level: 1,
+    category: "ML Foundations",
+    order: 2,
+    what: `**Supervised learning** is the most common form of ML. You give the model a dataset of (input, correct output) pairs and it learns a function that maps inputs to outputs.
+
+Two main tasks:
+- **Regression** — predict a continuous number. "Given house size + location, predict price." Output: $342,000.
+- **Classification** — predict a category. "Given an email, is it spam?" Output: spam / not-spam.
+
+Key algorithms:
+- **Linear Regression** — fit the best straight line through the data. Output = w₁x₁ + w₂x₂ + … + b. Simplest and most interpretable model.
+- **Logistic Regression** — linear regression + sigmoid squash. Outputs a probability between 0 and 1. Used for binary classification despite the name.
+- **Gradient Descent** — the universal optimizer. Adjust weights in the direction that reduces the loss function.`,
+    why: `Before neural networks dominated, supervised learning algorithms were the workhorses of industry:
+- Predict credit risk (regression).
+- Classify medical images (classification).
+- Forecast demand (regression).
+
+They remain important because they are **fast, interpretable, and work well on small datasets**. When you have 500 rows and need to explain your model to a regulator, linear regression beats a 70B LLM.
+
+Understanding regression is also the foundation for understanding neural networks: a neural network is just many logistic regressions stacked and composed.`,
+    how: `**Linear Regression:**
+- Model: ŷ = Xw + b (matrix form)
+- Loss: Mean Squared Error = (1/n) Σ(yᵢ - ŷᵢ)²
+- Optimal weights: w* = (XᵀX)⁻¹Xᵀy (closed-form) or gradient descent (for large data)
+
+**Logistic Regression:**
+- Model: p = σ(Xw + b), where σ(z) = 1/(1+e⁻ᶻ)
+- Loss: Binary Cross-Entropy = -(y log p + (1-y) log(1-p))
+- No closed form; always use gradient descent
+
+**Training loop:**
+1. Forward pass: compute ŷ
+2. Compute loss
+3. Compute gradient ∂loss/∂w
+4. Update: w ← w - lr × gradient
+5. Repeat until loss converges`,
+    keyInsight: "Linear regression finds the hyperplane that minimizes squared error. Every neural network is built from this same fundamental idea — just stacked and bent.",
+    examples: [
+      {
+        title: "House price prediction (regression)",
+        body: "Features: size (m²), bedrooms, neighborhood score. Target: sale price. Linear regression fits: price = 3500×size + 12000×bedrooms + 45000×neighborhood - 80000. Interpretable: every extra m² adds $3,500.",
+      },
+      {
+        title: "Spam detection (logistic regression)",
+        body: "Features: word frequencies (TF-IDF). Logistic regression outputs P(spam|email). Threshold at 0.5: if p > 0.5 → spam. Gmail used logistic regression for years before switching to neural networks.",
+      },
+      {
+        title: "Medical diagnosis",
+        body: "Predict diabetes risk from blood glucose, BMI, age, family history. Logistic regression outputs a probability. Doctors trust it because the coefficients are inspectable: 'BMI coefficient = 0.08 means each unit of BMI increases log-odds by 0.08.'",
+      },
+    ],
+    diagramType: "regression",
+    relatedSlugs: ["ml-basics", "classical-classifiers", "training-dynamics"],
+  },
+  {
+    slug: "classical-classifiers",
+    title: "Classical Classifiers",
+    tagline: "Decision Trees, Random Forests, SVM, and KNN — the algorithms behind most production ML before deep learning.",
+    level: 1,
+    category: "ML Foundations",
+    order: 3,
+    what: `Before neural networks took over, these algorithms solved most real-world classification problems. Understanding them builds intuition for how ML models carve up feature space.
+
+**Decision Tree:**
+Recursively split data on the feature that best separates classes. "Is income > $50k? → Yes → Is age > 30? → ..." Forms a tree of if-else rules. Interpretable but prone to overfitting.
+
+**Random Forest:**
+Train 100+ decision trees on random subsets of data + features. Average their predictions (bagging). Much more robust than a single tree — reduces variance dramatically.
+
+**Support Vector Machine (SVM):**
+Find the hyperplane that maximally separates two classes (maximizes the margin). Points closest to the boundary are "support vectors." Kernel trick extends this to non-linear boundaries.
+
+**K-Nearest Neighbors (KNN):**
+To classify a new point, find the K most similar training examples and vote. No training phase — just memorize the dataset. Simple but slow at inference on large datasets.`,
+    why: `These algorithms are still used in production today because they:
+- Train on small datasets (100–10k rows) where neural networks overfit.
+- Are interpretable — a decision tree can be printed and reviewed by a business stakeholder.
+- Require no GPU.
+- Often outperform neural networks on tabular data (structured tables with mixed features).
+
+Random forests and gradient boosting (XGBoost) consistently win Kaggle competitions on tabular data. Neural networks are for images, text, and audio — not always for spreadsheets.`,
+    how: `**Decision Tree — splitting criterion:**
+- Gini impurity: 1 - Σpᵢ² (lower = purer split)
+- Information gain: entropy before - entropy after split
+- Repeat greedily at each node until leaves are pure or max depth reached
+
+**Random Forest — bagging:**
+- Sample n rows with replacement (bootstrap)
+- At each split, consider only √(num_features) random features
+- Aggregate predictions: majority vote (classification) or average (regression)
+
+**SVM — margin maximization:**
+- Decision boundary: wᵀx + b = 0
+- Margin = 2/‖w‖, maximize by minimizing ‖w‖
+- Kernel trick: K(x,z) = φ(x)·φ(z) — computes similarity in high-dim space without explicit transformation
+
+**KNN — distance metrics:**
+- Euclidean distance (default), Manhattan, cosine
+- k=1: nearest neighbor (very high variance). k=large: smoother boundary (high bias)`,
+    keyInsight: "Each algorithm makes a different assumption about what 'similar' means. SVM maximizes margin, trees split greedily, KNN uses raw distance, forests reduce variance by averaging disagreements.",
+    examples: [
+      {
+        title: "Fraud detection with Random Forest",
+        body: "Features: transaction amount, merchant category, time since last transaction, location mismatch flag. Random Forest trains in seconds on 100k transactions. Feature importance shows 'location mismatch' is the strongest predictor. Deployed in real-time at every card swipe.",
+      },
+      {
+        title: "Image classification before deep learning",
+        body: "MNIST handwritten digits: SVM with RBF kernel achieved 98.6% accuracy in 2002. This was state-of-the-art. LeNet (neural network) achieved 99.3% but was slow to train. SVM was the practical choice for a decade.",
+      },
+      {
+        title: "KNN for recommendation",
+        body: "Netflix's first recommendation system: find the 10 users most similar to you (KNN in user-rating space), return what they liked. Simple, no training, worked well enough for millions of users — until matrix factorization (a form of unsupervised learning) outperformed it.",
+      },
+    ],
+    diagramType: "decision-tree",
+    relatedSlugs: ["supervised-learning", "unsupervised-learning", "neural-networks"],
+  },
+  {
+    slug: "unsupervised-learning",
+    title: "Unsupervised Learning & Clustering",
+    tagline: "Find hidden structure in data without labels — clustering, dimensionality reduction, and anomaly detection.",
+    level: 1,
+    category: "ML Foundations",
+    order: 4,
+    what: `**Unsupervised learning** works on data with no labels. The model finds structure, patterns, or compressed representations on its own.
+
+Main branches:
+
+**Clustering — group similar points together:**
+- **K-Means:** Pick K cluster centers (centroids). Assign each point to the nearest centroid. Move centroids to the mean of their cluster. Repeat until convergence. Simple, fast, assumes spherical clusters.
+- **DBSCAN:** Density-based — finds arbitrarily-shaped clusters and labels outliers as noise. No need to specify K.
+
+**Dimensionality Reduction — compress features:**
+- **PCA (Principal Component Analysis):** Find the directions of maximum variance. Project data onto top K components. Useful for visualization, noise removal, and speeding up downstream models.
+- **t-SNE / UMAP:** Non-linear reduction to 2D/3D for visualization. Preserves local structure. Used to visualize embedding spaces.
+
+**Anomaly Detection:**
+- Model what "normal" looks like, flag deviations.
+- Isolation Forest, Autoencoders, one-class SVM.`,
+    why: `Labels are expensive. Getting a doctor to label 10,000 X-rays costs $500,000. Getting 10M web documents is free — but they have no labels.
+
+Unsupervised learning extracts value from unlabeled data:
+- Cluster customers into segments without being told what segments exist.
+- Reduce 1000-feature datasets to 20 components for faster modeling.
+- Detect server anomalies without manually labeling every incident.
+
+Also: **pretraining is unsupervised**. GPT's pretraining (next-token prediction) is unsupervised — the labels are the next token in the text, automatically available from any document.`,
+    how: `**K-Means algorithm:**
+1. Choose K (e.g., K=3).
+2. Initialize K centroids randomly.
+3. Assign each point to the nearest centroid (Euclidean distance).
+4. Recompute each centroid as the mean of assigned points.
+5. Repeat steps 3-4 until centroids stop moving.
+6. Output: K cluster labels for each data point.
+
+**Choosing K:** Elbow method — plot inertia (sum of squared distances to nearest centroid) vs. K. The "elbow" where the curve flattens is the right K.
+
+**PCA steps:**
+1. Standardize features (zero mean, unit variance).
+2. Compute covariance matrix.
+3. Compute eigenvectors (principal components) — directions of max variance.
+4. Project data onto top K eigenvectors.
+5. Explained variance ratio tells you how much information is retained.`,
+    keyInsight: "Unsupervised learning is the model reading without a teacher — it finds structure because structure is compressible. Anything redundant can be compressed; compression reveals pattern.",
+    examples: [
+      {
+        title: "Customer segmentation",
+        body: "E-commerce company: K-Means on purchase frequency, average order value, days since last purchase. K=4 reveals: 'Champions' (frequent, high value), 'At Risk' (was frequent, now inactive), 'Hibernating', 'New'. Marketing team sends different campaigns to each cluster — no labels needed.",
+      },
+      {
+        title: "Embedding visualization",
+        body: "Train word2vec embeddings (300-dim vectors). Apply UMAP to reduce to 2D. Visualize: 'king', 'queen', 'prince', 'princess' cluster together. 'Python', 'JavaScript', 'C++' form another cluster. The geometric structure of meaning becomes visible.",
+      },
+      {
+        title: "Anomaly detection in servers",
+        body: "Monitor 50 server metrics (CPU, memory, network, disk I/O). Train Isolation Forest on 30 days of normal traffic. New data points that are 'hard to isolate' (require many random splits) = anomalies. Detects DDoS attacks, memory leaks, and hardware failures without labeled incident data.",
+      },
+    ],
+    diagramType: "clustering",
+    relatedSlugs: ["ml-basics", "supervised-learning", "embeddings"],
   },
   {
     slug: "neural-networks",
@@ -958,6 +1147,9 @@ export const CATEGORIES = [
 
 export const LEARNING_PATH: string[] = [
   "ml-basics",
+  "supervised-learning",
+  "classical-classifiers",
+  "unsupervised-learning",
   "neural-networks",
   "backpropagation",
   "training-dynamics",

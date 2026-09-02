@@ -400,6 +400,98 @@ function RLHFDiagram() {
   );
 }
 
+function RegressionDiagram() {
+  // Scatter plot with regression line
+  const points = [[1,2],[2,3.2],[3,2.8],[4,4.5],[5,4.2],[6,5.8],[7,6.1],[8,7.5]];
+  const scaleX = (x: number) => 60 + x * 52;
+  const scaleY = (y: number) => 200 - y * 22;
+  return (
+    <svg viewBox="0 0 500 240" className="w-full max-w-xl mx-auto" aria-label="Linear regression diagram">
+      {/* Axes */}
+      <line x1={60} y1={20} x2={60} y2={205} stroke="rgb(var(--border-strong))" strokeWidth="1.5"/>
+      <line x1={55} y1={200} x2={490} y2={200} stroke="rgb(var(--border-strong))" strokeWidth="1.5"/>
+      <text x={270} y={230} textAnchor="middle" fontSize="11" fill="rgb(var(--muted))">Feature (e.g. house size m²)</text>
+      <text x={20} y={110} fontSize="11" fill="rgb(var(--muted))" transform="rotate(-90,20,110)">Price ($k)</text>
+      {/* Regression line y = 0.85x + 1.2 */}
+      <line x1={scaleX(0.5)} y1={scaleY(1.6)} x2={scaleX(8.5)} y2={scaleY(8.4)} stroke="rgb(var(--accent))" strokeWidth="2"/>
+      {/* Residual lines */}
+      {points.map(([x, y], i) => {
+        const predY = 0.85 * x + 1.2;
+        return <line key={i} x1={scaleX(x)} y1={scaleY(y)} x2={scaleX(x)} y2={scaleY(predY)} stroke="rgb(var(--medium))" strokeWidth="1" strokeDasharray="3" opacity="0.6"/>;
+      })}
+      {/* Data points */}
+      {points.map(([x, y], i) => (
+        <circle key={i} cx={scaleX(x)} cy={scaleY(y)} r={5} fill="rgb(var(--fg-soft))" stroke="rgb(var(--panel))" strokeWidth="1.5"/>
+      ))}
+      <text x={400} y={70} fontSize="10" fill="rgb(var(--accent))">ŷ = w₁x + b</text>
+      <text x={400} y={84} fontSize="9" fill="rgb(var(--muted))">minimises MSE</text>
+      <text x={240} y={120} fontSize="9" fill="rgb(var(--medium))">residual error</text>
+    </svg>
+  );
+}
+
+function DecisionTreeDiagram() {
+  return (
+    <svg viewBox="0 0 520 280" className="w-full max-w-xl mx-auto" aria-label="Decision tree diagram">
+      {/* Root */}
+      <rect x={190} y={20} width={140} height={40} rx="8" fill="rgb(var(--accent))/15" stroke="rgb(var(--accent))" strokeWidth="1.5"/>
+      <text x={260} y={37} textAnchor="middle" fontSize="11" fontWeight="600" fill="rgb(var(--accent))">Income &gt; $50k?</text>
+      <text x={260} y={52} textAnchor="middle" fontSize="9" fill="rgb(var(--muted))">feature split</text>
+      {/* Yes branch */}
+      <line x1={240} y1={60} x2={140} y2={110} stroke="rgb(var(--border-strong))" strokeWidth="1.5"/>
+      <text x={175} y={92} fontSize="10" fill="rgb(var(--muted))">Yes</text>
+      <rect x={70} y={110} width={140} height={40} rx="8" fill="rgb(var(--panel-2))" stroke="rgb(var(--border))" strokeWidth="1"/>
+      <text x={140} y={127} textAnchor="middle" fontSize="11" fill="rgb(var(--fg-soft))">Age &gt; 30?</text>
+      <text x={140} y={142} textAnchor="middle" fontSize="9" fill="rgb(var(--muted))">next split</text>
+      {/* No branch */}
+      <line x1={280} y1={60} x2={380} y2={110} stroke="rgb(var(--border-strong))" strokeWidth="1.5"/>
+      <text x={342} y={92} fontSize="10" fill="rgb(var(--muted))">No</text>
+      <rect x={310} y={110} width={140} height={40} rx="8" fill="rgb(var(--panel-2))" stroke="rgb(var(--border))" strokeWidth="1"/>
+      <text x={380} y={134} textAnchor="middle" fontSize="11" fill="rgb(var(--fg-soft))">Low Risk</text>
+      {/* Age Yes */}
+      <line x1={120} y1={150} x2={80} y2={200} stroke="rgb(var(--border-strong))" strokeWidth="1.5"/>
+      <text x={90} y={183} fontSize="10" fill="rgb(var(--muted))">Yes</text>
+      <rect x={20} y={200} width={120} height={36} rx="8" fill="rgb(var(--medium))/15" stroke="rgb(var(--medium))" strokeWidth="1.5"/>
+      <text x={80} y={223} textAnchor="middle" fontSize="11" fontWeight="600" fill="rgb(var(--medium))">High Risk ✓</text>
+      {/* Age No */}
+      <line x1={160} y1={150} x2={200} y2={200} stroke="rgb(var(--border-strong))" strokeWidth="1.5"/>
+      <text x={185} y={183} fontSize="10" fill="rgb(var(--muted))">No</text>
+      <rect x={150} y={200} width={120} height={36} rx="8" fill="rgb(var(--easy))/15" stroke="rgb(var(--easy))" strokeWidth="1.5"/>
+      <text x={210} y={223} textAnchor="middle" fontSize="11" fontWeight="600" fill="rgb(var(--easy))">Medium Risk</text>
+      <text x={260} y={265} textAnchor="middle" fontSize="10" fill="rgb(var(--muted))">Each node splits on the feature that best separates classes (Gini / Information Gain)</text>
+    </svg>
+  );
+}
+
+function ClusteringDiagram() {
+  const clusters = [
+    { cx: 120, cy: 100, color: "rgb(var(--accent))", pts: [[95,80],[110,115],[140,90],[100,130],[130,75]] },
+    { cx: 300, cy: 140, color: "rgb(var(--medium))", pts: [[275,120],[315,155],[285,165],[320,125],[295,100]] },
+    { cx: 200, cy: 200, color: "#a78bfa", pts: [[175,185],[215,215],[195,230],[225,185],[180,210]] },
+  ];
+  return (
+    <svg viewBox="0 0 440 280" className="w-full max-w-xl mx-auto" aria-label="K-Means clustering">
+      <text x={220} y={20} textAnchor="middle" fontSize="12" fill="rgb(var(--muted))">K-Means: K=3 clusters</text>
+      {clusters.map((cl, ci) => (
+        <g key={ci}>
+          {/* Points */}
+          {cl.pts.map(([x, y], pi) => (
+            <circle key={pi} cx={x} cy={y} r={6} fill={cl.color + "60"} stroke={cl.color} strokeWidth="1.5"/>
+          ))}
+          {/* Centroid */}
+          <circle cx={cl.cx} cy={cl.cy} r={10} fill={cl.color} stroke="rgb(var(--panel))" strokeWidth="2"/>
+          <text x={cl.cx} y={cl.cy + 4} textAnchor="middle" fontSize="9" fontWeight="700" fill="white">μ</text>
+          {/* Lines to centroid */}
+          {cl.pts.map(([x, y], pi) => (
+            <line key={pi} x1={x} y1={y} x2={cl.cx} y2={cl.cy} stroke={cl.color} strokeWidth="0.8" opacity="0.4"/>
+          ))}
+        </g>
+      ))}
+      <text x={220} y={260} textAnchor="middle" fontSize="10" fill="rgb(var(--muted))">μ = centroid (mean of cluster). Assign → Recompute → Repeat.</text>
+    </svg>
+  );
+}
+
 const DIAGRAM_MAP: Record<string, React.FC> = {
   "nn-layers": NNLayersDiagram,
   "neuron": NeuronDiagram,
@@ -414,6 +506,9 @@ const DIAGRAM_MAP: Record<string, React.FC> = {
   "quantization": QuantizationDiagram,
   "moe": MoEDiagram,
   "rlhf": RLHFDiagram,
+  "regression": RegressionDiagram,
+  "decision-tree": DecisionTreeDiagram,
+  "clustering": ClusteringDiagram,
 };
 
 export default async function ConceptPage({
