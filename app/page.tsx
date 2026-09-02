@@ -4,6 +4,7 @@ import { SYLLABUS, type SyllabusEntry } from "@/lib/syllabus";
 import {
   TURING_STAGES,
   ANDELA_STAGES,
+  TOPTAL_STAGES,
   getStagesForPlatform,
   type Platform,
   type TestStage,
@@ -17,8 +18,9 @@ export default async function Home({ searchParams }: { searchParams: Promise<SP>
   const raw = params.platform ?? "turing";
 
   if (raw === "all") return <AllTopicsView />;
+  if (raw === "core") return <CoreView />;
 
-  const platform: Platform = raw === "andela" ? "andela" : "turing";
+  const platform: Platform = raw === "andela" ? "andela" : raw === "toptal" ? "toptal" : "turing";
   const stages = getStagesForPlatform(platform);
 
   const platformSyllabus = SYLLABUS.filter((s) => s.tracks.includes(platform));
@@ -28,6 +30,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<SP>
   const meta =
     platform === "turing"
       ? { name: "Turing.com", accent: "#2563eb", icon: "⚡" }
+      : platform === "toptal"
+      ? { name: "Toptal", accent: "#059669", icon: "🏆" }
       : { name: "Andela", accent: "#7c3aed", icon: "🌍" };
 
   return (
@@ -55,10 +59,11 @@ export default async function Home({ searchParams }: { searchParams: Promise<SP>
       </div>
 
       {/* ── Platform switcher ── */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         {[
           { id: "turing" as Platform, label: "⚡ Turing FDE" },
           { id: "andela" as Platform, label: "🌍 Andela" },
+          { id: "toptal" as Platform, label: "🏆 Toptal" },
         ].map((o) => (
           <Link
             key={o.id}
@@ -73,8 +78,15 @@ export default async function Home({ searchParams }: { searchParams: Promise<SP>
           </Link>
         ))}
         <Link
+          href="/?platform=core"
+          className="ml-1 px-3 py-2 rounded-lg border border-amber-400 text-[12px] text-amber-600 font-medium hover:bg-amber-50 dark:hover:bg-amber-950 transition"
+          title="The universal skill set that every portal tests"
+        >
+          ⭐ Universal Core
+        </Link>
+        <Link
           href="/?platform=all"
-          className="ml-2 px-3 py-2 rounded-lg border border-[rgb(var(--border))] text-[12px] text-[rgb(var(--muted))] hover:border-[rgb(var(--border-strong))] transition"
+          className="px-3 py-2 rounded-lg border border-[rgb(var(--border))] text-[12px] text-[rgb(var(--muted))] hover:border-[rgb(var(--border-strong))] transition"
         >
           All topics
         </Link>
@@ -102,7 +114,7 @@ function FunnelOverview({
   stages: TestStage[];
   platform: Platform;
 }) {
-  const platformLabel = platform === "turing" ? "Turing.com" : "Andela";
+  const platformLabel = platform === "turing" ? "Turing.com" : platform === "toptal" ? "Toptal" : "Andela";
   return (
     <div className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--panel))] p-5">
       <p className="text-[12px] text-[rgb(var(--muted))] mb-4">
@@ -333,6 +345,84 @@ function TopicCard({ topic, color }: { topic: SyllabusEntry; color: string }) {
 
 // ── All topics fallback ────────────────────────────────────────────────────────
 
+function CoreView() {
+  const core = SYLLABUS.filter((s) => s.isCore);
+  const totalBuilt = core.reduce((a, s) => a + countQs(s), 0);
+  const totalTarget = core.reduce((a, s) => a + s.targetQs, 0);
+
+  return (
+    <div className="space-y-8">
+      <div className="flex items-end justify-between gap-6 flex-wrap">
+        <div>
+          <div className="inline-flex items-center gap-2 mb-2 px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950 border border-amber-300">
+            <span className="text-amber-600 font-bold text-[12px] uppercase tracking-wider">⭐ Universal Core</span>
+          </div>
+          <h1 className="text-[26px] font-semibold text-[rgb(var(--fg))] leading-tight">Crack Any Remote Portal</h1>
+          <p className="text-[13px] text-[rgb(var(--muted))] mt-1 max-w-xl">
+            These {core.length} skill areas are tested by <strong>every</strong> remote FD hiring platform — Turing, Andela, Toptal, Arc.dev, and others. The format differs (HackerRank vs Codewars vs test project), but the underlying skills are identical. Master these first.
+          </p>
+        </div>
+        <ResumeButton />
+      </div>
+
+      {/* The insight banner */}
+      <div className="rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-800 p-5">
+        <h2 className="text-[14px] font-semibold text-amber-800 dark:text-amber-300 mb-3">Why every platform looks different but tests the same thing</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-[12px]">
+          <div>
+            <div className="font-semibold text-[rgb(var(--fg))] mb-1">Platform format varies</div>
+            <div className="text-[rgb(var(--muted))]">HackerRank (Turing T2) · Codewars (Andela practice) · Woven portal (Andela A2) · Test project (Toptal TP3)</div>
+          </div>
+          <div>
+            <div className="font-semibold text-[rgb(var(--fg))] mb-1">Underlying skills are identical</div>
+            <div className="text-[rgb(var(--muted))]">DSA medium · JS/TS core · System design · Clean code + PR review · Communication in English</div>
+          </div>
+          <div>
+            <div className="font-semibold text-[rgb(var(--fg))] mb-1">Strategy</div>
+            <div className="text-[rgb(var(--muted))]">Master the core (80% of any test). Then spend 1 week adapting to the specific platform format before applying.</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        <Link href="/?platform=turing" className="px-3 py-1.5 rounded-lg border border-[rgb(var(--border))] text-[12px] text-[rgb(var(--fg-soft))] hover:border-[rgb(var(--border-strong))] transition">⚡ Turing path</Link>
+        <Link href="/?platform=andela" className="px-3 py-1.5 rounded-lg border border-[rgb(var(--border))] text-[12px] text-[rgb(var(--fg-soft))] hover:border-[rgb(var(--border-strong))] transition">🌍 Andela path</Link>
+        <Link href="/?platform=toptal" className="px-3 py-1.5 rounded-lg border border-[rgb(var(--border))] text-[12px] text-[rgb(var(--fg-soft))] hover:border-[rgb(var(--border-strong))] transition">🏆 Toptal path</Link>
+      </div>
+
+      <p className="text-[12px] text-[rgb(var(--muted))]">{totalBuilt.toLocaleString()} / {totalTarget.toLocaleString()} questions across {core.length} core topics</p>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        {core.map((s) => {
+          const built = countQs(s);
+          const pct = Math.min(100, Math.round((built / s.targetQs) * 100));
+          const href = s.moduleId ? `/module/${s.moduleId}` : `/planned/${s.id}`;
+          return (
+            <Link key={s.id} href={href} className="group block rounded-lg border-2 border-amber-200 dark:border-amber-800 bg-[rgb(var(--panel))] p-4 hover:border-amber-400 transition">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0" />
+                <span className="text-[14px] font-medium text-[rgb(var(--fg))] group-hover:text-amber-600 truncate">{s.title}</span>
+              </div>
+              <p className="text-[12px] text-[rgb(var(--muted))] line-clamp-2 mb-3">{s.blurb}</p>
+              <div className="flex items-center gap-2 mb-1">
+                <div className="flex gap-1">
+                  {s.tracks.includes("turing") && <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">Turing</span>}
+                  {s.tracks.includes("andela") && <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">Andela</span>}
+                  {s.tracks.includes("toptal") && <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300">Toptal</span>}
+                </div>
+                <span className="ml-auto text-[11px] font-mono text-[rgb(var(--muted))]">{built}/{s.targetQs}</span>
+              </div>
+              <div className="h-[3px] rounded-full bg-[rgb(var(--panel-2))] overflow-hidden">
+                <div className="h-full bg-amber-400" style={{ width: `${pct}%` }} />
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function AllTopicsView() {
   const totalBuilt = SYLLABUS.reduce((a, s) => a + countQs(s), 0);
   const totalTarget = SYLLABUS.reduce((a, s) => a + s.targetQs, 0);
@@ -349,9 +439,11 @@ function AllTopicsView() {
         <ResumeButton />
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <Link href="/?platform=turing" className="px-4 py-2 rounded-lg border border-[rgb(var(--border))] text-[13px] text-[rgb(var(--fg-soft))] hover:border-[rgb(var(--border-strong))] transition">⚡ Turing FDE</Link>
         <Link href="/?platform=andela" className="px-4 py-2 rounded-lg border border-[rgb(var(--border))] text-[13px] text-[rgb(var(--fg-soft))] hover:border-[rgb(var(--border-strong))] transition">🌍 Andela</Link>
+        <Link href="/?platform=toptal" className="px-4 py-2 rounded-lg border border-[rgb(var(--border))] text-[13px] text-[rgb(var(--fg-soft))] hover:border-[rgb(var(--border-strong))] transition">🏆 Toptal</Link>
+        <Link href="/?platform=core" className="px-4 py-2 rounded-lg border border-amber-400 text-[13px] text-amber-600 font-medium hover:bg-amber-50 dark:hover:bg-amber-950 transition">⭐ Universal Core</Link>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">

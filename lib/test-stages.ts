@@ -1,7 +1,7 @@
 // Each entry = one real test/interview round in Turing or Andela's hiring funnel.
 // `id` matches the `testStages` values in syllabus.ts so topics auto-group here.
 
-export type Platform = "turing" | "andela";
+export type Platform = "turing" | "andela" | "toptal";
 export type StageType = "automated" | "human";
 
 export type TestStage = {
@@ -147,7 +147,7 @@ export const ANDELA_STAGES: TestStage[] = [
       "Automated — no human involved. Proctored via webcam.",
       "3 problems: typically 1 easy + 1 medium + 1 hard. All must be attempted.",
       "Scored purely on test cases passed. Any language allowed.",
-      "30-day retake lock if failed.",
+      "180-day retake lock if failed — make your first attempt count.",
     ],
     keyTip: "Read all 3 problems first. Solve easy fully, medium partially, hard at least brute-force. Empty submissions hurt your total score.",
     color: "#d97706",
@@ -236,7 +236,94 @@ export const ANDELA_STAGES: TestStage[] = [
 
 // ─── Combined ─────────────────────────────────────────────────────────────────
 
-export const TEST_STAGES = [...TURING_STAGES, ...ANDELA_STAGES];
+// ─── TOPTAL ──────────────────────────────────────────────────────────────────
+
+const TOPTAL_TOTAL = 4;
+
+export const TOPTAL_STAGES: TestStage[] = [
+  {
+    id: "toptal-tp1-screen",
+    platform: "toptal",
+    order: 1,
+    totalStages: TOPTAL_TOTAL,
+    tag: "TP1",
+    title: "English & Communication Screen",
+    type: "automated",
+    duration: "30 minutes",
+    format: "Written and spoken English assessment",
+    passMark: "Professional business English fluency — clear, structured writing",
+    whatToExpect: [
+      "Automated or brief human call. No coding at this stage.",
+      "Tests English fluency: writing clarity, grammar, and ability to explain technical concepts in plain language.",
+      "If you struggle to explain a technical decision in English to a non-technical stakeholder, you will not pass.",
+      "Toptal clients are US/EU enterprises — communication quality is weighted as heavily as code quality.",
+    ],
+    keyTip: "Practice writing a 2-paragraph explanation of a past technical project to a non-technical audience. Clarity beats vocabulary — no jargon, concrete outcomes, 'I' not 'we'.",
+    color: "#0891b2",
+  },
+  {
+    id: "toptal-tp2-tech",
+    platform: "toptal",
+    order: 2,
+    totalStages: TOPTAL_TOTAL,
+    tag: "TP2",
+    title: "Technical Screening Interview",
+    type: "human",
+    duration: "90 minutes",
+    format: "Live coding + system design with a Toptal technical interviewer",
+    passMark: "Senior-level code quality, system design reasoning, and clear communication",
+    whatToExpect: [
+      "A senior Toptal engineer watches you solve 1–2 coding problems live. Difficulty: LeetCode medium.",
+      "System design portion: design a real system end-to-end (URL shortener, rate limiter, messaging system).",
+      "You are expected to narrate your thinking, ask clarifying questions, and defend your trade-offs.",
+      "Code must be clean, production-quality — not just 'passes tests'. Naming, structure, and error handling are graded.",
+    ],
+    keyTip: "Toptal's bar is genuinely senior level. Do not apply if you cannot solve LeetCode mediums fluently AND explain a system design with scale considerations. The interview is unforgiving on code quality.",
+    color: "#7c3aed",
+  },
+  {
+    id: "toptal-tp3-project",
+    platform: "toptal",
+    order: 3,
+    totalStages: TOPTAL_TOTAL,
+    tag: "TP3",
+    title: "Test Project (Paid)",
+    type: "human",
+    duration: "1–3 weeks (compensated)",
+    format: "Real-world project assignment evaluated by Toptal engineers",
+    passMark: "Production-quality code, clean architecture, full test coverage, clear README",
+    whatToExpect: [
+      "You receive a real project spec. You have 1–3 weeks to build it. You are paid for this work.",
+      "Graded on: code architecture, test coverage, documentation, edge-case handling, and deployment readiness.",
+      "This is the most important stage — many qualified candidates fail here by submitting code that 'works' but isn't production-ready.",
+      "You can ask clarifying questions but cannot ask for code help. Treat it like a client engagement.",
+    ],
+    keyTip: "Write the README first — it forces you to clarify the architecture before coding. Add tests as you build, not after. Deploy it. Document setup steps that work on a clean machine. Reviewers run your code from the README.",
+    color: "#059669",
+  },
+  {
+    id: "toptal-tp4-trial",
+    platform: "toptal",
+    order: 4,
+    totalStages: TOPTAL_TOTAL,
+    tag: "TP4",
+    title: "Client Trial Period",
+    type: "human",
+    duration: "2 weeks (paid, with a real client)",
+    format: "Live client engagement — real work, observed by Toptal",
+    passMark: "Client satisfaction, professional communication, autonomous delivery",
+    whatToExpect: [
+      "You are matched to a real client. You work for 2 weeks as if fully hired.",
+      "Toptal monitors the engagement. The client rates your technical output AND your communication, reliability, and proactiveness.",
+      "This is where many developers fail: code is fine but async communication, meeting deadlines, and managing expectations break the engagement.",
+      "Remote-work discipline matters more here than any technical skill.",
+    ],
+    keyTip: "Over-communicate early. Send daily async updates even when not asked. Flag blockers the same day they appear — never wait. Ask 'is this what you expected?' after each deliverable. Client satisfaction = your Toptal rating = more work.",
+    color: "#dc2626",
+  },
+];
+
+export const TEST_STAGES = [...TURING_STAGES, ...ANDELA_STAGES, ...TOPTAL_STAGES];
 
 export function getStagesForPlatform(platform: Platform): TestStage[] {
   return TEST_STAGES.filter((s) => s.platform === platform).sort(
