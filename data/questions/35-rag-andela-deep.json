@@ -1,0 +1,381 @@
+{
+  "module": "rag-andela-deep",
+  "title": "RAG & AI Governance — Andela Deep Dive",
+  "description": "Chunking strategies (semantic vs fixed-size, recursive, sliding window, sentence-window), hybrid search (dense embeddings + BM25, score fusion), PII filtering before embedding, prompt caching for latency, RAG governance, hallucination defence, and RAGAS evaluation. Maps to Andela A2 Qualified MCQ and Stage 3 Client Simulation Architecture.",
+  "questions": [
+    {
+      "id": "rg-001",
+      "type": "mcq-single",
+      "tags": ["chunking"],
+      "prompt": "Fixed-size chunking splits documents into chunks of N characters with an overlap of M characters. The main advantage over semantic chunking is:",
+      "options": [
+        "It produces better retrieval quality",
+        "It is deterministic, fast, and requires no ML model — works on any text without understanding content",
+        "It respects sentence boundaries",
+        "Overlapping windows prevent any context loss"
+      ],
+      "answer": 1,
+      "explanation": "Fixed-size chunking is O(n) and requires no embedding model to chunk. Trade-off: chunks may split mid-sentence or mid-concept, degrading retrieval. The overlap (e.g., 20% overlap) mitigates this partially. Use when documents are uniform and speed/cost matters more than precision.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "rg-002",
+      "type": "mcq-single",
+      "tags": ["chunking"],
+      "prompt": "Semantic chunking splits text at natural semantic boundaries. It is preferred over fixed-size when:",
+      "options": [
+        "Documents are very short (< 200 words)",
+        "Document structure varies: technical PDFs mixed with FAQ pages, Slack threads, and support tickets — fixed splits would fragment concepts across chunks",
+        "You need to minimize chunking cost",
+        "Documents are in a language without sentence markers"
+      ],
+      "answer": 1,
+      "explanation": "Semantic chunking uses embeddings or sentence boundaries to detect where one topic ends and another begins. Higher quality retrieval since each chunk represents one coherent idea. Higher cost: requires embedding each sentence to detect topic shifts. Use for heterogeneous document types where content structure matters.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "rg-003",
+      "type": "mcq-single",
+      "tags": ["chunking"],
+      "prompt": "Recursive Character Text Splitter (LangChain's default) works by:",
+      "options": [
+        "Splitting on every character recursively",
+        "Trying a hierarchy of separators (\\n\\n, \\n, ' ', '') — splits on paragraph first, then sentence, then word, then character — only going deeper if the chunk is still too large",
+        "Embedding each paragraph and clustering similar ones",
+        "Splitting on punctuation marks only"
+      ],
+      "answer": 1,
+      "explanation": "The recursive splitter tries paragraph breaks first (\\n\\n), then single newlines, then spaces, then individual characters as a last resort. This preserves the most semantic meaning while staying under the target chunk size. It's a good default for general text before committing to semantic chunking.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "rg-004",
+      "type": "mcq-single",
+      "tags": ["chunking"],
+      "prompt": "Sentence-window chunking: you embed a single sentence but store and retrieve the surrounding N sentences as context. Why is this architecture better than embedding the full paragraph?",
+      "options": [
+        "Single sentences embed more accurately — the vector represents exactly one idea, improving retrieval precision. The surrounding window provides the LLM enough context to generate a good answer",
+        "It reduces storage costs",
+        "Single sentences are faster to embed",
+        "The surrounding window prevents hallucination"
+      ],
+      "answer": 0,
+      "explanation": "Sentence-window combines precision with context: a precise query matches a precise sentence embedding (high precision), then the surrounding window gives the LLM the broader paragraph context for generation. Embedding full paragraphs dilutes the vector — a query about one sentence has to match the embedding of 10 sentences.",
+      "timeSeconds": 55
+    },
+    {
+      "id": "rg-005",
+      "type": "mcq-single",
+      "tags": ["chunking"],
+      "prompt": "Chunk overlap (e.g., 10% overlap between adjacent chunks) serves what purpose?",
+      "options": [
+        "Reduces total storage needed",
+        "Ensures that content near chunk boundaries is not lost — a concept that straddles two chunks still appears in at least one chunk in full",
+        "Makes embeddings more accurate",
+        "Required by all vector databases"
+      ],
+      "answer": 1,
+      "explanation": "Without overlap: a key sentence at the boundary of chunk 1 and chunk 2 might be split — half in chunk 1, half in chunk 2. Neither chunk contains the full sentence. Overlap repeats the boundary content in both chunks, ensuring boundary content is always fully retrievable. Trade-off: increased storage and duplicate retrieval.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "rg-006",
+      "type": "mcq-single",
+      "tags": ["hybrid-search"],
+      "prompt": "In hybrid search combining dense embeddings and BM25 keyword search, the dense component captures __ while BM25 captures __.",
+      "options": [
+        "exact keywords; semantic meaning",
+        "semantic meaning and paraphrases; exact keyword and term frequency matches",
+        "structured data; unstructured data",
+        "short queries; long documents"
+      ],
+      "answer": 1,
+      "explanation": "Dense retrieval: query 'car insurance pricing' matches 'vehicle coverage cost estimation' (same meaning, different words). BM25: great for exact product codes, names, error codes — 'ERR_CONNECTION_REFUSED' must match exactly. Hybrid search uses both: if a user searches for 'TypeError: cannot read property' you want exact matching, not semantic drift.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "rg-007",
+      "type": "mcq-single",
+      "tags": ["hybrid-search"],
+      "prompt": "Reciprocal Rank Fusion (RRF) is used in hybrid search to:",
+      "options": [
+        "Re-embed documents using a cross-encoder",
+        "Combine ranked lists from dense and sparse retrieval by computing a score based on each result's rank position in each list — independent of the raw scores",
+        "Filter results below a similarity threshold",
+        "Select the top-K from each retrieval method and deduplicate"
+      ],
+      "answer": 1,
+      "explanation": "RRF: for each document, score = Σ 1/(k + rank_in_list) across all retrieval lists. This normalises across different scoring systems (cosine similarity doesn't compare directly to BM25 scores). k=60 is the standard constant. RRF is simple, robust, and doesn't require training a fusion model.",
+      "timeSeconds": 55
+    },
+    {
+      "id": "rg-008",
+      "type": "mcq-single",
+      "tags": ["hybrid-search"],
+      "prompt": "When should you favour BM25 over dense retrieval in a RAG system?",
+      "options": [
+        "When the user asks conceptual questions",
+        "When queries contain specific identifiers (invoice #INV-2024-001, error codes, exact product names, legal clause numbers) that must match exactly",
+        "When documents are very short",
+        "When the embedding model is expensive"
+      ],
+      "answer": 1,
+      "explanation": "Dense embeddings compress meaning — specific codes/IDs/numbers get averaged into semantic neighborhoods and lose precision. BM25 is term-frequency based: 'INV-2024-001' in a query gives high weight to documents containing exactly 'INV-2024-001'. This is why financial, legal, and technical support systems need hybrid search: conceptual queries → dense, exact identifier queries → BM25.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "rg-009",
+      "type": "mcq-single",
+      "tags": ["pii-governance"],
+      "prompt": "Before sending user documents to an embedding API, why must you filter PII?",
+      "options": [
+        "Embedding APIs charge more for PII content",
+        "PII sent to a third-party embedding endpoint (OpenAI, Cohere) is transmitted to and may be stored by that vendor — violating GDPR/CCPA. Once embedded, PII is encoded into the vector store and can be indirectly exposed via semantic search",
+        "Embedding models don't work well on names and numbers",
+        "PII causes embedding dimension mismatch errors"
+      ],
+      "answer": 1,
+      "explanation": "Legal risk: GDPR Article 28 requires data processing agreements (DPAs) with third-party processors. Sending PII to an embedding API without a DPA is a violation. Technical risk: PII embedded in vectors can be reconstructed or leaked via membership inference attacks. Fix: use a PII detection library (Presidio, GLiNER) to redact/pseudonymize before embedding.",
+      "timeSeconds": 55
+    },
+    {
+      "id": "rg-010",
+      "type": "mcq-single",
+      "tags": ["pii-governance"],
+      "prompt": "Which approach correctly handles a document that contains customer PII before it enters a RAG pipeline?",
+      "options": [
+        "Encrypt the document before embedding",
+        "Use a PII detection tool (Microsoft Presidio, AWS Comprehend) to identify and replace PII entities with pseudonyms or redaction tokens (e.g., [PERSON_1], [EMAIL_2]) before chunking and embedding",
+        "Only embed metadata, not document content",
+        "Store PII in a separate database and join at query time"
+      ],
+      "answer": 1,
+      "explanation": "Pseudonymization before embedding: replace `John Smith` with `[PERSON_1]`, `john@example.com` with `[EMAIL_1]`. The vector store holds no real PII. At retrieval time, if the source document is needed, fetch it from a secured store and substitute back. This satisfies GDPR's data minimization principle while keeping RAG functionality intact.",
+      "timeSeconds": 55
+    },
+    {
+      "id": "rg-011",
+      "type": "mcq-single",
+      "tags": ["pii-governance"],
+      "prompt": "A GDPR 'right to erasure' request arrives for a user whose data was already embedded in your vector store. The problem is:",
+      "options": [
+        "Vector stores don't support deletion",
+        "Deleting the original document doesn't remove its semantic fingerprint from existing embeddings — the vector still exists. Compliance requires: delete from source, delete vector by document ID, and potentially recompute embeddings if the PII was in shared chunks",
+        "Erasure only applies to structured databases, not vector stores",
+        "You only need to delete the chunks containing the user's name"
+      ],
+      "answer": 1,
+      "explanation": "This is a hard RAG governance problem. Fix: store document IDs with every chunk/vector at ingestion time. On erasure request: (1) Delete source document. (2) Query vector store for all chunks by document ID and delete them. (3) If chunks were merged with other content, those shared chunks must also be deleted and re-ingested without the erased content.",
+      "timeSeconds": 60
+    },
+    {
+      "id": "rg-012",
+      "type": "mcq-single",
+      "tags": ["latency-caching"],
+      "prompt": "Semantic caching in a RAG system caches LLM responses keyed by the embedding of the query. A new query hits the cache if:",
+      "options": [
+        "The exact query string matches a cached query",
+        "The embedding of the new query is within a cosine similarity threshold (e.g., > 0.95) of a cached query's embedding — meaning the questions are semantically similar even if worded differently",
+        "The query uses the same keywords as a cached query",
+        "The user's session matches a previous session"
+      ],
+      "answer": 1,
+      "explanation": "Semantic cache (GPTCache, LangChain's cache): 'What is the invoice total?' and 'What is the total amount on the invoice?' have near-identical embeddings. One LLM call serves both. Threshold tuning matters: too high (0.99) = almost never hits cache; too low (0.8) = wrong answers served. Redis + vector similarity search implements this.",
+      "timeSeconds": 55
+    },
+    {
+      "id": "rg-013",
+      "type": "mcq-single",
+      "tags": ["latency-caching"],
+      "prompt": "Prompt caching (Anthropic, OpenAI) works by:",
+      "options": [
+        "Storing the LLM output for identical prompts",
+        "Caching the KV (key-value) computation of the prompt prefix on the provider's servers — if the same system prompt + context appears in a new request, the computation is reused, reducing latency and cost by up to 90% for the cached prefix",
+        "Compressing the prompt before sending",
+        "Storing prompts in the vector database alongside documents"
+      ],
+      "answer": 1,
+      "explanation": "Provider-side prompt caching: Anthropic's cache_control prefix caching, OpenAI's built-in caching. The static parts of your prompt (system instructions, large document context) are cached as KV states. New requests with the same prefix skip recomputing those tokens. TTFB drops dramatically for long-context RAG where the retrieved documents are prepended.",
+      "timeSeconds": 55
+    },
+    {
+      "id": "rg-014",
+      "type": "mcq-single",
+      "tags": ["latency-caching"],
+      "prompt": "In a RAG pipeline with 10 retrieval chunks of 512 tokens each + a 500-token system prompt, the prompt is 5,500 tokens. To minimize latency, you should structure the prompt as:",
+      "options": [
+        "Query → retrieved chunks → system prompt (query first for the model's attention)",
+        "System prompt → retrieved chunks → query — putting the static system prompt first maximizes provider-side prompt cache hits since the prefix is identical across all requests",
+        "Retrieved chunks → query → system prompt",
+        "Order doesn't matter for caching"
+      ],
+      "answer": 1,
+      "explanation": "Prompt caching works on PREFIXES. The system prompt is the same across all requests — if it's first, every request shares the same prefix and the cache hit rate is high. If the dynamic query is first, every request has a unique prefix and the cache is useless. Always: static content first (system prompt, static context), dynamic content last (user query, retrieved chunks).",
+      "timeSeconds": 55
+    },
+    {
+      "id": "rg-015",
+      "type": "mcq-single",
+      "tags": ["hallucination"],
+      "prompt": "In a RAG system, hallucination can still occur even when relevant documents are retrieved. The most common remaining cause is:",
+      "options": [
+        "The embedding model is too small",
+        "The LLM ignores retrieved context and generates from its parametric memory — especially for specific numbers, dates, and names that the model has strong priors about",
+        "The vector store is too slow",
+        "The retrieved chunks are too long"
+      ],
+      "answer": 1,
+      "explanation": "RAG reduces but doesn't eliminate hallucination. LLMs can override retrieved facts with parametric knowledge — 'I know the CEO is X' overrides the retrieved document saying 'the CEO is Y'. Mitigations: system prompt instructions ('only use the provided context, say I don't know if not in context'), faithfulness scoring (RAGAS), and citation enforcement (require the model to cite its source chunk).",
+      "timeSeconds": 55
+    },
+    {
+      "id": "rg-016",
+      "type": "mcq-single",
+      "tags": ["hallucination"],
+      "prompt": "RAGAS evaluates RAG pipelines on four metrics. Which metric specifically measures whether the LLM's answer is supported by the retrieved context (not just correct)?",
+      "options": [
+        "Answer Relevancy — how well the answer addresses the question",
+        "Faithfulness — the proportion of the answer's claims that are directly supported by retrieved context",
+        "Context Precision — how relevant the retrieved chunks are to the question",
+        "Context Recall — how much of the ground-truth answer can be attributed to retrieved chunks"
+      ],
+      "answer": 1,
+      "explanation": "Faithfulness: extracts all claims from the LLM's answer, then checks what fraction of those claims appear in the retrieved context. A score of 0.5 means half the answer was hallucinated (not in context). This is independent of whether the answer is factually correct — it measures grounding, not accuracy.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "rg-017",
+      "type": "mcq-single",
+      "tags": ["hallucination"],
+      "prompt": "Recall vs Precision in RAG retrieval: you retrieve 10 chunks, 3 of which are relevant. Your recall is 3/5 (5 total relevant chunks exist). Your precision is:",
+      "options": [
+        "3/5 = 0.6",
+        "3/10 = 0.3 (3 relevant out of 10 retrieved)",
+        "5/10 = 0.5",
+        "10/5 = 2.0"
+      ],
+      "answer": 1,
+      "explanation": "Precision@K = relevant retrieved / total retrieved = 3/10 = 0.3. Recall = relevant retrieved / total relevant = 3/5 = 0.6. The trade-off: increasing K (retrieve more chunks) increases recall but decreases precision — you get more relevant results but also more noise. The LLM then has to deal with noisy context, increasing hallucination risk.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "rg-018",
+      "type": "mcq-single",
+      "tags": ["governance"],
+      "prompt": "A client asks: 'How do we audit what information was used to generate each AI answer?' The RAG architecture element that enables this is:",
+      "options": [
+        "Logging the full LLM prompt to a database",
+        "Storing chunk metadata (source document, page number, chunk ID) alongside each vector — at response time, record which chunk IDs contributed to the answer alongside the response in an audit log",
+        "Keeping a copy of all retrieved documents in cold storage",
+        "Recording the user's query only"
+      ],
+      "answer": 1,
+      "explanation": "Full auditability requires: store chunk IDs with vectors at ingest time, log {query, retrieved_chunk_ids, llm_response, timestamp, user_id} per request, store chunk content retrievable by ID. This enables: explaining any answer, detecting data quality issues, supporting right-to-erasure (which source docs contributed to which answers), and compliance audits.",
+      "timeSeconds": 55
+    },
+    {
+      "id": "rg-019",
+      "type": "mcq-single",
+      "tags": ["chunking"],
+      "prompt": "A client has: annual reports (100 pages), product spec PDFs (20 pages), and a Slack export (thousands of short messages). Which chunking strategy per document type is correct?",
+      "options": [
+        "Same fixed-size chunking for all — consistency matters",
+        "Annual reports: semantic chunking by section; product specs: recursive splitter with small chunks; Slack messages: each message is a chunk (already natural units)",
+        "Semantic chunking for everything — always produces best results",
+        "Annual reports: one chunk per page; specs: one chunk per doc; Slack: one chunk per conversation"
+      ],
+      "answer": 1,
+      "explanation": "Document-specific chunking: Annual reports have long sections with coherent topics — semantic chunking preserves section integrity. Product specs have dense, structured content — smaller recursive chunks enable precise retrieval of individual specifications. Slack messages are naturally atomic units — treating each message as a chunk prevents artificial fragmentation of conversation threads.",
+      "timeSeconds": 55
+    },
+    {
+      "id": "rg-020",
+      "type": "mcq-single",
+      "tags": ["latency-caching"],
+      "prompt": "A RAG system has P95 latency of 4 seconds. The breakdown is: retrieval 200ms, embedding query 100ms, LLM generation 3700ms. Where should you optimize first?",
+      "options": [
+        "Retrieval — 200ms is too slow",
+        "LLM generation — it consumes 92% of the total latency. Options: streaming (first token in ~500ms), smaller model, prompt caching, reducing context window by better retrieval precision",
+        "Query embedding — 100ms is the bottleneck",
+        "All three components equally"
+      ],
+      "answer": 1,
+      "explanation": "Always optimize the biggest slice first (Amdahl's Law). LLM = 3700ms of 4000ms = 92%. Optimizing retrieval from 200ms to 100ms saves 2.5% of total time. Optimizing LLM: streaming makes the UX feel instant (user sees first words in 400-600ms), prompt caching reduces TTFB, choosing a smaller/faster model (GPT-4o-mini vs GPT-4o) cuts cost and latency.",
+      "timeSeconds": 55
+    },
+    {
+      "id": "rg-021",
+      "type": "mcq-single",
+      "tags": ["hybrid-search"],
+      "prompt": "A RAG pipeline shows high recall but low answer faithfulness. The most likely root cause is:",
+      "options": [
+        "The embedding model is outdated",
+        "Low precision: too many irrelevant chunks are being retrieved. The LLM is distracted by noisy context and generates answers not grounded in the relevant chunks",
+        "The chunk size is too small",
+        "The vector database index is corrupted"
+      ],
+      "answer": 1,
+      "explanation": "High recall + low faithfulness = precision problem. You're fetching relevant chunks but also lots of irrelevant ones. The LLM uses noisy context to generate non-grounded answers. Fixes: (1) Reduce K (retrieve fewer, more precise chunks). (2) Add a reranker (cross-encoder) to re-order and filter before sending to LLM. (3) Use hybrid search with BM25 to add precision on specific terms.",
+      "timeSeconds": 55
+    },
+    {
+      "id": "rg-022",
+      "type": "open-rubric",
+      "tags": ["chunking"],
+      "prompt": "A client has a knowledge base with: 50 legal contracts (avg 80 pages), 200 product FAQ pages (avg 2 pages), and a support ticket database (500k tickets, avg 3 sentences each). Design the chunking strategy for each document type and justify your choices.",
+      "rubric": [
+        { "criterion": "Legal contracts: semantic or section-aware chunking — preserves clause integrity; explains why fixed-size would split clause boundaries causing hallucination on legal queries", "weight": 3 },
+        { "criterion": "FAQ pages: recursive splitter or question-answer pair chunking — each Q&A is a natural unit; explains why chunking mid-answer degrades retrieval", "weight": 2 },
+        { "criterion": "Support tickets: each ticket as one chunk (already atomic) OR sentence-window; explains why paragraph chunking is wrong (tickets are 3 sentences = already one chunk)", "weight": 2 },
+        { "criterion": "Mentions overlap strategy (e.g., 10-15% overlap for contracts where context spans paragraphs)", "weight": 2 },
+        { "criterion": "Addresses scaling: 500k ticket embeddings = cost/time consideration, batch embedding, incremental indexing for new tickets", "weight": 1 }
+      ],
+      "timeSeconds": 240
+    },
+    {
+      "id": "rg-023",
+      "type": "open-rubric",
+      "tags": ["pii-governance"],
+      "prompt": "You are designing a RAG system for a healthcare company. Patient records contain PII (names, DOB, diagnosis codes). Walk through your complete PII governance architecture from ingestion to query time.",
+      "rubric": [
+        { "criterion": "PII detection before embedding: named entity recognition (Presidio, SpaCy) to identify and pseudonymize names, DOB, SSN, diagnoses", "weight": 3 },
+        { "criterion": "Pseudonymization mapping stored securely (encrypted DB, not in vector store) — allows reversibility for authorized access", "weight": 2 },
+        { "criterion": "Vector store holds only pseudonymized content — no real PII in embeddings or chunk text", "weight": 2 },
+        { "criterion": "Access control on query: verify user has permission to access the source documents before returning chunks", "weight": 1 },
+        { "criterion": "Audit log: log every query, retrieved chunk IDs, user identity — for HIPAA compliance", "weight": 1 },
+        { "criterion": "Right-to-erasure: document ID → chunk ID mapping enables deleting all vectors for a specific patient", "weight": 1 }
+      ],
+      "timeSeconds": 300
+    },
+    {
+      "id": "rg-024",
+      "type": "mcq-single",
+      "tags": ["governance"],
+      "prompt": "In a multi-tenant RAG system (multiple clients, each with their own documents), what prevents Client A's query from retrieving Client B's documents?",
+      "options": [
+        "Separate vector databases for each client — expensive but clean isolation",
+        "Namespace/metadata filtering: each chunk is stored with a tenantId metadata field; every query includes a filter `tenantId = currentTenant` before similarity search",
+        "Semantic similarity naturally prevents cross-tenant retrieval",
+        "Access tokens prevent unauthorized queries"
+      ],
+      "answer": 1,
+      "explanation": "Multi-tenant RAG: store `tenantId` as metadata on every chunk at ingestion. Apply a mandatory metadata filter on every query (never let the user control this filter — it must be injected server-side from the authenticated session). Option A (separate DBs) is clean but costs O(tenants) in infrastructure. Metadata filtering in one DB is efficient but must be enforced server-side without exception.",
+      "timeSeconds": 55
+    },
+    {
+      "id": "rg-025",
+      "type": "mcq-single",
+      "tags": ["hallucination"],
+      "prompt": "A RAG system answers 'The contract expires on March 15, 2025' but the retrieved chunk says 'The agreement terminates on March 15, 2025'. This is an example of:",
+      "options": [
+        "Hallucination — the model changed the wording",
+        "Faithful paraphrase — the answer is supported by the retrieved context, just expressed with a synonym ('expires' vs 'terminates'). Faithfulness score should be high",
+        "Recall failure — the correct chunk was not retrieved",
+        "Precision failure — irrelevant chunks were retrieved"
+      ],
+      "answer": 1,
+      "explanation": "Faithfulness measures support by retrieved context, not exact wording. 'Expires' and 'terminates' are synonyms — the claim 'expires March 15' is fully supported by 'terminates March 15'. A well-implemented faithfulness scorer uses NLI (Natural Language Inference) to detect entailment, not exact string matching. This answer is faithful.",
+      "timeSeconds": 50
+    }
+  ]
+}

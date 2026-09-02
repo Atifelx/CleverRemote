@@ -57,7 +57,10 @@
     { "id": "live-coding-take-home", "file": "questions/27-live-coding-take-home.json", "priority": 1, "estimatedHours": 4 },
     { "id": "codility-patterns", "file": "questions/30-codility-patterns.json", "priority": 1, "estimatedHours": 6 },
     { "id": "oop-design-patterns", "file": "questions/31-oop-design-patterns.json", "priority": 1, "estimatedHours": 7 },
-    { "id": "git-advanced", "file": "questions/32-git-advanced.json", "priority": 1, "estimatedHours": 4 }
+    { "id": "git-advanced", "file": "questions/32-git-advanced.json", "priority": 1, "estimatedHours": 4 },
+    { "id": "financial-data-engineering", "file": "questions/33-financial-data-engineering.json", "priority": 1, "estimatedHours": 5 },
+    { "id": "pr-review-andela", "file": "questions/34-pr-review-andela.json", "priority": 1, "estimatedHours": 4 },
+    { "id": "rag-andela-deep", "file": "questions/35-rag-andela-deep.json", "priority": 1, "estimatedHours": 6 }
   ],
   "plans": {
     "60-day": {

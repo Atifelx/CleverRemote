@@ -1,0 +1,304 @@
+{
+  "module": "pr-review-andela",
+  "title": "PR Review — Andela Style (Risk→Impact→Resolution)",
+  "description": "Deep PR review drills: async flaws (unhandled rejections, missing try/catch), security bugs (hardcoded creds, SQL injection, race conditions), generic error masking. Structured feedback using the Risk→Impact→Resolution framework Andela evaluates in the Woven test and live stages.",
+  "questions": [
+    {
+      "id": "pr-001",
+      "type": "mcq-single",
+      "tags": ["async-flaws"],
+      "prompt": "Review this code:\n```js\nasync function fetchUserData(userId) {\n  const user = await db.query('SELECT * FROM users WHERE id = ' + userId);\n  const orders = await fetch(`/api/orders/${userId}`);\n  return { user, orders };\n}\n```\nIdentify ALL bugs:",
+      "options": [
+        "Only the SQL concatenation is a bug",
+        "SQL injection (string concatenation), unhandled promise rejection (no try/catch), two sequential awaits that could run in parallel",
+        "Only the missing try/catch is a bug",
+        "The code is correct"
+      ],
+      "answer": 1,
+      "explanation": "Three bugs: (1) SQL injection — `userId` injected directly into query string. Fix: parameterized queries. (2) No try/catch — any DB or network error becomes an unhandled rejection that crashes in Node.js. (3) `user` and `orders` are independent — `await Promise.all([...])` fetches them in parallel, 2× faster.",
+      "timeSeconds": 60
+    },
+    {
+      "id": "pr-002",
+      "type": "mcq-single",
+      "tags": ["async-flaws"],
+      "prompt": "What happens in Node.js when a Promise rejects and there is no `.catch()` or try/catch?",
+      "options": [
+        "The error is silently ignored",
+        "Node prints a deprecation warning but continues",
+        "Node.js emits an `unhandledRejection` event — in Node 15+ this crashes the process by default",
+        "The Promise automatically retries 3 times"
+      ],
+      "answer": 2,
+      "explanation": "Node 15+ treats unhandled Promise rejections as fatal by default (`--unhandled-rejections=throw`). In production this means your server crashes. Node 14 and below printed a warning but continued (dangerous: errors were silently swallowed). Always wrap async API routes in try/catch or use an error-handling middleware.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "pr-003",
+      "type": "mcq-single",
+      "tags": ["async-flaws"],
+      "prompt": "This Express route has a bug:\n```js\napp.get('/invoice/:id', async (req, res) => {\n  const invoice = await invoiceService.get(req.params.id);\n  res.json(invoice);\n});\n```\nWhat is the issue?",
+      "options": [
+        "async functions cannot be used in Express route handlers",
+        "If `invoiceService.get()` throws, the error is an unhandled rejection — Express never calls `next(err)` and the request hangs forever",
+        "res.json() should be res.send()",
+        "req.params.id needs to be parsed to an integer"
+      ],
+      "answer": 1,
+      "explanation": "Express does not natively catch async errors. If the await throws, Express's error handler is never called — the client hangs until timeout. Fix: wrap in try/catch calling `next(err)`, or use a wrapper like `express-async-errors` package, or in Express 5 (async errors auto-forwarded).",
+      "timeSeconds": 55
+    },
+    {
+      "id": "pr-004",
+      "type": "mcq-single",
+      "tags": ["async-flaws"],
+      "prompt": "Review:\n```js\nconst results = [];\nfor (const userId of userIds) {\n  const data = await fetchUser(userId);\n  results.push(data);\n}\n```\nWhat is wrong with this pattern for large `userIds` arrays?",
+      "options": [
+        "for...of loops don't work with async/await",
+        "Sequential awaiting — each request waits for the previous to complete. For 100 users with 200ms latency each, this takes 20 seconds. Fix: Promise.all() for parallel fetching",
+        "results.push() is not async-safe",
+        "Nothing — this is the correct pattern"
+      ],
+      "answer": 1,
+      "explanation": "Sequential await in a loop = serial network calls. 100 users × 200ms = 20s. `Promise.all(userIds.map(id => fetchUser(id)))` runs all 100 in parallel = ~200ms total. Caveat: Promise.all fails fast if any one rejects. Use `Promise.allSettled()` if partial failure is acceptable.",
+      "timeSeconds": 55
+    },
+    {
+      "id": "pr-005",
+      "type": "mcq-single",
+      "tags": ["security"],
+      "prompt": "Find the security issue:\n```js\nconst stripe = require('stripe')('sk_live_AbCdEf123456789...');\napp.post('/charge', async (req, res) => {\n  const charge = await stripe.charges.create({...});\n  res.json({ success: true });\n});\n```",
+      "options": [
+        "The route should use GET not POST",
+        "Live API key hardcoded in source code — will be committed to git history, visible to all repo contributors, and exposed if the repo is public or leaked",
+        "stripe.charges.create() is deprecated",
+        "Missing Content-Type header"
+      ],
+      "answer": 1,
+      "explanation": "NEVER hardcode API keys. Even if you remove the commit later, it remains in git history (`git log -S 'sk_live'` finds it). Fix: load from environment variable `process.env.STRIPE_SECRET_KEY`. Store in `.env` (gitignored), inject in CI/CD via secrets manager (AWS Secrets Manager, GitHub Secrets). Immediately rotate the key if committed.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "pr-006",
+      "type": "mcq-single",
+      "tags": ["security"],
+      "prompt": "SQL injection: which of these is vulnerable?\n```js\n// A:\nconst user = await db.query('SELECT * FROM users WHERE email = $1', [email]);\n// B:\nconst user = await db.query(`SELECT * FROM users WHERE email = '${email}'`);\n// C:\nconst user = await db.query('SELECT * FROM users WHERE email = ?', [email]);\n```",
+      "options": [
+        "A only — $1 syntax is non-standard",
+        "B only — template literal directly interpolates user input into SQL string",
+        "C only — ? placeholder is deprecated",
+        "A and C are safe (parameterized); B is vulnerable"
+      ],
+      "answer": 3,
+      "explanation": "B is vulnerable: if `email = \"' OR 1=1 --\"`, the query becomes `WHERE email = '' OR 1=1 --'` — returns all users. A ($1 parameterized, PostgreSQL) and C (? parameterized, MySQL/SQLite) are safe — the database treats parameters as data, never as SQL syntax.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "pr-007",
+      "type": "mcq-single",
+      "tags": ["race-conditions"],
+      "prompt": "This code has a race condition:\n```js\nasync function deductBalance(userId, amount) {\n  const user = await User.findById(userId);\n  if (user.balance < amount) throw new Error('Insufficient funds');\n  user.balance -= amount;\n  await user.save();\n}\n```\nTwo simultaneous requests for the same user with balance $100 can both deduct $80, resulting in -$60. The fix is:",
+      "options": [
+        "Use setTimeout to retry on conflict",
+        "Database-level atomic update: `UPDATE users SET balance = balance - $amount WHERE id = $id AND balance >= $amount` — atomic check-and-update prevents race",
+        "Add a JavaScript mutex using a Map of Promises per userId",
+        "Wrap in a transaction — transactions always prevent race conditions"
+      ],
+      "answer": 1,
+      "explanation": "The read-check-write pattern is not atomic at the application level. Fix: push the logic to the DB as a single atomic statement with a conditional (WHERE balance >= amount). If 0 rows updated, the check failed. A transaction helps but only if you use SELECT FOR UPDATE (row lock) — plain transactions don't prevent this race without explicit locking.",
+      "timeSeconds": 60
+    },
+    {
+      "id": "pr-008",
+      "type": "mcq-single",
+      "tags": ["race-conditions"],
+      "prompt": "A cache-aside pattern has a race condition called 'thundering herd'. It occurs when:",
+      "options": [
+        "The cache is too small and evicts too frequently",
+        "Multiple requests simultaneously find a cache miss and all hit the database at once — the database is overwhelmed by N simultaneous identical queries",
+        "A cached value is outdated by 1 second",
+        "The cache key hashing algorithm collides"
+      ],
+      "answer": 1,
+      "explanation": "Thundering herd: a popular cache key expires, 1,000 concurrent requests all miss the cache at the same moment, all query the DB simultaneously. Fix options: (1) Cache lock/mutex — first miss locks, others wait for the first to populate. (2) Stale-while-revalidate — serve stale data while refreshing. (3) Probabilistic early expiration — refresh before the exact expiry time.",
+      "timeSeconds": 55
+    },
+    {
+      "id": "pr-009",
+      "type": "mcq-single",
+      "tags": ["error-masking"],
+      "prompt": "Review this error handling:\n```js\ntry {\n  const result = await paymentGateway.charge(amount);\n  return result;\n} catch (err) {\n  res.status(500).json({ error: 'Something went wrong' });\n}\n```\nWhat is the problem?",
+      "options": [
+        "The catch block should re-throw the error",
+        "Generic error message hides what actually failed: DB down vs. card declined vs. network timeout. Loses the stack trace. Makes debugging impossible. Also: 'Something went wrong' for a card decline should be 400, not 500",
+        "try/catch doesn't work with async/await",
+        "The error message is too short"
+      ],
+      "answer": 1,
+      "explanation": "Three issues: (1) Generic message hides root cause — impossible to debug in production logs. (2) All errors return 500 — a card decline (business logic) should be 400/402, not 500. (3) The original error's stack trace is swallowed. Fix: log the real error server-side, map error types to appropriate HTTP status codes, return safe messages to clients (never expose internal details).",
+      "timeSeconds": 55
+    },
+    {
+      "id": "pr-010",
+      "type": "mcq-single",
+      "tags": ["async-flaws"],
+      "prompt": "This code has a subtle bug:\n```js\nasync function getOrCreate(userId) {\n  let user = await User.findOne({ id: userId });\n  if (!user) {\n    user = await User.create({ id: userId, createdAt: new Date() });\n  }\n  return user;\n}\n```\nTwo simultaneous calls with the same userId will:",
+      "options": [
+        "Work correctly — the second create will fail silently",
+        "Both pass the `if (!user)` check and both try to create — causing a duplicate key error if `id` has a unique constraint, or creating duplicate rows if not",
+        "The second call returns before the first creates",
+        "Only one function can run at a time in Node.js — event loop guarantees sequential execution"
+      ],
+      "answer": 1,
+      "explanation": "Node's event loop is single-threaded but not sequential for async operations. Both calls hit `findOne()`, both find nothing, both hit `create()`. With a unique constraint, one INSERT wins and the other throws a DB error. Fix: use UPSERT (INSERT ... ON CONFLICT DO NOTHING), or application-level locking by userId, or rely on the DB constraint and handle the error.",
+      "timeSeconds": 60
+    },
+    {
+      "id": "pr-011",
+      "type": "mcq-single",
+      "tags": ["security"],
+      "prompt": "A PR adds this to a REST API:\n```js\napp.get('/debug/env', (req, res) => {\n  res.json(process.env);\n});\n```\nThe developer says 'it's only for debugging locally'. The risk is:",
+      "options": [
+        "process.env is not serializable to JSON",
+        "This endpoint exposes ALL environment variables — database passwords, API keys, JWT secrets — to anyone who can reach the server, even if 'local only' routes often get deployed accidentally",
+        "It only returns public env vars",
+        "The route is GET not POST, which is the problem"
+      ],
+      "answer": 1,
+      "explanation": "Risk: critical secret exposure. Impact: any attacker who discovers this endpoint gets database credentials, API keys, JWT signing secrets — full system compromise. Resolution: delete this endpoint entirely. If debugging is needed, use a startup log that explicitly lists only non-sensitive config variables. Never expose raw process.env over HTTP.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "pr-012",
+      "type": "mcq-single",
+      "tags": ["async-flaws"],
+      "prompt": "Review the Promise chain:\n```js\nfunction processOrder(orderId) {\n  return db.getOrder(orderId)\n    .then(order => {\n      sendEmail(order.userEmail, 'Confirmed');  // ← no return\n      return order;\n    })\n    .catch(err => console.log(err));\n}\n```\nTwo bugs:",
+      "options": [
+        "`.then()` and `.catch()` cannot be mixed",
+        "1) Missing `return` before `sendEmail()` — its promise is fire-and-forget, errors are swallowed. 2) `.catch()` swallows the error and returns `undefined` — callers think success when it failed",
+        "sendEmail should be called before db.getOrder",
+        "The function should use async/await instead"
+      ],
+      "answer": 1,
+      "explanation": "Bug 1: `sendEmail()` returns a Promise but it's not returned — its rejection is unhandled and the order processing continues even if email fails silently. Bug 2: `.catch(err => console.log(err))` swallows the error — callers receive `undefined` and assume success. Fix: `return sendEmail(...)` inside then, and re-throw in catch: `.catch(err => { log(err); throw err; })`.",
+      "timeSeconds": 60
+    },
+    {
+      "id": "pr-013",
+      "type": "mcq-single",
+      "tags": ["security"],
+      "prompt": "A PR adds JWT authentication:\n```js\nconst token = jwt.sign({ userId, role }, 'mysecretkey123', { expiresIn: '365d' });\n```\nIdentify two security issues:",
+      "options": [
+        "jwt.sign() is deprecated",
+        "1) Hardcoded secret key in source — must come from environment variable. 2) 365-day expiry is excessive — if token is stolen, attacker has access for a year. Best practice: 15-minute access tokens + refresh token rotation",
+        "role should not be included in the payload",
+        "expiresIn must be a number, not a string"
+      ],
+      "answer": 1,
+      "explanation": "Issue 1: hardcoded secret — anyone with repo access can forge tokens. Use `process.env.JWT_SECRET`. Issue 2: 365d expiry = any stolen token is valid for a year with no way to revoke (JWTs are stateless). Best practice: short-lived access tokens (15min) + longer refresh tokens (7d) stored in httpOnly cookie with rotation on each use.",
+      "timeSeconds": 55
+    },
+    {
+      "id": "pr-014",
+      "type": "mcq-single",
+      "tags": ["race-conditions"],
+      "prompt": "A webhook handler processes payment events:\n```js\napp.post('/webhook/payment', async (req, res) => {\n  const event = req.body;\n  await processPayment(event);\n  res.status(200).send('ok');\n});\n```\nA payment provider retries the webhook if no 200 is received within 5 seconds. What is the race condition?",
+      "options": [
+        "The webhook will never retry because we always return 200",
+        "If processPayment() takes > 5 seconds, the provider retries — you receive the same payment event twice. Without idempotency checking, the payment is processed twice (double charge)",
+        "The 200 response prevents retries",
+        "Webhooks don't retry in practice"
+      ],
+      "answer": 1,
+      "explanation": "Webhook idempotency is critical. Fix: (1) Respond 200 immediately, then process async. (2) Use the event's unique ID (e.g., Stripe's `event.id`) to check if already processed before acting. (3) Store processed event IDs in a DB with a unique constraint — duplicate processing throws, which you catch and still return 200. This is the idempotency key pattern.",
+      "timeSeconds": 60
+    },
+    {
+      "id": "pr-015",
+      "type": "mcq-single",
+      "tags": ["error-masking"],
+      "prompt": "The Risk→Impact→Resolution PR review framework: you find hardcoded database credentials in a PR. Structure your review comment using this framework:",
+      "options": [
+        "Just leave a comment: 'Use environment variables'",
+        "Risk: DB credentials hardcoded in source code will be committed to version control and visible to all contributors. Impact: Any team member or anyone with repo access (or if repo is compromised) can access the production database directly. Resolution: Load via `process.env.DB_PASSWORD`, store in `.env` (add to .gitignore), inject via CI/CD secrets — and immediately rotate the credential if it was ever committed",
+        "Risk: minor code style issue. Impact: low. Resolution: use a linter rule",
+        "Flag it as a blocker with no explanation"
+      ],
+      "answer": 1,
+      "explanation": "Andela's PR review evaluation looks for: (1) correct identification of the Risk (what the vulnerability is), (2) concrete Impact (what actually happens if exploited — not 'it's bad'), (3) actionable Resolution with specific code or config steps. Generic comments ('use env vars') score low. Risk→Impact→Resolution with specifics scores high.",
+      "timeSeconds": 55
+    },
+    {
+      "id": "pr-016",
+      "type": "mcq-single",
+      "tags": ["async-flaws"],
+      "prompt": "Review this retry logic:\n```js\nasync function fetchWithRetry(url, retries = 3) {\n  try {\n    return await fetch(url);\n  } catch (err) {\n    if (retries === 0) throw err;\n    return fetchWithRetry(url, retries - 1);\n  }\n}\n```\nWhat is missing from production-grade retry logic?",
+      "options": [
+        "Nothing — this is complete",
+        "No exponential backoff — immediate retry hammers a struggling server. No jitter — all retries hit the server at the same time. No differentiation between retryable errors (timeout) and non-retryable (401 auth failed)",
+        "The recursion depth limit",
+        "fetch() cannot be wrapped in try/catch"
+      ],
+      "answer": 1,
+      "explanation": "Production retry needs: (1) Exponential backoff: wait 1s, 2s, 4s between retries. (2) Jitter: add random delay to prevent synchronized retry storms from multiple clients. (3) Error classification: don't retry 401/403/400 (client errors) — only retry 5xx and network timeouts. (4) Max delay cap so exponential doesn't wait indefinitely.",
+      "timeSeconds": 55
+    },
+    {
+      "id": "pr-017",
+      "type": "mcq-single",
+      "tags": ["security"],
+      "prompt": "A PR adds file upload handling:\n```js\napp.post('/upload', upload.single('file'), (req, res) => {\n  const filePath = path.join('./uploads', req.file.originalname);\n  fs.renameSync(req.file.path, filePath);\n  res.json({ url: `/uploads/${req.file.originalname}` });\n});\n```\nIdentify the security vulnerability:",
+      "options": [
+        "upload.single() is incorrect API",
+        "Path traversal attack: if `originalname` is `'../../etc/passwd'` or `'../server.js'`, the attacker overwrites arbitrary files. Also: no file type validation — executable .js or .php files could be uploaded and executed",
+        "fs.renameSync should be fs.rename with callback",
+        "The route should require authentication"
+      ],
+      "answer": 1,
+      "explanation": "Two vulnerabilities: (1) Path traversal: never use user-supplied filenames in file paths. Generate a UUID filename: `const safeFilename = crypto.randomUUID() + path.extname(req.file.originalname)`. (2) Missing file type validation — validate MIME type AND file extension AND check magic bytes (file signature). Don't trust the browser-supplied MIME type.",
+      "timeSeconds": 55
+    },
+    {
+      "id": "pr-018",
+      "type": "mcq-single",
+      "tags": ["race-conditions"],
+      "prompt": "Inventory deduction at checkout:\n```js\nconst product = await Product.findById(id);\nif (product.stock < quantity) return res.status(400).json({ error: 'Out of stock' });\nproduct.stock -= quantity;\nawait product.save();\n```\n100 simultaneous checkout requests for the last item: what happens?",
+      "options": [
+        "Only one request succeeds due to JavaScript's single-threaded nature",
+        "All 100 read stock=1, all pass the check, all decrement — stock becomes 1-100=-99. All 100 orders are confirmed but only 1 item exists",
+        "The database's ACID guarantees prevent this",
+        "The last save wins due to optimistic locking"
+      ],
+      "answer": 1,
+      "explanation": "Classic race condition in inventory. All 100 read stock=1 before any write completes. All pass `stock < quantity`. All write `stock -= 1`. Fix: atomic DB update: `UPDATE products SET stock = stock - $qty WHERE id = $id AND stock >= $qty RETURNING *`. If 0 rows returned, checkout fails. OR use DB transactions with `SELECT FOR UPDATE` to lock the row.",
+      "timeSeconds": 60
+    },
+    {
+      "id": "pr-019",
+      "type": "open-rubric",
+      "tags": ["async-flaws"],
+      "prompt": "You receive this PR for review. Write your full feedback using the Risk→Impact→Resolution framework for each issue you find:\n```js\napp.post('/process-batch', async (req, res) => {\n  const { userIds } = req.body;\n  const results = [];\n  for (const id of userIds) {\n    const user = await db.find('SELECT * FROM users WHERE id = ' + id);\n    const balance = await paymentService.getBalance(user.email);\n    results.push({ id, balance });\n  }\n  const apiKey = 'sk_live_abc123';\n  await reportingService.send(results, apiKey);\n  res.json({ processed: results.length });\n});\n```",
+      "rubric": [
+        { "criterion": "Identifies SQL injection: Risk (arbitrary SQL execution), Impact (data breach/full DB access), Resolution (parameterized query)", "weight": 3 },
+        { "criterion": "Identifies sequential await in loop: Risk (O(N) serial network calls), Impact (latency scales linearly — 1000 users = ~1000× slower), Resolution (Promise.all or batching)", "weight": 2 },
+        { "criterion": "Identifies hardcoded API key: Risk (credential in source/git history), Impact (unauthorized reporting service access), Resolution (process.env.REPORTING_API_KEY)", "weight": 2 },
+        { "criterion": "Identifies no try/catch: Risk (any error crashes request), Impact (unhandled rejection, server 500 or hang), Resolution (wrap in try/catch with next(err))", "weight": 2 },
+        { "criterion": "Feedback is constructive (not just listing bugs — provides specific code fixes)", "weight": 1 }
+      ],
+      "timeSeconds": 300
+    },
+    {
+      "id": "pr-020",
+      "type": "open-rubric",
+      "tags": ["race-conditions"],
+      "prompt": "Explain the 'check-then-act' race condition pattern, give one real example from a billing or inventory system, and show the correct database-level fix in SQL.",
+      "rubric": [
+        { "criterion": "Correctly explains: read current state → check condition → act based on stale state. Race: state can change between read and act", "weight": 3 },
+        { "criterion": "Real example: inventory deduction, balance deduction, duplicate order prevention, or coupon usage limiting", "weight": 2 },
+        { "criterion": "Correct SQL fix: atomic UPDATE with WHERE condition (e.g., WHERE stock >= qty) or SELECT FOR UPDATE inside a transaction", "weight": 3 },
+        { "criterion": "Mentions checking rows affected = 0 as the signal that the condition check failed", "weight": 2 }
+      ],
+      "timeSeconds": 180
+    }
+  ]
+}

@@ -98,6 +98,21 @@ export const SYLLABUS: SyllabusEntry[] = [
     targetQs: 35, status: "built", moduleId: "git-advanced",
     tracks: ["turing", "andela"], testStages: ["turing-t1-mcq", "turing-t3-live", "andela-a2-qualified", "andela-a4-pair"] },
 
+  { num: 32, id: "financial-data-engineering", title: "Financial Data Engineering",
+    blurb: "Float vs integer precision for currency, UTC/timezone handling for backdated billing, O(N²)→O(N) lookup optimization, proration calculations, array transformations. Core Andela Woven code challenge format.",
+    targetQs: 25, status: "built", moduleId: "financial-data-engineering",
+    tracks: ["andela"], testStages: ["andela-a2-qualified", "andela-a4-pair"] },
+
+  { num: 33, id: "pr-review-andela", title: "PR Review — Andela Style",
+    blurb: "Async flaws (unhandled rejections, sequential awaits), security bugs (hardcoded creds, SQL injection, race conditions), Risk→Impact→Resolution structured feedback framework.",
+    targetQs: 20, status: "built", moduleId: "pr-review-andela",
+    tracks: ["turing", "andela"], testStages: ["andela-a2-qualified", "andela-a4-pair", "turing-t3-live", "turing-t4-fde"] },
+
+  { num: 34, id: "rag-andela-deep", title: "RAG & AI Governance (Andela Deep Dive)",
+    blurb: "Chunking strategies (semantic, fixed, recursive, sentence-window), hybrid search (dense + BM25, RRF), PII filtering & GDPR, prompt caching for latency, faithfulness vs recall, RAGAS, multi-tenant isolation.",
+    targetQs: 25, status: "built", moduleId: "rag-andela-deep",
+    tracks: ["turing", "andela"], testStages: ["andela-a2-qualified", "andela-a3-screen", "andela-a4-pair", "turing-t4-fde"] },
+
   { num: 13, id: "testing-debugging", title: "Testing / Debugging",
     blurb: "Unit/integration/e2e/mocks/coverage/flaky-test playbook.",
     targetQs: 50, status: "built", moduleId: "testing-debugging",

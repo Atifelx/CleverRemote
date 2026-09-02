@@ -1,0 +1,334 @@
+{
+  "module": "financial-data-engineering",
+  "title": "Financial Data Engineering (Woven Code Challenge)",
+  "description": "Float vs integer precision for currency, UTC/timezone handling for backdated billing, O(N²)→O(N) lookup optimization, invoice array transformations, edge-case billing logic. Directly maps to Andela's Woven code challenge format.",
+  "questions": [
+    {
+      "id": "fde-001",
+      "type": "mcq-single",
+      "tags": ["float-precision"],
+      "prompt": "Why does `0.1 + 0.2 === 0.3` return `false` in JavaScript?",
+      "options": [
+        "JavaScript uses 32-bit floats which have lower precision",
+        "IEEE 754 double-precision binary floating point cannot represent 0.1 or 0.2 exactly — their binary representations are infinite repeating fractions, so addition accumulates error",
+        "The `===` operator applies type coercion to numbers",
+        "JavaScript rounds all floats to 2 decimal places internally"
+      ],
+      "answer": 1,
+      "explanation": "0.1 in binary is 0.0001100110011... (repeating). Adding two imprecise binary representations gives 0.30000000000000004, not 0.3. This is fundamental IEEE 754 behavior — not a JavaScript bug. Every language using 64-bit floats has this issue.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "fde-002",
+      "type": "mcq-single",
+      "tags": ["float-precision"],
+      "prompt": "You are building an invoice system. A line item costs $12.99 and is purchased 3 times. Which calculation is correct for production?",
+      "options": [
+        "`const total = 12.99 * 3;` — simple multiplication is precise enough",
+        "Store prices as integers in cents: `const total = 1299 * 3;` then display as `(total / 100).toFixed(2)`",
+        "Use `parseFloat((12.99 * 3).toFixed(2))` to round after multiplication",
+        "Use `Math.round(12.99 * 3 * 100) / 100`"
+      ],
+      "answer": 1,
+      "explanation": "Store all monetary values as integer cents (or the smallest currency unit). 1299 cents × 3 = 3897 cents exactly. Integer arithmetic has no floating-point error. Display by dividing and formatting. `toFixed()` tricks only mask the problem — the internal float is still imprecise.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "fde-003",
+      "type": "mcq-single",
+      "tags": ["float-precision"],
+      "prompt": "A billing calculation uses: `const fee = amount * 0.025;` for a 2.5% processing fee. For $1000.00, the result is 24.999999999999996. The correct fix for production billing is:",
+      "options": [
+        "`Math.ceil(fee)` — always round up to protect revenue",
+        "Work in cents: `const feeCents = Math.round(amountCents * 25) / 1000;` where amountCents = 100000",
+        "`fee.toFixed(2)` — two decimal places is standard",
+        "`parseInt(fee)` — truncate to whole cents"
+      ],
+      "answer": 1,
+      "explanation": "In cents: 100000 × 25 = 2,500,000 (exact integer). Divide by 1000 = 2500 cents = $25.00. All operations are integers until the final display division. Using toFixed() returns a string, not a number, and doesn't fix the underlying float error in further calculations.",
+      "timeSeconds": 55
+    },
+    {
+      "id": "fde-004",
+      "type": "mcq-single",
+      "tags": ["timezone"],
+      "prompt": "A subscription charges on the 1st of each month. A user in New York (UTC-5 in winter) signs up at 11:30 PM EST on December 31. In UTC this is January 1 at 4:30 AM. When should their next invoice date be?",
+      "options": [
+        "February 1 — they signed up in January UTC time so first full month is January",
+        "January 1 — their local time was still December 31, so they haven't been billed for December yet",
+        "Depends on your billing system's timezone; this is why billing should always store and compare dates in UTC and clearly define which timezone determines 'month boundaries'",
+        "February 1 is always correct regardless of timezone"
+      ],
+      "answer": 2,
+      "explanation": "This is the classic billing timezone trap. The answer depends on your system's definition — the point is to have ONE canonical timezone (UTC) for all date comparisons, document it explicitly, and ensure user-facing dates are converted from UTC. The bug happens when you mix local and UTC dates inconsistently.",
+      "timeSeconds": 60
+    },
+    {
+      "id": "fde-005",
+      "type": "mcq-single",
+      "tags": ["timezone"],
+      "prompt": "Your invoice backdating code does: `const invoiceDate = new Date(dateString);` where dateString is '2024-01-15'. What date does this represent in JavaScript and why is it dangerous for billing?",
+      "options": [
+        "January 15, 2024 in local timezone — correct and safe",
+        "January 15, 2024 at 00:00:00 UTC — which displays as January 14 in UTC-5 and UTC-8 timezones, potentially creating invoices for the wrong day",
+        "January 15, 2024 at noon UTC — JavaScript always uses noon for date-only strings",
+        "It depends on the system locale — unpredictable and should always be avoided"
+      ],
+      "answer": 1,
+      "explanation": "ECMA-262: a date-only string 'YYYY-MM-DD' is interpreted as UTC midnight. But `new Date('2024-01-15').toLocaleDateString()` in UTC-5 renders as January 14 — the date is off by one day. For billing, always use 'YYYY-MM-DDT00:00:00Z' (explicit UTC) or parse with a library like date-fns that makes timezone explicit.",
+      "timeSeconds": 60
+    },
+    {
+      "id": "fde-006",
+      "type": "mcq-single",
+      "tags": ["timezone"],
+      "prompt": "You need to find all invoices from 'January 2024' for a report. The safest database query approach is:",
+      "options": [
+        "`WHERE invoice_date = '2024-01'` — month comparison",
+        "`WHERE invoice_date BETWEEN '2024-01-01' AND '2024-01-31'` — inclusive range",
+        "`WHERE invoice_date >= '2024-01-01T00:00:00Z' AND invoice_date < '2024-02-01T00:00:00Z'` — UTC range with exclusive upper bound",
+        "`WHERE MONTH(invoice_date) = 1 AND YEAR(invoice_date) = 2024` — database function approach"
+      ],
+      "answer": 2,
+      "explanation": "Explicit UTC timestamps with exclusive upper bound is the safest. `BETWEEN` is inclusive and '2024-01-31' misses times after midnight on Jan 31. Database functions prevent index use. The UTC range captures all possible Jan timestamps regardless of where users are located, and the exclusive upper bound `< Feb 1 00:00:00` correctly covers Jan 31 23:59:59.999.",
+      "timeSeconds": 55
+    },
+    {
+      "id": "fde-007",
+      "type": "mcq-single",
+      "tags": ["big-o-optimization"],
+      "prompt": "This invoice processing loop is O(N²). Identify the nested operation:\n```js\nfunction processInvoices(invoices, pricingTiers) {\n  return invoices.map(inv => {\n    const tier = pricingTiers.find(t => t.id === inv.tierId); // ← here\n    return { ...inv, price: tier.price * inv.quantity };\n  });\n}\n```",
+      "options": [
+        "The `.map()` call — mapping is always O(N²)",
+        "`.find()` inside `.map()` — for each of N invoices, we scan all M pricing tiers. Total: O(N×M)",
+        "Destructuring `{ ...inv }` — object spread is expensive",
+        "Multiplying `tier.price * inv.quantity` — floating point math"
+      ],
+      "answer": 1,
+      "explanation": "`.find()` is O(M) per call (scans the array). Called N times inside `.map()` = O(N×M). If N=10,000 invoices and M=50 tiers, that's 500,000 comparisons. The fix: build a lookup Map from pricingTiers first, then each lookup is O(1).",
+      "timeSeconds": 50
+    },
+    {
+      "id": "fde-008",
+      "type": "mcq-single",
+      "tags": ["big-o-optimization"],
+      "prompt": "Refactor the O(N×M) invoice loop to O(N+M). The correct approach is:",
+      "options": [
+        "Sort pricingTiers first, then use binary search — O(N log M)",
+        "Build a Map from tierId → tier BEFORE the loop, then look up in O(1) per invoice:\n`const tierMap = new Map(pricingTiers.map(t => [t.id, t]));\nreturn invoices.map(inv => ({ ...inv, price: tierMap.get(inv.tierId).price * inv.quantity }));`",
+        "Use `pricingTiers.filter()` instead of `.find()` — filter is faster",
+        "Memoize the `.find()` results using a closure"
+      ],
+      "answer": 1,
+      "explanation": "Build the Map once: O(M). Then each `tierMap.get()` is O(1) hash lookup. Total: O(M) setup + O(N) loop = O(N+M). This is the exact pattern interviewers test: recognize the nested scan, extract it into a pre-built dictionary, reduce to linear time.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "fde-009",
+      "type": "mcq-single",
+      "tags": ["big-o-optimization"],
+      "prompt": "You have 50,000 transactions and need to sum them by customerId. Which is fastest?",
+      "options": [
+        "Nested loop: for each customer, filter all transactions — O(customers × transactions)",
+        "Sort by customerId then reduce — O(N log N)",
+        "Single-pass reduce into a Map: O(N) time, O(unique customers) space",
+        "Use a database GROUP BY query — delegate to DB"
+      ],
+      "answer": 2,
+      "explanation": "Single-pass reduce into a Map: `txns.reduce((acc, t) => { acc.set(t.customerId, (acc.get(t.customerId) || 0) + t.amount); return acc; }, new Map())` — O(N) time, one pass. Sort is O(N log N). Nested loop is O(N²). Database GROUP BY is often the right answer for large datasets but the JS version should still be O(N).",
+      "timeSeconds": 50
+    },
+    {
+      "id": "fde-010",
+      "type": "mcq-single",
+      "tags": ["backdated-invoices"],
+      "prompt": "A subscription was $100/month. On Jan 15 the price changed to $120/month. A backdated invoice for January must charge prorated amounts. The prorated Jan 15 change for a 31-day month is:",
+      "options": [
+        "$120 — new price applies to the whole month",
+        "$100 — old price applies since invoice is backdated",
+        "First 14 days at old rate + remaining 17 days at new rate: `(14/31 × 100) + (17/31 × 120)` = 45.16 + 65.81 = $110.97",
+        "Average of old and new: ($100 + $120) / 2 = $110"
+      ],
+      "answer": 2,
+      "explanation": "Proration: days × daily_rate. Old rate daily = $100/31. New rate daily = $120/31. Days at old rate = 14 (Jan 1–14). Days at new rate = 17 (Jan 15–31). Total = (14 × 100/31) + (17 × 120/31). Always use integer cents throughout: (14 × 10000 + 17 × 12000) / 31 to avoid float error.",
+      "timeSeconds": 60
+    },
+    {
+      "id": "fde-011",
+      "type": "mcq-single",
+      "tags": ["backdated-invoices"],
+      "prompt": "When calculating proration for 'days used in a month', which formula avoids the off-by-one error?",
+      "options": [
+        "daysUsed = endDate - startDate (in days)",
+        "daysUsed = (endDate - startDate) / (24 × 60 × 60 × 1000) + 1 when both dates are inclusive",
+        "daysUsed = Math.round((endDate - startDate) / 86400000)",
+        "daysUsed = endDate.getDate() - startDate.getDate()"
+      ],
+      "answer": 1,
+      "explanation": "If startDate=Jan 1 and endDate=Jan 14, the number of billable days is 14 (inclusive on both ends). `endDate - startDate` gives 13 days difference. +1 corrects for inclusive counting. `getDate()` subtraction breaks across month boundaries. Always test: Jan 1 to Jan 1 = 1 day (not 0).",
+      "timeSeconds": 55
+    },
+    {
+      "id": "fde-012",
+      "type": "mcq-single",
+      "tags": ["array-transformations"],
+      "prompt": "You have invoice line items and need to group them by category, sum quantities, and sort by total descending. The correct single-pipeline approach in JS is:",
+      "options": [
+        "Three separate loops: group, then sum, then sort",
+        "`items.reduce()` into a Map for grouping+summing, then `Array.from(map).sort()` — two passes total",
+        "`items.filter().map().reduce()` chained — always readable",
+        "Use a nested forEach with an outer object and inner accumulation"
+      ],
+      "answer": 1,
+      "explanation": "reduce() groups and sums in one O(N) pass. Converting Map to array is O(M). Sort is O(M log M) where M = unique categories (typically M << N). Total: O(N + M log M). The key insight: reduce first, sort last — sorting unsummed line items is wasteful and more complex.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "fde-013",
+      "type": "mcq-single",
+      "tags": ["array-transformations"],
+      "prompt": "An invoice has 10,000 line items. You need items where `status === 'unpaid'` sorted by `dueDate` ascending. Which is most efficient?",
+      "options": [
+        "`items.sort(...).filter(...)` — sort first, then filter",
+        "`items.filter(...).sort(...)` — filter first to reduce sort input, then sort",
+        "`items.reduce()` into two buckets",
+        "Both (a) and (b) are O(N log N) so order doesn't matter"
+      ],
+      "answer": 1,
+      "explanation": "Filter first: if 80% of items are paid, filtering reduces from 10,000 to 2,000 items before sorting. Sorting 2,000 items vs 10,000 is 5× faster. `sort()` on the original array also needlessly moves paid items around in memory. Filter first is always preferred when the filter is selective.",
+      "timeSeconds": 45
+    },
+    {
+      "id": "fde-014",
+      "type": "mcq-single",
+      "tags": ["float-precision"],
+      "prompt": "Summing an array of invoice totals stored as floats: `[10.50, 20.30, 15.20].reduce((a, b) => a + b, 0)`. The result is often imprecise. The fix is:",
+      "options": [
+        "Use `parseFloat(sum.toFixed(2))` after the reduce",
+        "Convert to cents integers first: `amounts.map(a => Math.round(a * 100)).reduce((a, b) => a + b, 0)` then divide by 100 at display",
+        "Use `Number.EPSILON` in the comparison",
+        "Use a library like Decimal.js for all arithmetic"
+      ],
+      "answer": 1,
+      "explanation": "Best approach without a library: multiply to integer cents before summing (Math.round handles minor float imprecision in the conversion), sum as integers (exact), divide once at the end. `toFixed()` only masks the issue in the string output — the internal float remains imprecise for further calculations. Decimal.js is correct but adds a dependency.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "fde-015",
+      "type": "mcq-single",
+      "tags": ["timezone"],
+      "prompt": "A Daylight Saving Time (DST) edge case: on March 10, 2024 in the US, clocks spring forward at 2 AM. A billing job scheduled for '2024-03-10T02:30:00' local time will:",
+      "options": [
+        "Run at 2:30 AM as scheduled",
+        "Never run — 2:30 AM does not exist on that day (clocks jump from 2:00 to 3:00)",
+        "Run at 3:30 AM — automatically shifted by the OS",
+        "Run twice — once before and once after DST change"
+      ],
+      "answer": 1,
+      "explanation": "DST 'spring forward': the hour from 2:00 to 3:00 AM is skipped. A job scheduled for 2:30 AM in a local-time scheduler hits a non-existent time and either runs at 3:00 AM or is skipped entirely, depending on the system. Solution: schedule billing jobs in UTC only — UTC has no DST shifts.",
+      "timeSeconds": 55
+    },
+    {
+      "id": "fde-016",
+      "type": "mcq-single",
+      "tags": ["big-o-optimization"],
+      "prompt": "Given this deduplication code for invoice IDs:\n```js\nconst seen = [];\nconst unique = invoices.filter(inv => {\n  if (seen.includes(inv.id)) return false;\n  seen.push(inv.id);\n  return true;\n});\n```\nWhat is the time complexity and how do you fix it?",
+      "options": [
+        "O(N) — already optimal",
+        "O(N²) — `seen.includes()` is O(N) per call inside a filter. Fix: use `Set` instead of array: `const seen = new Set(); ... if (seen.has(inv.id)) ...`",
+        "O(N log N) — push is logarithmic",
+        "O(1) amortized — array push is amortized constant"
+      ],
+      "answer": 1,
+      "explanation": "`Array.includes()` is O(N) (linear scan). Called N times in filter = O(N²). `Set.has()` is O(1) hash lookup. Replacing `[]` with `new Set()` and `.includes()` with `.has()` makes the whole operation O(N). This is one of the most common O(N²) mistakes in financial data processing pipelines.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "fde-017",
+      "type": "mcq-single",
+      "tags": ["backdated-invoices"],
+      "prompt": "Your billing API receives a backdated start date from a client. The client sends `startDate: '2024-11-01'`. Which validation is critical before processing?",
+      "options": [
+        "Ensure the date is a valid calendar date",
+        "Ensure the date is not in the future",
+        "Validate: (1) parseable as a valid date, (2) not more than X months back (business rule), (3) normalized to UTC midnight, (4) the billing period it falls in is not already finalized/locked",
+        "Only validate that it's a string type"
+      ],
+      "answer": 2,
+      "explanation": "Backdated invoice validation needs: valid date parse (not NaN), business rule limit (e.g., max 12 months back), UTC normalization to prevent timezone bugs, and crucially — checking if the accounting period is already closed (locked invoices in a finalized period cause audit problems). Missing any of these causes financial data integrity issues.",
+      "timeSeconds": 60
+    },
+    {
+      "id": "fde-018",
+      "type": "mcq-single",
+      "tags": ["array-transformations"],
+      "prompt": "You need to merge two sorted arrays of invoice payments by date. The optimal algorithm is:",
+      "options": [
+        "Concatenate then sort — O((N+M) log(N+M))",
+        "Two-pointer merge — O(N+M) since both arrays are already sorted",
+        "One pointer through the first array, binary-search into the second — O(N log M)",
+        "Recursive divide-and-conquer — O(N+M) but with high stack overhead"
+      ],
+      "answer": 1,
+      "explanation": "Two-pointer merge: maintain pointers i=0, j=0. Compare arr1[i] and arr2[j], push the smaller, advance its pointer. O(N+M) — each element is visited exactly once. Since both inputs are already sorted, there is no need to re-sort. This is the merge step from merge sort.",
+      "timeSeconds": 50
+    },
+    {
+      "id": "fde-019",
+      "type": "mcq-single",
+      "tags": ["float-precision"],
+      "prompt": "A financial calculation produces `taxAmount = 8.549999999999999` due to float error. The requirement says 'round half-up to 2 decimal places'. Standard `Math.round(8.549999 * 100) / 100` gives 8.55 or 8.54?",
+      "options": [
+        "8.55 — Math.round always rounds .5 up",
+        "8.54 — because 8.549999... × 100 = 854.9999... which Math.round rounds DOWN to 854",
+        "It depends on the JavaScript engine version",
+        "Math.round does not work on 2 decimal places"
+      ],
+      "answer": 1,
+      "explanation": "8.549999... × 100 = 854.9999... (not 855). Math.round(854.9999) = 855 — actually this rounds to 855 since .9999 > .5. BUT: if the original was 8.545 (which floats represent as 8.544999...), then 8.544999 × 100 = 854.4999 → Math.round = 854. The trick is: store as cents integers to avoid this class of bug entirely.",
+      "timeSeconds": 60
+    },
+    {
+      "id": "fde-020",
+      "type": "open-rubric",
+      "tags": ["big-o-optimization"],
+      "prompt": "You are given two arrays:\n- `invoices: [{id, customerId, amount, tierId}]` — 50,000 items\n- `pricingTiers: [{id, name, discountPct}]` — 200 items\n\nWrite a function that returns each invoice with its final amount after discount applied. Achieve O(N+M) time complexity. Explain your approach.",
+      "rubric": [
+        { "criterion": "Builds a Map/object from pricingTiers by id BEFORE the loop — O(M) setup", "weight": 3 },
+        { "criterion": "Single .map() over invoices using O(1) Map.get() lookup per invoice", "weight": 3 },
+        { "criterion": "Correctly calculates discounted amount: amount * (1 - discountPct/100), with consideration for integer cents", "weight": 2 },
+        { "criterion": "Handles missing tier gracefully (tierId not found in map)", "weight": 1 },
+        { "criterion": "Correctly states O(N+M) time and explains why .find() inside .map() would be O(N×M)", "weight": 1 }
+      ],
+      "timeSeconds": 180
+    },
+    {
+      "id": "fde-021",
+      "type": "open-rubric",
+      "tags": ["timezone"],
+      "prompt": "Write a function `getMonthBoundariesUTC(year: number, month: number): {start: Date, end: Date}` that returns the UTC start (inclusive) and end (exclusive) of a given month. Explain why you use UTC and how this prevents billing bugs.",
+      "rubric": [
+        { "criterion": "Uses Date.UTC() or explicit 'T00:00:00Z' strings — no local timezone constructors", "weight": 3 },
+        { "criterion": "Start = first day of month at UTC midnight", "weight": 2 },
+        { "criterion": "End = first day of NEXT month at UTC midnight (exclusive, not last day 23:59:59)", "weight": 3 },
+        { "criterion": "Handles month=12 correctly (rolls to January of year+1)", "weight": 1 },
+        { "criterion": "Explains that UTC prevents DST and timezone offset from shifting billing boundaries", "weight": 1 }
+      ],
+      "timeSeconds": 150
+    },
+    {
+      "id": "fde-022",
+      "type": "open-rubric",
+      "tags": ["backdated-invoices"],
+      "prompt": "A subscription costs $120/month. The billing period is a calendar month. A customer upgrades from Basic ($80/month) to Pro ($120/month) on day 10 of a 30-day month. Write the proration calculation in JavaScript using integer cents. Return the total billable cents for that month.",
+      "rubric": [
+        { "criterion": "Converts all prices to cents immediately (8000 and 12000)", "weight": 2 },
+        { "criterion": "Calculates daysAtBasic = 9 (days 1–9), daysAtPro = 21 (days 10–30)", "weight": 2 },
+        { "criterion": "Uses integer arithmetic: Math.round(daysAtBasic * basicCents / totalDays) + Math.round(daysAtPro * proCents / totalDays)", "weight": 3 },
+        { "criterion": "Uses Math.round (not floor/ceil) for each segment to minimize cumulative rounding error", "weight": 2 },
+        { "criterion": "Explains the total should equal exactly one month's pro rate or close to it due to proration", "weight": 1 }
+      ],
+      "timeSeconds": 180
+    }
+  ]
+}
