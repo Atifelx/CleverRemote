@@ -24,6 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 {/* Platform tabs */}
                 <NavTab href="/?platform=turing" label="⚡ Turing" />
                 <NavTab href="/?platform=andela" label="🌍 Andela" />
+                <NavTab href="/module/ai-engineering-deep" label="🤖 AI Fundamentals" />
                 <div className="w-px h-4 bg-[rgb(var(--border))] mx-1" />
                 <NavTab href="/plans/60-day" label="Study Plans" />
                 <NavTab href="/?platform=all" label="All Topics" />
