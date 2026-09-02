@@ -24,161 +24,971 @@
     }
   ],
   "modules": [
-    { "id": "programming-fundamentals", "file": "questions/00-programming-fundamentals.json", "priority": 1, "estimatedHours": 4 },
-    { "id": "dsa", "file": "questions/01-dsa.json", "priority": 1, "estimatedHours": 40 },
-    { "id": "javascript-fundamentals", "file": "questions/01-javascript.json", "priority": 1, "estimatedHours": 8 },
-    { "id": "typescript", "file": "questions/02-typescript.json", "priority": 2, "estimatedHours": 4 },
-    { "id": "react", "file": "questions/03-react.json", "priority": 1, "estimatedHours": 6 },
-    { "id": "nodejs", "file": "questions/04-nodejs.json", "priority": 1, "estimatedHours": 5 },
-    { "id": "dsa-easy", "file": "questions/05-dsa-easy.json", "priority": 1, "estimatedHours": 10 },
-    { "id": "dsa-medium", "file": "questions/06-dsa-medium.json", "priority": 2, "estimatedHours": 12 },
-    { "id": "dsa-hard", "file": "questions/07-dsa-hard.json", "priority": 3, "estimatedHours": 12 },
-    { "id": "sql", "file": "questions/08-sql.json", "priority": 2, "estimatedHours": 4 },
-    { "id": "system-design", "file": "questions/09-system-design.json", "priority": 2, "estimatedHours": 8 },
-    { "id": "ai-llm", "file": "questions/10-ai-llm.json", "priority": 1, "estimatedHours": 6 },
-    { "id": "fde-decomposition", "file": "questions/11-fde-decomposition.json", "priority": 1, "estimatedHours": 8 },
-    { "id": "fde-client-sim", "file": "questions/12-fde-client-sim.json", "priority": 1, "estimatedHours": 5 },
-    { "id": "behavioral", "file": "questions/13-behavioral.json", "priority": 2, "estimatedHours": 4 },
-    { "id": "web-protocols-security", "file": "questions/14-web-protocols-security.json", "priority": 1, "estimatedHours": 6 },
-    { "id": "distributed-systems", "file": "questions/15-distributed-systems.json", "priority": 1, "estimatedHours": 5 },
-    { "id": "refactoring-debugging", "file": "questions/16-refactoring-debugging.json", "priority": 1, "estimatedHours": 4 },
-    { "id": "async-concurrency", "file": "questions/17-async-concurrency.json", "priority": 1, "estimatedHours": 8 },
-    { "id": "redis-caching", "file": "questions/18-redis-caching.json", "priority": 1, "estimatedHours": 6 },
-    { "id": "cloud-deployment", "file": "questions/19-cloud-deployment.json", "priority": 1, "estimatedHours": 6 },
-    { "id": "docker-k8s", "file": "questions/20-docker-k8s.json", "priority": 1, "estimatedHours": 5 },
-    { "id": "llm-app-arch", "file": "questions/21-llm-app-arch.json", "priority": 1, "estimatedHours": 6 },
-    { "id": "testing-debugging", "file": "questions/22-testing-debugging.json", "priority": 1, "estimatedHours": 5 },
-    { "id": "project-deep-dive", "file": "questions/26-project-deep-dive.json", "priority": 1, "estimatedHours": 3 },
-    { "id": "software-engineering", "file": "questions/28-software-engineering.json", "priority": 1, "estimatedHours": 5 },
-    { "id": "python", "file": "questions/29-python.json", "priority": 1, "estimatedHours": 6 },
-    { "id": "enterprise-integrations", "file": "questions/23-enterprise-integrations.json", "priority": 1, "estimatedHours": 6 },
-    { "id": "fde-customer-engineering", "file": "questions/24-fde-customer-engineering.json", "priority": 1, "estimatedHours": 6 },
-    { "id": "behavioral", "file": "questions/25-behavioral.json", "priority": 1, "estimatedHours": 4 },
-    { "id": "live-coding-take-home", "file": "questions/27-live-coding-take-home.json", "priority": 1, "estimatedHours": 4 },
-    { "id": "codility-patterns", "file": "questions/30-codility-patterns.json", "priority": 1, "estimatedHours": 6 },
-    { "id": "oop-design-patterns", "file": "questions/31-oop-design-patterns.json", "priority": 1, "estimatedHours": 7 },
-    { "id": "git-advanced", "file": "questions/32-git-advanced.json", "priority": 1, "estimatedHours": 4 },
-    { "id": "financial-data-engineering", "file": "questions/33-financial-data-engineering.json", "priority": 1, "estimatedHours": 5 },
-    { "id": "pr-review-andela", "file": "questions/34-pr-review-andela.json", "priority": 1, "estimatedHours": 4 },
-    { "id": "rag-andela-deep", "file": "questions/35-rag-andela-deep.json", "priority": 1, "estimatedHours": 6 }
+    {
+      "id": "programming-fundamentals",
+      "file": "questions/00-programming-fundamentals.json",
+      "priority": 1,
+      "estimatedHours": 4
+    },
+    {
+      "id": "dsa",
+      "file": "questions/01-dsa.json",
+      "priority": 1,
+      "estimatedHours": 40
+    },
+    {
+      "id": "javascript-fundamentals",
+      "file": "questions/01-javascript.json",
+      "priority": 1,
+      "estimatedHours": 8
+    },
+    {
+      "id": "typescript",
+      "file": "questions/02-typescript.json",
+      "priority": 2,
+      "estimatedHours": 4
+    },
+    {
+      "id": "react",
+      "file": "questions/03-react.json",
+      "priority": 1,
+      "estimatedHours": 6
+    },
+    {
+      "id": "nodejs",
+      "file": "questions/04-nodejs.json",
+      "priority": 1,
+      "estimatedHours": 5
+    },
+    {
+      "id": "dsa-easy",
+      "file": "questions/05-dsa-easy.json",
+      "priority": 1,
+      "estimatedHours": 10
+    },
+    {
+      "id": "dsa-medium",
+      "file": "questions/06-dsa-medium.json",
+      "priority": 2,
+      "estimatedHours": 12
+    },
+    {
+      "id": "dsa-hard",
+      "file": "questions/07-dsa-hard.json",
+      "priority": 3,
+      "estimatedHours": 12
+    },
+    {
+      "id": "sql",
+      "file": "questions/08-sql.json",
+      "priority": 2,
+      "estimatedHours": 4
+    },
+    {
+      "id": "system-design",
+      "file": "questions/09-system-design.json",
+      "priority": 2,
+      "estimatedHours": 8
+    },
+    {
+      "id": "ai-llm",
+      "file": "questions/10-ai-llm.json",
+      "priority": 1,
+      "estimatedHours": 6
+    },
+    {
+      "id": "fde-decomposition",
+      "file": "questions/11-fde-decomposition.json",
+      "priority": 1,
+      "estimatedHours": 8
+    },
+    {
+      "id": "fde-client-sim",
+      "file": "questions/12-fde-client-sim.json",
+      "priority": 1,
+      "estimatedHours": 5
+    },
+    {
+      "id": "behavioral",
+      "file": "questions/13-behavioral.json",
+      "priority": 2,
+      "estimatedHours": 4
+    },
+    {
+      "id": "web-protocols-security",
+      "file": "questions/14-web-protocols-security.json",
+      "priority": 1,
+      "estimatedHours": 6
+    },
+    {
+      "id": "distributed-systems",
+      "file": "questions/15-distributed-systems.json",
+      "priority": 1,
+      "estimatedHours": 5
+    },
+    {
+      "id": "refactoring-debugging",
+      "file": "questions/16-refactoring-debugging.json",
+      "priority": 1,
+      "estimatedHours": 4
+    },
+    {
+      "id": "async-concurrency",
+      "file": "questions/17-async-concurrency.json",
+      "priority": 1,
+      "estimatedHours": 8
+    },
+    {
+      "id": "redis-caching",
+      "file": "questions/18-redis-caching.json",
+      "priority": 1,
+      "estimatedHours": 6
+    },
+    {
+      "id": "cloud-deployment",
+      "file": "questions/19-cloud-deployment.json",
+      "priority": 1,
+      "estimatedHours": 6
+    },
+    {
+      "id": "docker-k8s",
+      "file": "questions/20-docker-k8s.json",
+      "priority": 1,
+      "estimatedHours": 5
+    },
+    {
+      "id": "llm-app-arch",
+      "file": "questions/21-llm-app-arch.json",
+      "priority": 1,
+      "estimatedHours": 6
+    },
+    {
+      "id": "testing-debugging",
+      "file": "questions/22-testing-debugging.json",
+      "priority": 1,
+      "estimatedHours": 5
+    },
+    {
+      "id": "project-deep-dive",
+      "file": "questions/26-project-deep-dive.json",
+      "priority": 1,
+      "estimatedHours": 3
+    },
+    {
+      "id": "software-engineering",
+      "file": "questions/28-software-engineering.json",
+      "priority": 1,
+      "estimatedHours": 5
+    },
+    {
+      "id": "python",
+      "file": "questions/29-python.json",
+      "priority": 1,
+      "estimatedHours": 6
+    },
+    {
+      "id": "enterprise-integrations",
+      "file": "questions/23-enterprise-integrations.json",
+      "priority": 1,
+      "estimatedHours": 6
+    },
+    {
+      "id": "fde-customer-engineering",
+      "file": "questions/24-fde-customer-engineering.json",
+      "priority": 1,
+      "estimatedHours": 6
+    },
+    {
+      "id": "behavioral",
+      "file": "questions/25-behavioral.json",
+      "priority": 1,
+      "estimatedHours": 4
+    },
+    {
+      "id": "live-coding-take-home",
+      "file": "questions/27-live-coding-take-home.json",
+      "priority": 1,
+      "estimatedHours": 4
+    },
+    {
+      "id": "codility-patterns",
+      "file": "questions/30-codility-patterns.json",
+      "priority": 1,
+      "estimatedHours": 6
+    },
+    {
+      "id": "oop-design-patterns",
+      "file": "questions/31-oop-design-patterns.json",
+      "priority": 1,
+      "estimatedHours": 7
+    },
+    {
+      "id": "git-advanced",
+      "file": "questions/32-git-advanced.json",
+      "priority": 1,
+      "estimatedHours": 4
+    },
+    {
+      "id": "financial-data-engineering",
+      "file": "questions/33-financial-data-engineering.json",
+      "priority": 1,
+      "estimatedHours": 5
+    },
+    {
+      "id": "pr-review-andela",
+      "file": "questions/34-pr-review-andela.json",
+      "priority": 1,
+      "estimatedHours": 4
+    },
+    {
+      "id": "rag-andela-deep",
+      "file": "questions/35-rag-andela-deep.json",
+      "priority": 1,
+      "estimatedHours": 6
+    },
+    {
+      "id": "ai-engineering-deep",
+      "file": "questions/36-ai-engineering-deep.json",
+      "priority": 1,
+      "estimatedHours": 20
+    }
   ],
   "plans": {
     "60-day": {
       "label": "60-Day Comprehensive",
       "description": "Full depth across every module with spaced repetition. Recommended if you're not in a rush.",
       "days": [
-        { "day": 1, "modules": ["javascript-fundamentals"], "focus": "JS core: closures + hoisting + var/let/const" },
-        { "day": 2, "modules": ["javascript-fundamentals"], "focus": "JS: event loop, microtasks, async/await" },
-        { "day": 3, "modules": ["javascript-fundamentals"], "focus": "JS: this, prototypes, types, coercion" },
-        { "day": 4, "modules": ["javascript-fundamentals"], "focus": "JS: arrays/maps/sets APIs + spread/destructuring" },
-        { "day": 5, "modules": ["typescript"], "focus": "TS: primitives, any vs unknown, generics" },
-        { "day": 6, "modules": ["typescript"], "focus": "TS: utility types + narrowing + discriminated unions" },
-        { "day": 7, "modules": ["typescript"], "focus": "TS: conditional + mapped + infer + template literals" },
-        { "day": 8, "modules": ["react"], "focus": "React: hooks basics + rules of hooks" },
-        { "day": 9, "modules": ["react"], "focus": "React: useEffect + cleanup + strict mode + stale closures" },
-        { "day": 10, "modules": ["react"], "focus": "React: keys, reconciliation, memo, context" },
-        { "day": 11, "modules": ["react"], "focus": "React: Next.js app router + RSC + server actions" },
-        { "day": 12, "modules": ["nodejs"], "focus": "Node: event loop, streams, backpressure" },
-        { "day": 13, "modules": ["nodejs"], "focus": "Node: HTTP, middleware, express async errors" },
-        { "day": 14, "modules": ["nodejs"], "focus": "Node: auth (JWT, OAuth PKCE), security, helmet" },
-        { "day": 15, "modules": ["nodejs"], "focus": "Node: testing (Jest), logging, uncaughtException" },
-        { "day": 15.1, "modules": ["web-protocols-security"], "focus": "HTTP/1.1/2/3, CORS preflight, cookies (SameSite)" },
-        { "day": 15.2, "modules": ["web-protocols-security"], "focus": "WebSockets, SSE, JWT deep, OAuth flows, SAML" },
-        { "day": 15.3, "modules": ["web-protocols-security"], "focus": "CSRF/XSS/SSRF, CSP, security headers, TLS 1.3" },
-        { "day": 16, "modules": ["dsa-easy"], "focus": "DSA: arrays, two pointers, hash maps" },
-        { "day": 17, "modules": ["dsa-easy"], "focus": "DSA: strings, palindromes, anagrams" },
-        { "day": 18, "modules": ["dsa-easy"], "focus": "DSA: stacks, brackets, linked lists" },
-        { "day": 19, "modules": ["dsa-easy"], "focus": "DSA: Codility Lessons 1-4 review" },
-        { "day": 20, "modules": ["dsa-easy", "javascript-fundamentals"], "focus": "Mixed review + BigO" },
-        { "day": 21, "modules": ["dsa-medium"], "focus": "DSA: sliding window pattern" },
-        { "day": 22, "modules": ["dsa-medium"], "focus": "DSA: trees (BST, level-order, LCA)" },
-        { "day": 23, "modules": ["dsa-medium"], "focus": "DSA: recursion + backtracking (permutations)" },
-        { "day": 24, "modules": ["dsa-medium"], "focus": "DSA: greedy (jump, tie-ropes) + binary search variants" },
-        { "day": 25, "modules": ["dsa-medium"], "focus": "DSA: graphs (islands, BFS/DFS basic)" },
-        { "day": 26, "modules": ["dsa-medium"], "focus": "DSA: DP basics (climb, rob, kadane, coin change)" },
-        { "day": 27, "modules": ["sql"], "focus": "SQL: joins + aggregates + HAVING" },
-        { "day": 28, "modules": ["sql"], "focus": "SQL: window functions + CTEs + gap-and-island" },
-        { "day": 29, "modules": ["sql"], "focus": "SQL: indexes, EXPLAIN, N+1, concurrency" },
-        { "day": 30, "modules": ["sql", "javascript-fundamentals"], "focus": "Mixed review + retake weakest MCQs" },
-        { "day": 31, "modules": ["dsa-hard"], "focus": "DSA: Dijkstra + topo sort" },
-        { "day": 32, "modules": ["dsa-hard"], "focus": "DSA: union-find + course schedule + LIS" },
-        { "day": 33, "modules": ["dsa-hard"], "focus": "DSA: edit distance + coin change + house robber II" },
-        { "day": 34, "modules": ["dsa-hard"], "focus": "DSA: min window substring + sliding-window max" },
-        { "day": 35, "modules": ["dsa-hard"], "focus": "DSA: LRU cache + trie + N-Queens" },
-        { "day": 36, "modules": ["system-design"], "focus": "SysDes: rate limiter + webhooks + OAuth bridge" },
-        { "day": 37, "modules": ["system-design"], "focus": "SysDes: RAG VPC (HIPAA) + multi-tenant + queue" },
-        { "day": 38, "modules": ["system-design"], "focus": "SysDes: ingestion + caching + observability + prompt versioning" },
-        { "day": 38.1, "modules": ["system-design", "distributed-systems"], "focus": "SysDes: webhook 100k RPS engine + multi-region + SAML SSO" },
-        { "day": 38.2, "modules": ["distributed-systems"], "focus": "Kafka, sharding, consistent hashing, saga, outbox, CDC" },
-        { "day": 38.3, "modules": ["distributed-systems"], "focus": "Consensus (Raft), circuit-breaker, bulkhead, backpressure" },
-        { "day": 39, "modules": ["ai-llm"], "focus": "LLM: RAG basics + chunking + fine-tune vs RAG" },
-        { "day": 40, "modules": ["ai-llm"], "focus": "LLM: evaluation + guardrails + prompt injection" },
-        { "day": 41, "modules": ["ai-llm"], "focus": "LLM: LangChain vs LangGraph + agent design + cost" },
-        { "day": 41.1, "modules": ["ai-llm"], "focus": "LLM: HyDE, CRAG, Self-RAG, GraphRAG, hybrid search, reranking" },
-        { "day": 41.2, "modules": ["ai-llm"], "focus": "LLM: pgvector deep, HNSW vs IVF, RAGAS eval, tool-calling schemas" },
-        { "day": 41.3, "modules": ["refactoring-debugging"], "focus": "Think-aloud rehearsal + SOLID refactor drill" },
-        { "day": 41.4, "modules": ["refactoring-debugging"], "focus": "Debug flaky test + prod perf regression + memory leak" },
-        { "day": 41.5, "modules": ["refactoring-debugging"], "focus": "Legacy 3k-line file feature + PR review + code defense" },
-        { "day": 42, "modules": ["fde-decomposition"], "focus": "FDE decomp: 911 + fraud unification (5-step)" },
-        { "day": 43, "modules": ["fde-decomposition"], "focus": "FDE decomp: pharma + logistics + insurer" },
-        { "day": 44, "modules": ["fde-decomposition"], "focus": "FDE decomp: adoption crisis + policy violation" },
-        { "day": 45, "modules": ["fde-decomposition"], "focus": "FDE decomp: framework practice on novel prompts" },
-        { "day": 46, "modules": ["fde-client-sim"], "focus": "Client-sim: slip + governance push-back + accuracy claim" },
-        { "day": 47, "modules": ["fde-client-sim"], "focus": "Client-sim: IT blocking + demo failure + unrealistic timeline" },
-        { "day": 48, "modules": ["fde-client-sim"], "focus": "Client-sim: repeat bug + internal politics" },
-        { "day": 49, "modules": ["behavioral"], "focus": "STAR: ownership + difficult stakeholder + reversed decision" },
-        { "day": 50, "modules": ["behavioral"], "focus": "STAR: no-authority + tight deadline + failure" },
-        { "day": 51, "modules": ["behavioral"], "focus": "STAR: customer-no + why-FDE + pattern-spotting + remote" },
-        { "day": 52, "modules": ["javascript-fundamentals", "react"], "focus": "Full-loop mock: JS + React MCQ session" },
-        { "day": 53, "modules": ["dsa-medium", "dsa-hard"], "focus": "Full-loop mock: 90-min DSA sprint (3 problems)" },
-        { "day": 54, "modules": ["nodejs", "sql"], "focus": "Full-loop mock: Node + SQL" },
-        { "day": 55, "modules": ["system-design", "ai-llm"], "focus": "Full-loop mock: system design + AI eval" },
-        { "day": 56, "modules": ["fde-decomposition", "fde-client-sim"], "focus": "Full-loop mock: FDE decomp + client-sim" },
-        { "day": 57, "modules": ["behavioral"], "focus": "Full-loop mock: 6 STAR stories timed" },
-        { "day": 58, "modules": ["javascript-fundamentals", "react", "nodejs"], "focus": "Weakest-module retake" },
-        { "day": 59, "modules": ["dsa-medium", "dsa-hard"], "focus": "Weakest-module retake" },
-        { "day": 60, "modules": [], "focus": "Rest, hydrate, sleep, review notes." }
+        {
+          "day": 1,
+          "modules": [
+            "javascript-fundamentals"
+          ],
+          "focus": "JS core: closures + hoisting + var/let/const"
+        },
+        {
+          "day": 2,
+          "modules": [
+            "javascript-fundamentals"
+          ],
+          "focus": "JS: event loop, microtasks, async/await"
+        },
+        {
+          "day": 3,
+          "modules": [
+            "javascript-fundamentals"
+          ],
+          "focus": "JS: this, prototypes, types, coercion"
+        },
+        {
+          "day": 4,
+          "modules": [
+            "javascript-fundamentals"
+          ],
+          "focus": "JS: arrays/maps/sets APIs + spread/destructuring"
+        },
+        {
+          "day": 5,
+          "modules": [
+            "typescript"
+          ],
+          "focus": "TS: primitives, any vs unknown, generics"
+        },
+        {
+          "day": 6,
+          "modules": [
+            "typescript"
+          ],
+          "focus": "TS: utility types + narrowing + discriminated unions"
+        },
+        {
+          "day": 7,
+          "modules": [
+            "typescript"
+          ],
+          "focus": "TS: conditional + mapped + infer + template literals"
+        },
+        {
+          "day": 8,
+          "modules": [
+            "react"
+          ],
+          "focus": "React: hooks basics + rules of hooks"
+        },
+        {
+          "day": 9,
+          "modules": [
+            "react"
+          ],
+          "focus": "React: useEffect + cleanup + strict mode + stale closures"
+        },
+        {
+          "day": 10,
+          "modules": [
+            "react"
+          ],
+          "focus": "React: keys, reconciliation, memo, context"
+        },
+        {
+          "day": 11,
+          "modules": [
+            "react"
+          ],
+          "focus": "React: Next.js app router + RSC + server actions"
+        },
+        {
+          "day": 12,
+          "modules": [
+            "nodejs"
+          ],
+          "focus": "Node: event loop, streams, backpressure"
+        },
+        {
+          "day": 13,
+          "modules": [
+            "nodejs"
+          ],
+          "focus": "Node: HTTP, middleware, express async errors"
+        },
+        {
+          "day": 14,
+          "modules": [
+            "nodejs"
+          ],
+          "focus": "Node: auth (JWT, OAuth PKCE), security, helmet"
+        },
+        {
+          "day": 15,
+          "modules": [
+            "nodejs"
+          ],
+          "focus": "Node: testing (Jest), logging, uncaughtException"
+        },
+        {
+          "day": 15.1,
+          "modules": [
+            "web-protocols-security"
+          ],
+          "focus": "HTTP/1.1/2/3, CORS preflight, cookies (SameSite)"
+        },
+        {
+          "day": 15.2,
+          "modules": [
+            "web-protocols-security"
+          ],
+          "focus": "WebSockets, SSE, JWT deep, OAuth flows, SAML"
+        },
+        {
+          "day": 15.3,
+          "modules": [
+            "web-protocols-security"
+          ],
+          "focus": "CSRF/XSS/SSRF, CSP, security headers, TLS 1.3"
+        },
+        {
+          "day": 16,
+          "modules": [
+            "dsa-easy"
+          ],
+          "focus": "DSA: arrays, two pointers, hash maps"
+        },
+        {
+          "day": 17,
+          "modules": [
+            "dsa-easy"
+          ],
+          "focus": "DSA: strings, palindromes, anagrams"
+        },
+        {
+          "day": 18,
+          "modules": [
+            "dsa-easy"
+          ],
+          "focus": "DSA: stacks, brackets, linked lists"
+        },
+        {
+          "day": 19,
+          "modules": [
+            "dsa-easy"
+          ],
+          "focus": "DSA: Codility Lessons 1-4 review"
+        },
+        {
+          "day": 20,
+          "modules": [
+            "dsa-easy",
+            "javascript-fundamentals"
+          ],
+          "focus": "Mixed review + BigO"
+        },
+        {
+          "day": 21,
+          "modules": [
+            "dsa-medium"
+          ],
+          "focus": "DSA: sliding window pattern"
+        },
+        {
+          "day": 22,
+          "modules": [
+            "dsa-medium"
+          ],
+          "focus": "DSA: trees (BST, level-order, LCA)"
+        },
+        {
+          "day": 23,
+          "modules": [
+            "dsa-medium"
+          ],
+          "focus": "DSA: recursion + backtracking (permutations)"
+        },
+        {
+          "day": 24,
+          "modules": [
+            "dsa-medium"
+          ],
+          "focus": "DSA: greedy (jump, tie-ropes) + binary search variants"
+        },
+        {
+          "day": 25,
+          "modules": [
+            "dsa-medium"
+          ],
+          "focus": "DSA: graphs (islands, BFS/DFS basic)"
+        },
+        {
+          "day": 26,
+          "modules": [
+            "dsa-medium"
+          ],
+          "focus": "DSA: DP basics (climb, rob, kadane, coin change)"
+        },
+        {
+          "day": 27,
+          "modules": [
+            "sql"
+          ],
+          "focus": "SQL: joins + aggregates + HAVING"
+        },
+        {
+          "day": 28,
+          "modules": [
+            "sql"
+          ],
+          "focus": "SQL: window functions + CTEs + gap-and-island"
+        },
+        {
+          "day": 29,
+          "modules": [
+            "sql"
+          ],
+          "focus": "SQL: indexes, EXPLAIN, N+1, concurrency"
+        },
+        {
+          "day": 30,
+          "modules": [
+            "sql",
+            "javascript-fundamentals"
+          ],
+          "focus": "Mixed review + retake weakest MCQs"
+        },
+        {
+          "day": 31,
+          "modules": [
+            "dsa-hard"
+          ],
+          "focus": "DSA: Dijkstra + topo sort"
+        },
+        {
+          "day": 32,
+          "modules": [
+            "dsa-hard"
+          ],
+          "focus": "DSA: union-find + course schedule + LIS"
+        },
+        {
+          "day": 33,
+          "modules": [
+            "dsa-hard"
+          ],
+          "focus": "DSA: edit distance + coin change + house robber II"
+        },
+        {
+          "day": 34,
+          "modules": [
+            "dsa-hard"
+          ],
+          "focus": "DSA: min window substring + sliding-window max"
+        },
+        {
+          "day": 35,
+          "modules": [
+            "dsa-hard"
+          ],
+          "focus": "DSA: LRU cache + trie + N-Queens"
+        },
+        {
+          "day": 36,
+          "modules": [
+            "system-design"
+          ],
+          "focus": "SysDes: rate limiter + webhooks + OAuth bridge"
+        },
+        {
+          "day": 37,
+          "modules": [
+            "system-design"
+          ],
+          "focus": "SysDes: RAG VPC (HIPAA) + multi-tenant + queue"
+        },
+        {
+          "day": 38,
+          "modules": [
+            "system-design"
+          ],
+          "focus": "SysDes: ingestion + caching + observability + prompt versioning"
+        },
+        {
+          "day": 38.1,
+          "modules": [
+            "system-design",
+            "distributed-systems"
+          ],
+          "focus": "SysDes: webhook 100k RPS engine + multi-region + SAML SSO"
+        },
+        {
+          "day": 38.2,
+          "modules": [
+            "distributed-systems"
+          ],
+          "focus": "Kafka, sharding, consistent hashing, saga, outbox, CDC"
+        },
+        {
+          "day": 38.3,
+          "modules": [
+            "distributed-systems"
+          ],
+          "focus": "Consensus (Raft), circuit-breaker, bulkhead, backpressure"
+        },
+        {
+          "day": 39,
+          "modules": [
+            "ai-llm"
+          ],
+          "focus": "LLM: RAG basics + chunking + fine-tune vs RAG"
+        },
+        {
+          "day": 40,
+          "modules": [
+            "ai-llm"
+          ],
+          "focus": "LLM: evaluation + guardrails + prompt injection"
+        },
+        {
+          "day": 41,
+          "modules": [
+            "ai-llm"
+          ],
+          "focus": "LLM: LangChain vs LangGraph + agent design + cost"
+        },
+        {
+          "day": 41.1,
+          "modules": [
+            "ai-llm"
+          ],
+          "focus": "LLM: HyDE, CRAG, Self-RAG, GraphRAG, hybrid search, reranking"
+        },
+        {
+          "day": 41.2,
+          "modules": [
+            "ai-llm"
+          ],
+          "focus": "LLM: pgvector deep, HNSW vs IVF, RAGAS eval, tool-calling schemas"
+        },
+        {
+          "day": 41.3,
+          "modules": [
+            "refactoring-debugging"
+          ],
+          "focus": "Think-aloud rehearsal + SOLID refactor drill"
+        },
+        {
+          "day": 41.4,
+          "modules": [
+            "refactoring-debugging"
+          ],
+          "focus": "Debug flaky test + prod perf regression + memory leak"
+        },
+        {
+          "day": 41.5,
+          "modules": [
+            "refactoring-debugging"
+          ],
+          "focus": "Legacy 3k-line file feature + PR review + code defense"
+        },
+        {
+          "day": 42,
+          "modules": [
+            "fde-decomposition"
+          ],
+          "focus": "FDE decomp: 911 + fraud unification (5-step)"
+        },
+        {
+          "day": 43,
+          "modules": [
+            "fde-decomposition"
+          ],
+          "focus": "FDE decomp: pharma + logistics + insurer"
+        },
+        {
+          "day": 44,
+          "modules": [
+            "fde-decomposition"
+          ],
+          "focus": "FDE decomp: adoption crisis + policy violation"
+        },
+        {
+          "day": 45,
+          "modules": [
+            "fde-decomposition"
+          ],
+          "focus": "FDE decomp: framework practice on novel prompts"
+        },
+        {
+          "day": 46,
+          "modules": [
+            "fde-client-sim"
+          ],
+          "focus": "Client-sim: slip + governance push-back + accuracy claim"
+        },
+        {
+          "day": 47,
+          "modules": [
+            "fde-client-sim"
+          ],
+          "focus": "Client-sim: IT blocking + demo failure + unrealistic timeline"
+        },
+        {
+          "day": 48,
+          "modules": [
+            "fde-client-sim"
+          ],
+          "focus": "Client-sim: repeat bug + internal politics"
+        },
+        {
+          "day": 49,
+          "modules": [
+            "behavioral"
+          ],
+          "focus": "STAR: ownership + difficult stakeholder + reversed decision"
+        },
+        {
+          "day": 50,
+          "modules": [
+            "behavioral"
+          ],
+          "focus": "STAR: no-authority + tight deadline + failure"
+        },
+        {
+          "day": 51,
+          "modules": [
+            "behavioral"
+          ],
+          "focus": "STAR: customer-no + why-FDE + pattern-spotting + remote"
+        },
+        {
+          "day": 52,
+          "modules": [
+            "javascript-fundamentals",
+            "react"
+          ],
+          "focus": "Full-loop mock: JS + React MCQ session"
+        },
+        {
+          "day": 53,
+          "modules": [
+            "dsa-medium",
+            "dsa-hard"
+          ],
+          "focus": "Full-loop mock: 90-min DSA sprint (3 problems)"
+        },
+        {
+          "day": 54,
+          "modules": [
+            "nodejs",
+            "sql"
+          ],
+          "focus": "Full-loop mock: Node + SQL"
+        },
+        {
+          "day": 55,
+          "modules": [
+            "system-design",
+            "ai-llm"
+          ],
+          "focus": "Full-loop mock: system design + AI eval"
+        },
+        {
+          "day": 56,
+          "modules": [
+            "fde-decomposition",
+            "fde-client-sim"
+          ],
+          "focus": "Full-loop mock: FDE decomp + client-sim"
+        },
+        {
+          "day": 57,
+          "modules": [
+            "behavioral"
+          ],
+          "focus": "Full-loop mock: 6 STAR stories timed"
+        },
+        {
+          "day": 58,
+          "modules": [
+            "javascript-fundamentals",
+            "react",
+            "nodejs"
+          ],
+          "focus": "Weakest-module retake"
+        },
+        {
+          "day": 59,
+          "modules": [
+            "dsa-medium",
+            "dsa-hard"
+          ],
+          "focus": "Weakest-module retake"
+        },
+        {
+          "day": 60,
+          "modules": [],
+          "focus": "Rest, hydrate, sleep, review notes."
+        }
       ]
     },
     "20-day": {
       "label": "20-Day Intensive",
       "description": "Compressed: only what's tested. Skips deep-dive theory; heavier drilling on high-yield.",
       "days": [
-        { "day": 1, "modules": ["javascript-fundamentals"], "focus": "JS: closures, event loop, async, this" },
-        { "day": 2, "modules": ["javascript-fundamentals"], "focus": "JS: types, coercion, arrays/spread" },
-        { "day": 3, "modules": ["typescript"], "focus": "TS: generics, utility types, narrowing" },
-        { "day": 4, "modules": ["react"], "focus": "React: hooks, effects, keys, memo" },
-        { "day": 5, "modules": ["react"], "focus": "React: Next.js app router + RSC" },
-        { "day": 6, "modules": ["nodejs"], "focus": "Node: event loop, streams, HTTP, auth" },
-        { "day": 6.5, "modules": ["web-protocols-security"], "focus": "HTTP/2/3, CORS, WebSockets, JWT, CSRF/XSS, OAuth" },
-        { "day": 7, "modules": ["dsa-easy"], "focus": "DSA easy: arrays, hash, two pointers, strings" },
-        { "day": 8, "modules": ["dsa-easy"], "focus": "DSA easy: linked lists, trees, Codility lessons" },
-        { "day": 9, "modules": ["dsa-medium"], "focus": "DSA medium: sliding window, binary search" },
-        { "day": 10, "modules": ["dsa-medium"], "focus": "DSA medium: trees, recursion, DP basics" },
-        { "day": 11, "modules": ["dsa-hard"], "focus": "DSA hard: graphs (Dijkstra, topo, union-find)" },
-        { "day": 12, "modules": ["dsa-hard"], "focus": "DSA hard: LRU, min window, edit distance" },
-        { "day": 13, "modules": ["sql"], "focus": "SQL: joins, aggregates, window fns, indexes" },
-        { "day": 14, "modules": ["system-design", "distributed-systems"], "focus": "SysDes: webhook 100k RPS + Kafka + sharding + circuit breaker" },
-        { "day": 14.5, "modules": ["refactoring-debugging"], "focus": "Think-aloud + SOLID refactor + PR review" },
-        { "day": 15, "modules": ["ai-llm"], "focus": "LLM: RAG deep (HyDE/CRAG/Rerank/RAGAS), pgvector, LangGraph agents" },
-        { "day": 16, "modules": ["fde-decomposition"], "focus": "FDE decomp: 3 cases with 5-step narration" },
-        { "day": 17, "modules": ["fde-client-sim"], "focus": "Client-sim: slip, push-back, live demo fail" },
-        { "day": 18, "modules": ["behavioral"], "focus": "STAR: draft 6 stories" },
-        { "day": 19, "modules": ["dsa-medium", "system-design"], "focus": "Mock: 90-min DSA + 60-min sysdes" },
-        { "day": 20, "modules": [], "focus": "Rest + final review of weakest module" }
+        {
+          "day": 1,
+          "modules": [
+            "javascript-fundamentals"
+          ],
+          "focus": "JS: closures, event loop, async, this"
+        },
+        {
+          "day": 2,
+          "modules": [
+            "javascript-fundamentals"
+          ],
+          "focus": "JS: types, coercion, arrays/spread"
+        },
+        {
+          "day": 3,
+          "modules": [
+            "typescript"
+          ],
+          "focus": "TS: generics, utility types, narrowing"
+        },
+        {
+          "day": 4,
+          "modules": [
+            "react"
+          ],
+          "focus": "React: hooks, effects, keys, memo"
+        },
+        {
+          "day": 5,
+          "modules": [
+            "react"
+          ],
+          "focus": "React: Next.js app router + RSC"
+        },
+        {
+          "day": 6,
+          "modules": [
+            "nodejs"
+          ],
+          "focus": "Node: event loop, streams, HTTP, auth"
+        },
+        {
+          "day": 6.5,
+          "modules": [
+            "web-protocols-security"
+          ],
+          "focus": "HTTP/2/3, CORS, WebSockets, JWT, CSRF/XSS, OAuth"
+        },
+        {
+          "day": 7,
+          "modules": [
+            "dsa-easy"
+          ],
+          "focus": "DSA easy: arrays, hash, two pointers, strings"
+        },
+        {
+          "day": 8,
+          "modules": [
+            "dsa-easy"
+          ],
+          "focus": "DSA easy: linked lists, trees, Codility lessons"
+        },
+        {
+          "day": 9,
+          "modules": [
+            "dsa-medium"
+          ],
+          "focus": "DSA medium: sliding window, binary search"
+        },
+        {
+          "day": 10,
+          "modules": [
+            "dsa-medium"
+          ],
+          "focus": "DSA medium: trees, recursion, DP basics"
+        },
+        {
+          "day": 11,
+          "modules": [
+            "dsa-hard"
+          ],
+          "focus": "DSA hard: graphs (Dijkstra, topo, union-find)"
+        },
+        {
+          "day": 12,
+          "modules": [
+            "dsa-hard"
+          ],
+          "focus": "DSA hard: LRU, min window, edit distance"
+        },
+        {
+          "day": 13,
+          "modules": [
+            "sql"
+          ],
+          "focus": "SQL: joins, aggregates, window fns, indexes"
+        },
+        {
+          "day": 14,
+          "modules": [
+            "system-design",
+            "distributed-systems"
+          ],
+          "focus": "SysDes: webhook 100k RPS + Kafka + sharding + circuit breaker"
+        },
+        {
+          "day": 14.5,
+          "modules": [
+            "refactoring-debugging"
+          ],
+          "focus": "Think-aloud + SOLID refactor + PR review"
+        },
+        {
+          "day": 15,
+          "modules": [
+            "ai-llm"
+          ],
+          "focus": "LLM: RAG deep (HyDE/CRAG/Rerank/RAGAS), pgvector, LangGraph agents"
+        },
+        {
+          "day": 16,
+          "modules": [
+            "fde-decomposition"
+          ],
+          "focus": "FDE decomp: 3 cases with 5-step narration"
+        },
+        {
+          "day": 17,
+          "modules": [
+            "fde-client-sim"
+          ],
+          "focus": "Client-sim: slip, push-back, live demo fail"
+        },
+        {
+          "day": 18,
+          "modules": [
+            "behavioral"
+          ],
+          "focus": "STAR: draft 6 stories"
+        },
+        {
+          "day": 19,
+          "modules": [
+            "dsa-medium",
+            "system-design"
+          ],
+          "focus": "Mock: 90-min DSA + 60-min sysdes"
+        },
+        {
+          "day": 20,
+          "modules": [],
+          "focus": "Rest + final review of weakest module"
+        }
       ]
     },
     "asap": {
       "label": "ASAP Cram (7-10 days)",
       "description": "High-yield only. Highest risk if a topic surprises you. Use only if test is in a week.",
       "days": [
-        { "day": 1, "modules": ["javascript-fundamentals"], "focus": "JS: closures, event loop, async, this, types" },
-        { "day": 2, "modules": ["react", "typescript"], "focus": "React hooks + TS generics/narrowing" },
-        { "day": 3, "modules": ["nodejs", "sql", "web-protocols-security"], "focus": "Node HTTP+streams+auth. SQL joins+windows. HTTP/CORS/JWT/XSS." },
-        { "day": 4, "modules": ["dsa-easy", "dsa-medium"], "focus": "DSA: two pointers, sliding window, hash, sort" },
-        { "day": 5, "modules": ["dsa-medium", "dsa-hard"], "focus": "DSA: trees, graphs BFS/DFS, DP basics, LRU" },
-        { "day": 6, "modules": ["system-design", "distributed-systems", "ai-llm"], "focus": "SysDes: webhook 100k RPS + Kafka + RAG deep + LangGraph" },
-        { "day": 7, "modules": ["refactoring-debugging", "fde-decomposition", "fde-client-sim", "behavioral"], "focus": "Think-aloud + FDE narration + 6 STAR stories" }
+        {
+          "day": 1,
+          "modules": [
+            "javascript-fundamentals"
+          ],
+          "focus": "JS: closures, event loop, async, this, types"
+        },
+        {
+          "day": 2,
+          "modules": [
+            "react",
+            "typescript"
+          ],
+          "focus": "React hooks + TS generics/narrowing"
+        },
+        {
+          "day": 3,
+          "modules": [
+            "nodejs",
+            "sql",
+            "web-protocols-security"
+          ],
+          "focus": "Node HTTP+streams+auth. SQL joins+windows. HTTP/CORS/JWT/XSS."
+        },
+        {
+          "day": 4,
+          "modules": [
+            "dsa-easy",
+            "dsa-medium"
+          ],
+          "focus": "DSA: two pointers, sliding window, hash, sort"
+        },
+        {
+          "day": 5,
+          "modules": [
+            "dsa-medium",
+            "dsa-hard"
+          ],
+          "focus": "DSA: trees, graphs BFS/DFS, DP basics, LRU"
+        },
+        {
+          "day": 6,
+          "modules": [
+            "system-design",
+            "distributed-systems",
+            "ai-llm"
+          ],
+          "focus": "SysDes: webhook 100k RPS + Kafka + RAG deep + LangGraph"
+        },
+        {
+          "day": 7,
+          "modules": [
+            "refactoring-debugging",
+            "fde-decomposition",
+            "fde-client-sim",
+            "behavioral"
+          ],
+          "focus": "Think-aloud + FDE narration + 6 STAR stories"
+        }
       ]
     }
   }

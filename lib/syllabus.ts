@@ -166,6 +166,12 @@ export const SYLLABUS: SyllabusEntry[] = [
     targetQs: 30, status: "partial", moduleId: "ai-llm",
     tracks: ["turing", "andela"], testStages: ["turing-t4-fde", "andela-a2-qualified"] },
 
+  { num: 36, id: "ai-engineering-deep", title: "AI Engineering Deep — How ChatGPT Works",
+    blurb: "End-to-end concept module: neural networks → attention → Transformer → pretraining → SFT → RLHF/DPO → KV cache → quantization → RAG → agents. Every concept: WHAT / WHY / VARIANTS / WHEN / SOLVED / 2 EXAMPLES. 20 interview questions.",
+    targetQs: 20, status: "built", moduleId: "ai-engineering-deep",
+    tracks: ["turing", "andela", "toptal"],
+    testStages: ["turing-t4-fde", "andela-a2-qualified", "toptal-tp2-tech"] },
+
   { num: 34, id: "rag-andela-deep", title: "RAG & AI Governance (Andela Deep)",
     blurb: "Chunking strategies, hybrid search + BM25, PII governance, prompt caching, faithfulness, multi-tenant isolation.",
     targetQs: 25, status: "built", moduleId: "rag-andela-deep",
