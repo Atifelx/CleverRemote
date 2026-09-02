@@ -36,7 +36,7 @@ export const SYLLABUS: SyllabusEntry[] = [
   { num: 3, id: "javascript-typescript", title: "JavaScript / TypeScript",
     blurb: "Closures, event loop, this, async/await, TS generics, utility types, discriminated unions.",
     targetQs: 100, status: "built", moduleId: "javascript-fundamentals", extraModuleIds: ["typescript"],
-    tracks: ["turing", "andela"], testStages: ["turing-t1-mcq", "turing-t3-live", "andela-a4-pair"] },
+    tracks: ["turing", "andela"], testStages: ["turing-t1-mcq", "turing-t3-live", "andela-a2-qualified", "andela-a4-pair"] },
 
   { num: 4, id: "backend-engineering", title: "Backend Engineering",
     blurb: "Server internals, routing, middleware, auth, streams, error handling.",
@@ -46,27 +46,27 @@ export const SYLLABUS: SyllabusEntry[] = [
   { num: 5, id: "apis-comm", title: "APIs & Distributed Communication",
     blurb: "REST, GraphQL, gRPC, WebSocket, SSE, versioning.",
     targetQs: 60, status: "partial", moduleId: "web-protocols-security",
-    tracks: ["turing", "andela"], testStages: ["turing-t1-mcq", "turing-t4-fde"] },
+    tracks: ["turing", "andela"], testStages: ["turing-t1-mcq", "turing-t4-fde", "andela-a2-qualified"] },
 
   { num: 6, id: "databases", title: "Databases",
     blurb: "SQL joins/windows/CTE, indexes, isolation, execution plans, NoSQL basics.",
     targetQs: 60, status: "built", moduleId: "sql",
-    tracks: ["turing", "andela"], testStages: ["turing-t1-mcq", "turing-t4-fde", "andela-a3-screen"] },
+    tracks: ["turing", "andela"], testStages: ["turing-t1-mcq", "turing-t4-fde", "andela-a2-qualified", "andela-a3-screen"] },
 
   { num: 7, id: "redis-caching", title: "Redis & Caching",
     blurb: "Data types, patterns, pub/sub, cluster, invalidation, cache-aside vs write-through.",
     targetQs: 50, status: "built", moduleId: "redis-caching",
-    tracks: ["turing"], testStages: ["turing-t4-fde"] },
+    tracks: ["turing", "andela"], testStages: ["turing-t4-fde", "andela-a2-qualified"] },
 
   { num: 8, id: "async-queues", title: "Async / Concurrency / Queues",
     blurb: "Event loop, promises, workers, Kafka, RabbitMQ, SQS, backpressure.",
     targetQs: 60, status: "built", moduleId: "async-concurrency",
-    tracks: ["turing", "andela"], testStages: ["turing-t1-mcq", "turing-t4-fde"] },
+    tracks: ["turing", "andela"], testStages: ["turing-t1-mcq", "turing-t4-fde", "andela-a2-qualified"] },
 
   { num: 9, id: "system-design", title: "System Design",
     blurb: "Rate limiting, webhooks, multi-tenancy, sharding, real production prompts.",
     targetQs: 40, status: "built", moduleId: "system-design",
-    tracks: ["turing"], testStages: ["turing-t4-fde"] },
+    tracks: ["turing", "andela"], testStages: ["turing-t4-fde", "andela-a2-qualified"] },
 
   { num: 10, id: "cloud", title: "Cloud & Deployment",
     blurb: "AWS core (EC2/S3/RDS/IAM/VPC/ALB), secrets, CDN, GCP/Azure basics.",
@@ -78,10 +78,10 @@ export const SYLLABUS: SyllabusEntry[] = [
     targetQs: 30, status: "built", moduleId: "docker-k8s",
     tracks: ["turing"], testStages: ["turing-t4-fde"] },
 
-  { num: 12, id: "software-engineering", title: "Software Engineering",
+  { num: 12, id: "software-engineering", title: "Software Engineering & PR Review",
     blurb: "SOLID, patterns, semver, ADRs, code review, Git flow, PR review drills.",
     targetQs: 40, status: "built", moduleId: "software-engineering",
-    tracks: ["turing", "andela"], testStages: ["turing-t3-live", "andela-a4-pair"] },
+    tracks: ["turing", "andela"], testStages: ["turing-t3-live", "andela-a2-qualified", "andela-a4-pair"] },
 
   { num: 13, id: "testing-debugging", title: "Testing / Debugging",
     blurb: "Unit/integration/e2e/mocks/coverage/flaky-test playbook.",
@@ -91,42 +91,42 @@ export const SYLLABUS: SyllabusEntry[] = [
   { num: 14, id: "security", title: "Security",
     blurb: "CSRF/XSS/SSRF, JWT, OAuth, SAML, CSP, TLS, secrets, supply chain.",
     targetQs: 60, status: "built", moduleId: "web-protocols-security",
-    tracks: ["turing", "andela"], testStages: ["turing-t1-mcq"] },
+    tracks: ["turing", "andela"], testStages: ["turing-t1-mcq", "andela-a2-qualified"] },
 
   { num: 15, id: "llm-fundamentals", title: "AI / LLM Fundamentals",
     blurb: "Tokens, sampling, context, models, cost, latency, streaming.",
     targetQs: 60, status: "partial", moduleId: "ai-llm",
-    tracks: ["turing"], testStages: ["turing-t4-fde"] },
+    tracks: ["turing", "andela"], testStages: ["turing-t4-fde", "andela-a2-qualified"] },
 
   { num: 16, id: "embeddings-vector", title: "Embeddings / Vector Search",
     blurb: "Embed models, similarity, HNSW/IVF, pgvector, Pinecone, Qdrant.",
     targetQs: 40, status: "partial", moduleId: "ai-llm",
-    tracks: ["turing"], testStages: ["turing-t4-fde"] },
+    tracks: ["turing", "andela"], testStages: ["turing-t4-fde", "andela-a2-qualified"] },
 
   { num: 17, id: "rag", title: "RAG",
-    blurb: "Chunking, retrieval, reranking, hybrid, HyDE, CRAG, Self-RAG, GraphRAG.",
+    blurb: "Chunking, retrieval, reranking, hybrid, HyDE, recall/precision, hallucination, RAGAS.",
     targetQs: 60, status: "partial", moduleId: "ai-llm",
-    tracks: ["turing"], testStages: ["turing-t4-fde"] },
+    tracks: ["turing", "andela"], testStages: ["turing-t4-fde", "andela-a2-qualified"] },
 
   { num: 18, id: "llm-arch", title: "LLM Application Architecture",
     blurb: "System prompts, guardrails, structured output, tracing, cost tracking.",
     targetQs: 40, status: "built", moduleId: "llm-app-arch",
-    tracks: ["turing"], testStages: ["turing-t4-fde"] },
+    tracks: ["turing", "andela"], testStages: ["turing-t4-fde", "andela-a2-qualified"] },
 
   { num: 19, id: "agents-tools", title: "Agents / Tool Calling",
     blurb: "ReAct, LangGraph, tools/schemas, HITL, checkpoints, function-calling.",
     targetQs: 40, status: "partial", moduleId: "ai-llm",
-    tracks: ["turing"], testStages: ["turing-t4-fde"] },
+    tracks: ["turing", "andela"], testStages: ["turing-t4-fde", "andela-a2-qualified"] },
 
   { num: 20, id: "ai-eval", title: "AI Evaluation",
     blurb: "RAGAS, LLM-as-judge, golden sets, drift, red teaming.",
     targetQs: 30, status: "partial", moduleId: "ai-llm",
-    tracks: ["turing"], testStages: ["turing-t4-fde"] },
+    tracks: ["turing", "andela"], testStages: ["turing-t4-fde", "andela-a2-qualified"] },
 
   { num: 21, id: "ai-security", title: "AI Security",
     blurb: "Prompt injection (direct/indirect), data leak, PII, tool abuse, sandboxing.",
     targetQs: 30, status: "partial", moduleId: "ai-llm",
-    tracks: ["turing"], testStages: ["turing-t4-fde"] },
+    tracks: ["turing", "andela"], testStages: ["turing-t4-fde", "andela-a2-qualified"] },
 
   { num: 22, id: "ai-production", title: "AI Production / Optimization",
     blurb: "Latency, streaming, batching, caching, quantization, vLLM / TGI.",
@@ -136,12 +136,12 @@ export const SYLLABUS: SyllabusEntry[] = [
   { num: 23, id: "enterprise-integrations", title: "Enterprise Integrations",
     blurb: "Webhooks, SSO/SAML, SCIM, OAuth bridging, CRM/ERP adapters, legacy.",
     targetQs: 40, status: "partial", moduleId: "enterprise-integrations",
-    tracks: ["turing"], testStages: ["turing-t4-fde"] },
+    tracks: ["turing", "andela"], testStages: ["turing-t4-fde", "andela-a2-qualified"] },
 
   { num: 24, id: "fde-customer-eng", title: "FDE / Customer Engineering",
     blurb: "Decomposition (5-step framework), client sim (posture drills).",
     targetQs: 40, status: "built", moduleId: "fde-customer-engineering",
-    tracks: ["turing"], testStages: ["turing-t4-fde"] },
+    tracks: ["turing", "andela"], testStages: ["turing-t4-fde", "andela-a2-qualified"] },
 
   { num: 25, id: "behavioral", title: "Behavioral / Communication",
     blurb: "STAR stories across 8 core slots + comms drills + EPIC values.",
@@ -161,5 +161,5 @@ export const SYLLABUS: SyllabusEntry[] = [
   { num: 28, id: "architecture-cases", title: "Architecture Case Studies",
     blurb: "Multi-hour end-to-end scenarios with graded steps.",
     targetQs: 20, status: "partial", moduleId: "system-design",
-    tracks: ["turing"], testStages: ["turing-t4-fde"] },
+    tracks: ["turing", "andela"], testStages: ["turing-t4-fde", "andela-a2-qualified"] },
 ];
