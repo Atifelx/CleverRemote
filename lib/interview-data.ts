@@ -21,6 +21,7 @@ import { BANK_E } from "./iq-bank-e";
 import { BANK_F } from "./iq-bank-f";
 import { BANK_G } from "./iq-bank-g";
 import { BANK_H } from "./iq-bank-h";
+import { BANK_I } from "./iq-bank-i";
 
 export const GROUPS = [
   { id: "ml-fundamentals",   label: "ML Fundamentals",          icon: "🧱", desc: "Bias-variance, overfitting, cross-validation, regularization" },
@@ -1038,6 +1039,7 @@ export const QUESTIONS: IQ[] = [
   ...BANK_F,
   ...BANK_G,
   ...BANK_H,
+  ...BANK_I,
 ];
 
 export function getByGroup(groupId: string): IQ[] {
