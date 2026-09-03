@@ -21,16 +21,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </Link>
 
               <nav className="flex items-center gap-0.5 text-[13px]">
-                {/* Platform tabs */}
-                <NavTab href="/?platform=turing" label="⚡ Turing" />
-                <NavTab href="/?platform=andela" label="🌍 Andela" />
-                <NavTab href="/learn" label="🧠 Learn ML" />
-                <NavTab href="/interview" label="📝 Interview Prep" />
-                <NavTab href="/module/ai-engineering-deep" label="🤖 AI Fundamentals" />
-                <div className="w-px h-4 bg-[rgb(var(--border))] mx-1" />
-                <NavTab href="/plans/60-day" label="Study Plans" />
-                <NavTab href="/?platform=all" label="All Topics" />
-                <NavTab href="/questions" label="📋 Questions" />
+                <NavTab href="/learn" label="📚 Learn AI/ML" />
+                <NavTab href="/interview" label="❓ Question AI/ML" />
               </nav>
             </div>
 
