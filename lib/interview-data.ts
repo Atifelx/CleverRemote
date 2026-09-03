@@ -13,6 +13,15 @@ export type IQ = {
   tags: string[];
 };
 
+import { BANK_A } from "./iq-bank-a";
+import { BANK_B } from "./iq-bank-b";
+import { BANK_C } from "./iq-bank-c";
+import { BANK_D } from "./iq-bank-d";
+import { BANK_E } from "./iq-bank-e";
+import { BANK_F } from "./iq-bank-f";
+import { BANK_G } from "./iq-bank-g";
+import { BANK_H } from "./iq-bank-h";
+
 export const GROUPS = [
   { id: "ml-fundamentals",   label: "ML Fundamentals",          icon: "🧱", desc: "Bias-variance, overfitting, cross-validation, regularization" },
   { id: "classical-ml",      label: "Classical Algorithms",      icon: "🌲", desc: "Regression, SVM, trees, KNN, K-Means, PCA" },
@@ -26,7 +35,7 @@ export const GROUPS = [
   { id: "agents",            label: "Agents & Tools",            icon: "🤖", desc: "Tool use, ReAct, memory, multi-agent systems" },
 ];
 
-export const QUESTIONS: IQ[] = [
+const INLINE: IQ[] = [
 
   // ═══════════════════════════════════════════════════════════
   // GROUP 1: ML FUNDAMENTALS  (~60 questions)
@@ -1017,6 +1026,18 @@ export const QUESTIONS: IQ[] = [
     explanation:"Inference efficiency changes the equation: if you're serving a model to millions of users, smaller models are cheaper to serve even if they required more training compute. Llama-3 optimises for inference: train longer on more data to get a smaller model that achieves frontier quality.",
     tags:["toptal","frequently-tested"] },
 
+];
+
+export const QUESTIONS: IQ[] = [
+  ...INLINE,
+  ...BANK_A,
+  ...BANK_B,
+  ...BANK_C,
+  ...BANK_D,
+  ...BANK_E,
+  ...BANK_F,
+  ...BANK_G,
+  ...BANK_H,
 ];
 
 export function getByGroup(groupId: string): IQ[] {
