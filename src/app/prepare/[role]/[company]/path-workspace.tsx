@@ -18,12 +18,11 @@ import Link from 'next/link'
 
 import type { AssessmentPath, CompanyId, RoleId } from '@/lib/assessment-paths'
 import {
-  fdeTuringPractice,
   isPracticeAttemptPassed,
   type PracticeAttempt,
   type PracticeAttempts,
   type StagePractice,
-} from '@/lib/fde-turing-practice'
+} from '@/lib/practice-model'
 
 import AuthControls from '../../../auth-controls'
 import BrandLink from '../../../brand-link'
@@ -48,19 +47,13 @@ type PathWorkspaceProps = {
   role: RoleSummary
   company: CompanySummary
   path: AssessmentPath
+  practiceStages: StagePractice[]
   storageOwner: string
 }
 
 type StoredProgress = {
   activeStageId: string
-  completedTaskIds: string[]
   practiceAttempts: PracticeAttempts
-}
-
-const noPracticeStages: StagePractice[] = []
-
-function taskId(stageId: string, taskIndex: number) {
-  return `${stageId}:${taskIndex}`
 }
 
 function isStoredProgress(value: unknown): value is StoredProgress {
@@ -70,8 +63,6 @@ function isStoredProgress(value: unknown): value is StoredProgress {
 
   const progress = value as Partial<StoredProgress>
   return typeof progress.activeStageId === 'string'
-    && Array.isArray(progress.completedTaskIds)
-    && progress.completedTaskIds.every((id) => typeof id === 'string')
     && (progress.practiceAttempts === undefined
       || (typeof progress.practiceAttempts === 'object' && progress.practiceAttempts !== null))
 }
@@ -98,9 +89,6 @@ function sanitizeStoredProgress(
   }
 
   const validStageIds = new Set(path.stages.map((stage) => stage.id))
-  const validTaskIds = new Set(path.stages.flatMap((stage) => (
-    stage.outcomes.map((_, index) => taskId(stage.id, index))
-  )))
   const validQuestions = new Map(practiceStages.flatMap((stage) => (
     stage.questions.map((question) => [question.id, question] as const)
   )))
@@ -125,19 +113,20 @@ function sanitizeStoredProgress(
 
   return {
     activeStageId: validStageIds.has(value.activeStageId) ? value.activeStageId : (path.stages[0]?.id ?? ''),
-    completedTaskIds: [...new Set(value.completedTaskIds.filter((id) => validTaskIds.has(id)))],
     practiceAttempts,
   }
 }
 
-export default function PathWorkspace({ role, company, path, storageOwner }: PathWorkspaceProps) {
+export default function PathWorkspace({
+  role,
+  company,
+  path,
+  practiceStages,
+  storageOwner,
+}: PathWorkspaceProps) {
   const defaultStageId = path.stages[0]?.id ?? ''
-  const isPracticePath = role.id === 'forward-deployed-engineer' && company.id === 'turing'
-  const practiceStages = isPracticePath ? fdeTuringPractice : noPracticeStages
-  const storageVersion = isPracticePath ? 'v2' : 'v1'
-  const storageKey = `vetted-path:${storageVersion}:${storageOwner}:${role.id}:${company.id}`
+  const storageKey = `vetted-path:v2:${storageOwner}:${role.id}:${company.id}`
   const [activeStageId, setActiveStageId] = useState(defaultStageId)
-  const [completedTaskIds, setCompletedTaskIds] = useState<string[]>([])
   const [practiceAttempts, setPracticeAttempts] = useState<PracticeAttempts>({})
   const [storageReady, setStorageReady] = useState(false)
 
@@ -154,7 +143,6 @@ export default function PathWorkspace({ role, company, path, storageOwner }: Pat
 
     startTransition(() => {
       setActiveStageId(savedProgress?.activeStageId ?? defaultStageId)
-      setCompletedTaskIds(savedProgress?.completedTaskIds ?? [])
       setPracticeAttempts(savedProgress?.practiceAttempts ?? {})
       setStorageReady(true)
     })
@@ -165,34 +153,33 @@ export default function PathWorkspace({ role, company, path, storageOwner }: Pat
       return
     }
 
-    const progress: StoredProgress = { activeStageId, completedTaskIds, practiceAttempts }
+    const progress: StoredProgress = { activeStageId, practiceAttempts }
     try {
       window.localStorage.setItem(storageKey, JSON.stringify(progress))
     } catch {
       // Progress remains available for the current session when storage is blocked.
     }
-  }, [activeStageId, completedTaskIds, practiceAttempts, storageKey, storageReady])
+  }, [activeStageId, practiceAttempts, storageKey, storageReady])
 
   const activeStageIndex = Math.max(path.stages.findIndex((stage) => stage.id === activeStageId), 0)
   const activeStage = path.stages[activeStageIndex]
   const activeStagePractice = practiceStages.find((stage) => stage.stageId === activeStage.id)
 
+  if (!activeStagePractice) {
+    throw new Error(`Missing practice stage: ${activeStage.id}`)
+  }
+
   function getStageProgress(stage: AssessmentPath['stages'][number]) {
     const stagePractice = practiceStages.find((practice) => practice.stageId === stage.id)
-    if (stagePractice) {
-      return {
-        completedCount: stagePractice.questions.filter((question) => (
-          isPracticeAttemptPassed(question, practiceAttempts[question.id])
-        )).length,
-        totalCount: stagePractice.questions.length,
-      }
+    if (!stagePractice) {
+      throw new Error(`Missing practice stage: ${stage.id}`)
     }
 
     return {
-      completedCount: stage.outcomes.filter((_, index) => (
-        completedTaskIds.includes(taskId(stage.id, index))
+      completedCount: stagePractice.questions.filter((question) => (
+        isPracticeAttemptPassed(question, practiceAttempts[question.id])
       )).length,
-      totalCount: stage.outcomes.length,
+      totalCount: stagePractice.questions.length,
     }
   }
 
@@ -219,13 +206,6 @@ export default function PathWorkspace({ role, company, path, storageOwner }: Pat
     && activeCompletedCount === activeStageProgress.totalCount
   const isFirstStage = activeStageIndex === 0
   const isLastStage = activeStageIndex === path.stages.length - 1
-
-  function toggleTask(stageId: string, taskIndex: number) {
-    const id = taskId(stageId, taskIndex)
-    setCompletedTaskIds((current) => current.includes(id)
-      ? current.filter((task) => task !== id)
-      : [...current, id])
-  }
 
   function updatePracticeAttempt(questionId: string, attempt: PracticeAttempt) {
     const isKnownQuestion = practiceStages.some((stage) => (
@@ -258,7 +238,6 @@ export default function PathWorkspace({ role, company, path, storageOwner }: Pat
       // Reset the in-memory state even when storage is unavailable.
     }
     setActiveStageId(defaultStageId)
-    setCompletedTaskIds([])
     setPracticeAttempts({})
   }
 
@@ -294,7 +273,7 @@ export default function PathWorkspace({ role, company, path, storageOwner }: Pat
             <div>
               <p className={styles.kicker}>{company.name} assessment roadmap</p>
               <h1>{role.title}</h1>
-              <p>{path.stages.length} ordered rounds · {isPracticePath ? 'Evidence-backed practice sequence' : 'Role-specific preparation sequence'}</p>
+              <p>{path.stages.length} ordered rounds · Evidence-backed practice sequence</p>
             </div>
           </div>
           <div className={styles.overallProgress} aria-label={`${progressPercent}% roadmap complete`}>
@@ -305,7 +284,7 @@ export default function PathWorkspace({ role, company, path, storageOwner }: Pat
             <div className={styles.progressBar}>
               <i style={{ width: `${storageReady ? progressPercent : 0}%` }} />
             </div>
-            <small>{completedTaskCount} of {totalTaskCount} {isPracticePath ? 'practice questions passed' : 'preparation tasks complete'}</small>
+            <small>{completedTaskCount} of {totalTaskCount} practice questions passed</small>
           </div>
         </section>
 
@@ -366,7 +345,7 @@ export default function PathWorkspace({ role, company, path, storageOwner }: Pat
             <div className={styles.stageFactRow}>
               <span><Clock3 size={17} /><small>Expected duration</small><strong>{activeStage.duration}</strong></span>
               <span><Target size={17} /><small>Primary signal</small><strong>{activeStage.type}</strong></span>
-              <span><ListChecks size={17} /><small>{activeStagePractice ? 'Practice questions' : 'Readiness tasks'}</small><strong>{activeStageProgress.totalCount}</strong></span>
+              <span><ListChecks size={17} /><small>Practice questions</small><strong>{activeStageProgress.totalCount}</strong></span>
             </div>
 
             <div className={styles.expectationBlock}>
@@ -374,67 +353,23 @@ export default function PathWorkspace({ role, company, path, storageOwner }: Pat
               <p>{activeStage.summary}</p>
             </div>
 
-            {activeStagePractice ? (
-              <>
-                <PracticeStagePanel
-                  key={activeStagePractice.stageId}
-                  practice={activeStagePractice}
-                  attempts={practiceAttempts}
-                  onAttemptChange={updatePracticeAttempt}
-                />
-                <div className={styles.practiceCompletionWrap}>
-                  <div className={`${styles.stageReadiness} ${activeStageComplete ? styles.stageReady : ''}`}>
-                    {activeStageComplete ? <CheckCircle2 size={19} /> : <Target size={19} />}
-                    <span>
-                      <strong>{activeStageComplete ? 'Round evidence complete' : 'Round evidence still incomplete'}</strong>
-                      <small>{activeStageComplete
-                        ? 'Every required response passed its rubric. Continue in sequence.'
-                        : `${activeCompletedCount} of ${activeStageProgress.totalCount} required responses have passed.`}</small>
-                    </span>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className={styles.preparationBlock}>
-                <div className={styles.preparationHeading}>
-                  <div>
-                    <span>Preparation evidence</span>
-                    <h3>Complete before this round</h3>
-                  </div>
-                  <strong>{activeCompletedCount}/{activeStageProgress.totalCount}</strong>
-                </div>
-
-                <div className={styles.taskList}>
-                  {activeStage.outcomes.map((outcome, index) => {
-                    const id = taskId(activeStage.id, index)
-                    const isChecked = completedTaskIds.includes(id)
-
-                    return (
-                      <label className={styles.taskItem} key={id}>
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => toggleTask(activeStage.id, index)}
-                        />
-                        <span className={styles.customCheckbox}>{isChecked && <Check size={16} />}</span>
-                        <span>
-                          <small>Task {String(index + 1).padStart(2, '0')}</small>
-                          <strong>{outcome}</strong>
-                        </span>
-                      </label>
-                    )
-                  })}
-                </div>
-
-                <div className={`${styles.stageReadiness} ${activeStageComplete ? styles.stageReady : ''}`}>
-                  {activeStageComplete ? <CheckCircle2 size={19} /> : <Target size={19} />}
-                  <span>
-                    <strong>{activeStageComplete ? 'Round preparation complete' : 'Round still in preparation'}</strong>
-                    <small>{activeStageComplete ? 'Continue to the next stage in sequence.' : 'Finish each evidence task before moving forward.'}</small>
-                  </span>
-                </div>
+            <PracticeStagePanel
+              key={activeStagePractice.stageId}
+              practice={activeStagePractice}
+              attempts={practiceAttempts}
+              onAttemptChange={updatePracticeAttempt}
+            />
+            <div className={styles.practiceCompletionWrap}>
+              <div className={`${styles.stageReadiness} ${activeStageComplete ? styles.stageReady : ''}`}>
+                {activeStageComplete ? <CheckCircle2 size={19} /> : <Target size={19} />}
+                <span>
+                  <strong>{activeStageComplete ? 'Round evidence complete' : 'Round evidence still incomplete'}</strong>
+                  <small>{activeStageComplete
+                    ? 'Every required response passed its rubric. Continue in sequence.'
+                    : `${activeCompletedCount} of ${activeStageProgress.totalCount} required responses have passed.`}</small>
+                </span>
               </div>
-            )}
+            </div>
 
             <footer className={styles.stageActions}>
               <button type="button" onClick={() => selectRelativeStage(-1)} disabled={isFirstStage}>

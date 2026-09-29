@@ -1565,6 +1565,82 @@
   color: #287a4d;
 }
 
+.choiceField {
+  padding: 20px 24px 24px;
+  border: 0;
+}
+
+.choiceField legend,
+.objectiveResult > span {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.choiceList {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.choiceList label {
+  min-height: 64px;
+  padding: 11px 13px;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  background: #fcfdfb;
+  border: 1px solid #c7cbc1;
+  border-radius: 4px;
+}
+
+.choiceList label:hover,
+.choiceList label:focus-within,
+.choiceList .selectedChoice {
+  border-color: var(--company-accent);
+  box-shadow: 0 0 0 1px var(--company-accent);
+}
+
+.choiceList input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.choiceList label > span {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  border: 1px solid #b8bdb3;
+  border-radius: 50%;
+}
+
+.choiceList input:checked + span {
+  color: #fff;
+  background: var(--company-accent);
+  border-color: var(--company-accent);
+}
+
+.choiceList label > strong {
+  font-size: 0.72rem;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.choiceField:disabled label {
+  cursor: default;
+  opacity: 0.74;
+}
+
 .reviewGate {
   min-height: 73px;
   padding: 13px 16px;
@@ -1682,6 +1758,44 @@
   color: var(--ink);
   font-size: 0.7rem;
   font-weight: 800;
+}
+
+.objectiveResult {
+  min-width: 0;
+  padding: 22px 24px;
+  color: #755711;
+  background: #fff8dc;
+}
+
+.objectiveResult > div {
+  margin-top: 15px;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.objectiveResult > div > span {
+  display: grid;
+  gap: 2px;
+}
+
+.objectiveResult strong {
+  font-size: 0.82rem;
+}
+
+.objectiveResult small {
+  color: #786b4d;
+  font-size: 0.64rem;
+}
+
+.correctObjectiveResult {
+  color: #205e3d;
+  background: #eaf7ef;
+}
+
+.correctObjectiveResult small {
+  color: #567261;
 }
 
 .rubricScore {

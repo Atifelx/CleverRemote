@@ -20,7 +20,7 @@ import {
   type PracticeAttempt,
   type PracticeAttempts,
   type StagePractice,
-} from '@/lib/fde-turing-practice'
+} from '@/lib/practice-model'
 
 import styles from '../../../experience.module.css'
 
@@ -34,6 +34,14 @@ const emptyAttempt: PracticeAttempt = {
   answer: '',
   reviewed: false,
   criteriaMet: [],
+}
+
+function formatTimeTarget(timeMinutes: number) {
+  const totalSeconds = Math.round(timeMinutes * 60)
+
+  return totalSeconds % 60 === 0
+    ? `${totalSeconds / 60} min target`
+    : `${totalSeconds} sec target`
 }
 
 export default function PracticeStagePanel({
@@ -56,8 +64,11 @@ export default function PracticeStagePanel({
   }
 
   const attempt = attempts[activeQuestion.id] ?? emptyAttempt
+  const isChoiceQuestion = activeQuestion.kind === 'single-choice'
   const answerLength = attempt.answer.trim().length
-  const canReview = answerLength >= activeQuestion.minimumAnswerLength
+  const canReview = isChoiceQuestion
+    ? Boolean(attempt.answer)
+    : answerLength >= activeQuestion.minimumAnswerLength
   const score = getPracticeScore(activeQuestion, attempt)
   const scorePercent = Math.round(score * 100)
   const isPassed = isPracticeAttemptPassed(activeQuestion, attempt)
@@ -160,7 +171,7 @@ export default function PracticeStagePanel({
             <div className={styles.questionMeta}>
               <span>{activeQuestion.kind === 'code-review' ? <Code2 size={14} /> : <FileText size={14} />}</span>
               <span>{activeQuestion.difficulty}</span>
-              <span>{activeQuestion.timeMinutes} min target</span>
+              <span>{formatTimeTarget(activeQuestion.timeMinutes)}</span>
               <span>Source {activeQuestion.id}</span>
             </div>
             <span className={`${styles.questionStatus} ${isPassed ? styles.passedQuestionStatus : ''}`}>
@@ -171,26 +182,54 @@ export default function PracticeStagePanel({
 
           <h4>{activeQuestion.prompt}</h4>
 
-          <label className={styles.answerField} htmlFor={`answer-${activeQuestion.id}`}>
-            <span>{activeQuestion.kind === 'code-review' ? 'Your solution' : 'Your structured response'}</span>
-            <textarea
-              id={`answer-${activeQuestion.id}`}
-              value={attempt.answer}
-              disabled={attempt.reviewed}
-              spellCheck={activeQuestion.kind !== 'code-review'}
-              onChange={(event) => onAttemptChange(activeQuestion.id, {
-                answer: event.target.value,
-                reviewed: false,
-                criteriaMet: [],
-              })}
-              placeholder={activeQuestion.kind === 'code-review'
-                ? 'Write the implementation and note the failure cases you would test...'
-                : 'Draft the answer you would give in the interview...'}
-            />
-            <small className={canReview ? styles.answerReady : ''}>
-              {answerLength} / {activeQuestion.minimumAnswerLength} character minimum before benchmark review
-            </small>
-          </label>
+          {isChoiceQuestion ? (
+            <fieldset className={styles.choiceField} disabled={attempt.reviewed}>
+              <legend>Select one answer</legend>
+              <div className={styles.choiceList}>
+                {activeQuestion.options?.map((option) => (
+                  <label
+                    className={attempt.answer === option.id ? styles.selectedChoice : undefined}
+                    key={option.id}
+                  >
+                    <input
+                      type="radio"
+                      name={`answer-${activeQuestion.id}`}
+                      value={option.id}
+                      checked={attempt.answer === option.id}
+                      onChange={() => onAttemptChange(activeQuestion.id, {
+                        answer: option.id,
+                        reviewed: false,
+                        criteriaMet: [],
+                      })}
+                    />
+                    <span>{option.id.toUpperCase()}</span>
+                    <strong>{option.label}</strong>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          ) : (
+            <label className={styles.answerField} htmlFor={`answer-${activeQuestion.id}`}>
+              <span>{activeQuestion.kind === 'code-review' ? 'Your solution' : 'Your structured response'}</span>
+              <textarea
+                id={`answer-${activeQuestion.id}`}
+                value={attempt.answer}
+                disabled={attempt.reviewed}
+                spellCheck={activeQuestion.kind !== 'code-review'}
+                onChange={(event) => onAttemptChange(activeQuestion.id, {
+                  answer: event.target.value,
+                  reviewed: false,
+                  criteriaMet: [],
+                })}
+                placeholder={activeQuestion.kind === 'code-review'
+                  ? 'Write the implementation and note the failure cases you would test...'
+                  : 'Draft the answer you would give in the interview...'}
+              />
+              <small className={canReview ? styles.answerReady : ''}>
+                {answerLength} / {activeQuestion.minimumAnswerLength} character minimum before benchmark review
+              </small>
+            </label>
+          )}
 
           {!attempt.reviewed ? (
             <div className={styles.reviewGate}>
@@ -198,50 +237,67 @@ export default function PracticeStagePanel({
                 <ShieldCheck size={18} />
                 <span>
                   <strong>Answer before revealing the benchmark</strong>
-                  <small>Your draft stays on this device and is the evidence used for rubric review.</small>
+                  <small>{isChoiceQuestion
+                    ? 'Your selection is checked only after you commit to an answer.'
+                    : 'Your draft stays on this device and is the evidence used for rubric review.'}</small>
                 </span>
               </div>
               <button type="button" disabled={!canReview} onClick={revealBenchmark}>
-                <BookOpenCheck size={16} /> Compare with benchmark
+                <BookOpenCheck size={16} /> {isChoiceQuestion ? 'Check answer' : 'Compare with benchmark'}
               </button>
             </div>
           ) : (
             <div className={styles.reviewWorkspace}>
               <section className={styles.referencePanel}>
-                <span>{activeQuestion.kind === 'code-review' ? 'Reference solution' : 'Model answer'}</span>
+                <span>{isChoiceQuestion
+                  ? 'Answer explanation'
+                  : activeQuestion.kind === 'code-review' ? 'Reference solution' : 'Model answer'}</span>
                 <pre className={activeQuestion.kind === 'code-review' ? styles.codeReference : ''}>
                   {activeQuestion.referenceAnswer}
                 </pre>
               </section>
 
-              <fieldset className={styles.rubricPanel}>
-                <legend>Score only what your submitted answer demonstrates</legend>
-                <div className={styles.rubricScore}>
-                  <span>
-                    <strong>{scorePercent}%</strong>
-                    <small>{Math.round(PRACTICE_PASS_SCORE * 100)}% required</small>
-                  </span>
-                  <i><b style={{ width: `${scorePercent}%` }} /></i>
-                </div>
-                <div className={styles.rubricList}>
-                  {activeQuestion.criteria.map((criterion, index) => {
-                    const isMet = attempt.criteriaMet.includes(index)
+              {isChoiceQuestion ? (
+                <section className={`${styles.objectiveResult} ${isPassed ? styles.correctObjectiveResult : ''}`}>
+                  <span>Answer check</span>
+                  <div>
+                    {isPassed ? <CheckCircle2 size={24} /> : <Target size={24} />}
+                    <span>
+                      <strong>{isPassed ? 'Correct' : 'Not correct yet'}</strong>
+                      <small>The correct answer is {activeQuestion.correctOptionId?.toUpperCase()}.</small>
+                    </span>
+                  </div>
+                </section>
+              ) : (
+                <fieldset className={styles.rubricPanel}>
+                  <legend>Score only what your submitted answer demonstrates</legend>
+                  <div className={styles.rubricScore}>
+                    <span>
+                      <strong>{scorePercent}%</strong>
+                      <small>{Math.round(PRACTICE_PASS_SCORE * 100)}% required</small>
+                    </span>
+                    <i><b style={{ width: `${scorePercent}%` }} /></i>
+                  </div>
+                  <div className={styles.rubricList}>
+                    {activeQuestion.criteria.map((criterion, index) => {
+                      const isMet = attempt.criteriaMet.includes(index)
 
-                    return (
-                      <label key={criterion.label}>
-                        <input
-                          type="checkbox"
-                          checked={isMet}
-                          onChange={() => toggleCriterion(index)}
-                        />
-                        <span className={styles.rubricCheck}>{isMet && <Check size={14} />}</span>
-                        <span>{criterion.label}</span>
-                        <small>{criterion.weight} pt</small>
-                      </label>
-                    )
-                  })}
-                </div>
-              </fieldset>
+                      return (
+                        <label key={criterion.label}>
+                          <input
+                            type="checkbox"
+                            checked={isMet}
+                            onChange={() => toggleCriterion(index)}
+                          />
+                          <span className={styles.rubricCheck}>{isMet && <Check size={14} />}</span>
+                          <span>{criterion.label}</span>
+                          <small>{criterion.weight} pt</small>
+                        </label>
+                      )
+                    })}
+                  </div>
+                </fieldset>
+              )}
 
               <div className={`${styles.questionResult} ${isPassed ? styles.passedQuestionResult : ''}`}>
                 {isPassed ? <CheckCircle2 size={19} /> : <Target size={19} />}
@@ -249,11 +305,13 @@ export default function PracticeStagePanel({
                   <strong>{isPassed ? 'Evidence accepted' : 'Revision still needed'}</strong>
                   <small>{isPassed
                     ? 'This question now contributes to weighted roadmap readiness.'
-                    : 'Revise your answer until it genuinely covers enough of the weighted rubric.'}</small>
+                    : isChoiceQuestion
+                      ? 'Review the explanation, then revise your selection.'
+                      : 'Revise your answer until it genuinely covers enough of the weighted rubric.'}</small>
                 </span>
                 <div>
                   <button type="button" onClick={reviseAnswer}>
-                    <RotateCcw size={15} /> Revise response
+                    <RotateCcw size={15} /> {isChoiceQuestion ? 'Try again' : 'Revise response'}
                   </button>
                   {isPassed && nextQuestion && (
                     <button type="button" onClick={() => setActiveQuestionId(nextQuestion.id)}>

@@ -10,6 +10,7 @@ import {
   isCompanyId,
   isRoleId,
 } from '@/lib/assessment-paths'
+import { getPracticeStages } from '@/lib/practice-curricula'
 
 import PathWorkspace from './path-workspace'
 
@@ -57,12 +58,15 @@ export default async function AssessmentPathPage({ params }: AssessmentPathPageP
     notFound()
   }
 
+  const practiceStages = getPracticeStages(role.id, company.id)
+
   return (
     <PathWorkspace
       key={`${role.id}:${company.id}`}
       role={role}
       company={company}
       path={path}
+      practiceStages={practiceStages}
       storageOwner={userId ?? 'browser'}
     />
   )
