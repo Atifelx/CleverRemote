@@ -22,7 +22,13 @@ const allQuestions = [
 const questionBank = new Map<string, PracticeQuestion>()
 
 for (const question of allQuestions) {
-  if (questionBank.has(question.id)) {
+  const existingQuestion = questionBank.get(question.id)
+
+  if (existingQuestion === question) {
+    continue
+  }
+
+  if (existingQuestion) {
     throw new Error(`Duplicate practice question: ${question.id}`)
   }
 
@@ -117,7 +123,7 @@ const practiceCurricula: Record<CurriculumKey, StagePractice[]> = {
     { stageId: 'technical-screen', questionIds: ['sd-003', 'sd-009', 'pd-108', 'rd-007'] },
     { stageId: 'live-screening', questionIds: ['lct-208', 'lct-206', 'lct-301', 'lct-605'] },
     { stageId: 'test-project', questionIds: ['lct-401', 'lct-403', 'lct-405', 'cd-505'] },
-    { stageId: 'excellence-review', questionIds: ['lct-402', 'lct-404', 'pd-113', 'pd-111'] },
+    { stageId: 'excellence-review', questionIds: ['be-401', 'fce-210', 'pd-113', 'pd-111'] },
   ]),
   'ai-engineer:turing': buildCurriculum('ai-engineer', 'turing', [
     { stageId: 'profile-signal', questionIds: ['pd-101', 'pd-102', 'pd-108', 'pd-120'] },

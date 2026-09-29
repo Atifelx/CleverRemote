@@ -1,3 +1,4 @@
+import { getHistoricalPracticeQuestion } from './historical-practice-questions'
 import type { StagePractice } from './practice-model'
 
 export const fdeTuringPractice: StagePractice[] = [
@@ -86,44 +87,15 @@ export const fdeTuringPractice: StagePractice[] = [
   },
   {
     stageId: 'problem-solving',
-    competency: 'This round tests whether you can write production-minded code under a time limit. Strong answers control memory, handle failure explicitly, and explain the tradeoff that makes the solution safe.',
+    competency: 'Turing’s qualification includes a role-aligned tech-stack test and live coding challenge. Prepare both production-minded implementation and representative data-structure and algorithm fundamentals without assuming a separate DSA-only round.',
     preparation: [
       'State constraints and failure cases before coding.',
-      'Prefer bounded-memory streaming and explicit backpressure for large inputs.',
+      'Review hash maps, arrays, strings, complexity, and common data-structure patterns.',
       'Use the final minutes to test edge cases and narrate operational behavior.',
     ],
     completionRule: 'Submit a solution or debug plan for each drill, compare it with the benchmark, and score 70% or better.',
     questions: [
-      {
-        id: 'lct-601',
-        source: 'data/questions/27-live-coding-take-home.json',
-        kind: 'code-review',
-        difficulty: 'medium',
-        topic: 'Streaming file copy',
-        timeMinutes: 20,
-        prompt: 'Copy a 5GB file safely without running out of memory or dropping bytes. Report progress every 100MB.',
-        referenceAnswer: `const fs = require('fs')
-const { pipeline } = require('stream/promises')
-
-async function copy(source, destination) {
-  let copied = 0
-  const input = fs.createReadStream(source)
-  input.on('data', (chunk) => {
-    copied += chunk.length
-    if (copied % (100 * 1024 * 1024) < chunk.length) {
-      console.log(\`${'${(copied / 1e6).toFixed(0)}'} MB\`)
-    }
-  })
-  await pipeline(input, fs.createWriteStream(destination))
-}`,
-        criteria: [
-          { label: 'Streams the file instead of loading it into memory', weight: 3 },
-          { label: 'Handles read, write, and pipeline failures', weight: 3 },
-          { label: 'Respects write backpressure', weight: 3 },
-          { label: 'Reports each crossed 100MB boundary without relying on exact chunk sizes', weight: 2 },
-        ],
-        minimumAnswerLength: 140,
-      },
+      getHistoricalPracticeQuestion('de-019'),
       {
         id: 'lct-603',
         source: 'data/questions/27-live-coding-take-home.json',
@@ -213,7 +185,7 @@ async function filter(inputPath, outputPath) {
   },
   {
     stageId: 'technical-vetting',
-    competency: 'The interviewer is evaluating your reasoning more than a single diagram. Clarify guarantees and constraints, choose a design, and make reliability, security, tenancy, and operations visible.',
+    competency: 'If a matched client adds a technical interview, your reasoning matters more than a single diagram. Clarify guarantees and constraints, choose a design, and make reliability, security, tenancy, and operations visible.',
     preparation: [
       'Open with requirement questions and state the guarantees you are optimizing for.',
       'Trace one request or event through the design before adding scale components.',
@@ -307,7 +279,7 @@ async function filter(inputPath, outputPath) {
   },
   {
     stageId: 'delivery-simulation',
-    competency: 'Customer delivery starts by reducing ambiguity. The strongest response identifies the decision-maker and metric, maps constraints, and proposes a reversible first release before automation.',
+    competency: 'For client processes that include a delivery case, start by reducing ambiguity. Identify the decision-maker and metric, map constraints, and propose a reversible first release before automation.',
     preparation: [
       'Turn broad requests into one measurable workflow and named owner.',
       'Sequence discovery, shadow mode, advisory behavior, and automation by risk.',
@@ -393,7 +365,7 @@ async function filter(inputPath, outputPath) {
   },
   {
     stageId: 'matching',
-    competency: 'Matching checks whether a client can trust you in a live engagement. Demonstrate calm ownership, proactive stakeholder management, durable handoff, and a direct connection between your experience and the client situation.',
+    competency: 'Matching aligns your verified skills and availability to suitable work; any later client evaluation varies by engagement. Prepare to demonstrate calm ownership, proactive stakeholder management, durable handoff, and a direct connection to the client situation.',
     preparation: [
       'Answer in the first person and lead with the client impact, not your intention.',
       'Offer dated options and next checkpoints when delivery is at risk.',
