@@ -1,66 +1,106 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+import type { LucideIcon } from 'lucide-react'
+import {
+  ArrowRight,
+  Bot,
+  BriefcaseBusiness,
+  Check,
+  Network,
+} from 'lucide-react'
+import Link from 'next/link'
+
+import { assessmentPaths, roles, type RoleId } from '@/lib/assessment-paths'
+
+import AuthControls from './auth-controls'
+import BrandLink from './brand-link'
+import styles from './experience.module.css'
+
+const roleIcons: Record<RoleId, LucideIcon> = {
+  'forward-deployed-engineer': BriefcaseBusiness,
+  'ai-engineer': Bot,
+  'ai-forward-deployed-engineer': Network,
+}
 
 export default function Home() {
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.tsx file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main className={styles.screen}>
+      <header className={styles.topbar}>
+        <BrandLink />
+        <div className={styles.topbarActions}>
+          <div className={styles.stepStatus} aria-label="Step 1 of 3">
+            <span>01</span>
+            <div className={styles.stepTrack}><i /></div>
+            <span className={styles.stepTotal}>03</span>
+          </div>
+          <AuthControls />
+        </div>
+      </header>
+
+      <div className={styles.selectionLayout}>
+        <section className={styles.introPanel}>
+          <p className={styles.kicker}>Start your route</p>
+          <h1>Which role are you preparing for?</h1>
+          <p className={styles.lede}>
+            Your target role changes the interview sequence, technical depth, and practice plan.
           </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+
+          <div className={styles.routePreview}>
+            <div className={styles.routePreviewItem}>
+              <span className={styles.routePreviewNumber}>01</span>
+              <span><strong>Role</strong><small>Choose your discipline</small></span>
+              <Check size={16} aria-hidden="true" />
+            </div>
+            <div className={styles.routePreviewItem}>
+              <span className={styles.routePreviewNumber}>02</span>
+              <span><strong>Company</strong><small>Select the hiring process</small></span>
+            </div>
+            <div className={styles.routePreviewItem}>
+              <span className={styles.routePreviewNumber}>03</span>
+              <span><strong>Roadmap</strong><small>Work through every round</small></span>
+            </div>
+          </div>
+
+          <p className={styles.sourceNote}>
+            Hiring flows change. Each roadmap includes a confidence level and review date.
+          </p>
+        </section>
+
+        <section className={styles.choicePanel} aria-labelledby="role-list-title">
+          <div className={styles.choiceHeader}>
+            <div>
+              <p className={styles.choiceLabel}>Target role</p>
+              <h2 id="role-list-title">Select one path</h2>
+            </div>
+            <span className={styles.choiceCount}>{roles.length} paths</span>
+          </div>
+
+          <div className={styles.roleList}>
+            {roles.map((role, index) => {
+              const Icon = roleIcons[role.id]
+              const stageCount = assessmentPaths.find((path) => path.roleId === role.id)?.stages.length ?? 0
+
+              return (
+                <Link className={styles.roleCard} href={`/prepare/${role.id}`} key={role.id}>
+                  <span className={styles.roleIndex}>{String(index + 1).padStart(2, '0')}</span>
+                  <span className={styles.roleIcon}><Icon size={24} strokeWidth={1.8} /></span>
+                  <span className={styles.roleBody}>
+                    <span className={styles.roleEyebrow}>{role.eyebrow}</span>
+                    <strong>{role.title}</strong>
+                    <span className={styles.roleDescription}>{role.description}</span>
+                    <span className={styles.skillRow}>
+                      {role.skills.map((skill) => <span key={skill}>{skill}</span>)}
+                    </span>
+                  </span>
+                  <span className={styles.roleMeta}>
+                    <span>3 companies</span>
+                    <span>{stageCount} rounds each</span>
+                  </span>
+                  <ArrowRight className={styles.cardArrow} size={21} aria-hidden="true" />
+                </Link>
+              )
+            })}
+          </div>
+        </section>
+      </div>
+    </main>
+  )
 }
