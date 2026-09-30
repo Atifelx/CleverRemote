@@ -613,12 +613,413 @@
   color: var(--path-accent);
 }
 
+.workspaceModeBar {
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.workspaceModeBar > span {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+}
+
+.workspaceModeTabs {
+  display: inline-flex;
+  gap: 3px;
+  padding: 4px;
+  background: #ecefe8;
+  border-radius: 6px;
+}
+
+.workspaceModeTabs button {
+  min-height: 34px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 0.68rem;
+  font-weight: 800;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+}
+
+.workspaceModeTabs button:hover,
+.workspaceModeTabs button:focus-visible,
+.workspaceModeTabs .activeWorkspaceMode {
+  color: var(--ink);
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(23, 25, 21, 0.14);
+  outline: none;
+}
+
 .exampleWorkspace {
   margin-top: 30px;
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr);
   align-items: start;
   border: 1px solid var(--line);
+}
+
+.masteryWorkspace {
+  margin-top: 30px;
+  border: 1px solid var(--line);
+}
+
+.masteryHeader {
+  min-height: 112px;
+  padding: 22px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  background: #171915;
+  color: #fff;
+  border-top: 4px solid var(--path-accent);
+}
+
+.masteryHeader > div > span {
+  color: var(--lime);
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.masteryHeader h3 {
+  margin-top: 6px;
+  font-size: 1.25rem;
+  letter-spacing: 0;
+}
+
+.masteryHeader p {
+  max-width: 620px;
+  margin-top: 7px;
+  color: #b9c0b5;
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.masteryHeader > strong {
+  flex: none;
+  color: var(--lime);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+}
+
+.masteryLayout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  align-items: start;
+}
+
+.masteryTopicList {
+  max-height: 690px;
+  overflow-y: auto;
+  border-right: 1px solid var(--line);
+}
+
+.masteryTopicButton {
+  width: 100%;
+  min-height: 58px;
+  padding: 9px 12px;
+  display: grid;
+  grid-template-columns: 17px minmax(0, 1fr) 15px;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  background: #fafbf8;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.masteryTopicButton > span {
+  min-width: 0;
+  display: grid;
+}
+
+.masteryTopicButton strong {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 0.7rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.masteryTopicButton small {
+  margin-top: 3px;
+  font-size: 0.57rem;
+}
+
+.masteryTopicButton:hover,
+.masteryTopicButton:focus-visible,
+.activeMasteryTopic {
+  color: var(--path-accent);
+  background: color-mix(in srgb, var(--path-accent) 8%, white);
+  outline: none;
+}
+
+.activeMasteryTopic {
+  box-shadow: inset 3px 0 0 var(--path-accent);
+}
+
+.masteredTopic > svg:first-child {
+  color: #237147;
+}
+
+.masteryQuestion {
+  min-width: 0;
+  padding: clamp(24px, 4vw, 42px);
+}
+
+.masteryQuestion > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.masteryQuestion > header > span:last-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.63rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.masteryQuestion > header .masteryPassedStatus {
+  color: #237147;
+}
+
+.masteryQuestionMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.masteryQuestionMeta span {
+  padding: 4px 7px;
+  color: var(--muted);
+  font-size: 0.58rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  background: #f1f3ee;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+
+.masteryTopicProgress {
+  margin-top: 22px;
+  display: grid;
+  grid-template-columns: auto minmax(80px, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 0.63rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.masteryTopicProgress i {
+  height: 4px;
+  overflow: hidden;
+  background: #e3e6df;
+}
+
+.masteryTopicProgress b {
+  height: 100%;
+  display: block;
+  background: var(--path-accent);
+  transition: width 180ms ease;
+}
+
+.masteryTopicProgress strong {
+  color: var(--ink);
+  font-family: var(--font-mono);
+}
+
+.masteryQuestion h4 {
+  max-width: 780px;
+  margin-top: 27px;
+  font-family: var(--font-display, Georgia, serif);
+  font-size: clamp(1.35rem, 2.5vw, 2rem);
+  font-weight: 500;
+  line-height: 1.22;
+  letter-spacing: 0;
+}
+
+.masteryChoices {
+  min-width: 0;
+  margin-top: 25px;
+  display: grid;
+  gap: 8px;
+  border: 0;
+}
+
+.masteryChoices legend {
+  margin-bottom: 9px;
+  color: var(--muted);
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.masteryChoices label {
+  min-height: 52px;
+  padding: 8px 13px;
+  display: grid;
+  grid-template-columns: 29px minmax(0, 1fr) 17px;
+  align-items: center;
+  gap: 11px;
+  cursor: pointer;
+  background: #fafbf8;
+  border: 1px solid var(--line);
+}
+
+.masteryChoices label:hover,
+.masteryChoices label:focus-within,
+.masteryChoices .selectedMasteryChoice {
+  border-color: var(--path-accent);
+  background: color-mix(in srgb, var(--path-accent) 6%, white);
+}
+
+.masteryChoices input {
+  position: absolute;
+  opacity: 0;
+}
+
+.masteryChoices label > span {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.67rem;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+}
+
+.masteryChoices label > strong {
+  min-width: 0;
+  font-size: 0.76rem;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.masteryChoices .correctMasteryChoice {
+  border-color: #83c49e;
+  background: #edf8f1;
+}
+
+.masteryChoices .correctMasteryChoice > span {
+  color: #fff;
+  background: #237147;
+  border-color: #237147;
+}
+
+.masteryChoices .correctMasteryChoice > svg {
+  color: #237147;
+}
+
+.masteryChoices .wrongMasteryChoice {
+  border-color: #d99a91;
+  background: #fff2f0;
+}
+
+.masteryCheckBar,
+.masteryReview {
+  margin-top: 24px;
+  padding-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.masteryCheckBar > span {
+  color: var(--muted);
+  font-size: 0.64rem;
+}
+
+.masteryCheckBar button,
+.masteryReview button {
+  min-height: 38px;
+  padding: 0 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.68rem;
+  font-weight: 800;
+  cursor: pointer;
+  background: var(--path-accent);
+  border: 1px solid var(--path-accent);
+  border-radius: 5px;
+}
+
+.masteryCheckBar button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.masteryReview {
+  align-items: flex-end;
+}
+
+.masteryReview > div:first-child {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  color: #a13b30;
+}
+
+.masteryReview > div:first-child > span {
+  display: grid;
+}
+
+.masteryReview strong {
+  color: var(--ink);
+  font-size: 0.76rem;
+}
+
+.masteryReview p {
+  max-width: 650px;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1.55;
+}
+
+.masteryReview > div:last-child {
+  flex: none;
+  display: flex;
+  gap: 8px;
+}
+
+.masteryReviewPassed > div:first-child {
+  color: #237147;
+}
+
+.masteredQuestionSet {
+  box-shadow: inset 0 4px 0 #83c49e;
 }
 
 .exampleIndex {
@@ -1032,6 +1433,27 @@
     grid-template-columns: 1fr;
   }
 
+  .masteryLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .masteryTopicList {
+    display: flex;
+    max-height: none;
+    overflow-x: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .masteryTopicButton {
+    min-width: 180px;
+    border-right: 1px solid var(--line);
+  }
+
+  .activeMasteryTopic {
+    box-shadow: inset 0 -3px 0 var(--path-accent);
+  }
+
   .exampleIndex {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1144,6 +1566,54 @@
     border-left: 0;
   }
 
+  .workspaceModeBar,
+  .masteryHeader,
+  .masteryCheckBar,
+  .masteryReview {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .workspaceModeBar {
+    padding: 12px 0;
+  }
+
+  .workspaceModeTabs {
+    width: 100%;
+  }
+
+  .workspaceModeTabs button {
+    flex: 1;
+  }
+
+  .masteryHeader > strong {
+    align-self: flex-start;
+  }
+
+  .masteryQuestion {
+    padding: 24px 18px;
+  }
+
+  .masteryQuestion > header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .masteryTopicProgress {
+    grid-template-columns: 1fr auto;
+  }
+
+  .masteryTopicProgress i {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .masteryReview > div:last-child,
+  .masteryReview button,
+  .masteryCheckBar button {
+    width: 100%;
+  }
+
   .exampleIndex {
     grid-template-columns: 1fr;
     max-height: 290px;
@@ -1171,7 +1641,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .pathCard,
-  .overallProgress b {
+  .overallProgress b,
+  .masteryTopicProgress b {
     transition: none;
   }
 }

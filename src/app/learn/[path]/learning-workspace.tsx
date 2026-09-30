@@ -5,6 +5,7 @@ import { startTransition, useEffect, useState } from 'react'
 import {
   ArrowLeft,
   ArrowRight,
+  BrainCircuit,
   BookOpen,
   Check,
   CheckCircle2,
@@ -17,12 +18,13 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 
-import type { LearningPath } from '@/lib/learning-model'
-import { getLearningExampleCount } from '@/lib/learning-model'
+import type { LearningMasteryAttempts, LearningPath } from '@/lib/learning-model'
+import { getLearningExampleCount, getLearningMasteryQuestions } from '@/lib/learning-model'
 
 import AuthControls from '../../auth-controls'
 import BrandLink from '../../brand-link'
 import styles from '../learn.module.css'
+import LearningMasteryPanel from './learning-mastery-panel'
 
 type LearningWorkspaceProps = {
   path: LearningPath
@@ -34,6 +36,12 @@ type StoredLearningProgress = {
   activeExampleId: string
   completedExampleIds: string[]
 }
+
+type StoredMasteryProgress = {
+  attempts: LearningMasteryAttempts
+}
+
+type WorkspaceMode = 'learn' | 'mastery'
 
 function sanitizeProgress(value: unknown, path: LearningPath): StoredLearningProgress | undefined {
   if (!value || typeof value !== 'object') {
@@ -65,14 +73,53 @@ function sanitizeProgress(value: unknown, path: LearningPath): StoredLearningPro
   }
 }
 
+function sanitizeMasteryProgress(value: unknown, path: LearningPath): StoredMasteryProgress {
+  const stored = value && typeof value === 'object'
+    ? value as Partial<StoredMasteryProgress>
+    : undefined
+  const validQuestions = new Map(path.chapters.flatMap((chapter) => (
+    chapter.masteryTopics.flatMap((topic) => (
+      getLearningMasteryQuestions(topic).map((question) => [question.id, question] as const)
+    ))
+  )))
+  const attempts: LearningMasteryAttempts = {}
+
+  if (!stored?.attempts || typeof stored.attempts !== 'object') {
+    return { attempts }
+  }
+
+  Object.entries(stored.attempts).forEach(([questionId, attempt]) => {
+    const question = validQuestions.get(questionId)
+    if (
+      question
+      && attempt
+      && typeof attempt === 'object'
+      && typeof attempt.selectedOptionId === 'string'
+      && question.options.some((option) => option.id === attempt.selectedOptionId)
+      && typeof attempt.reviewed === 'boolean'
+    ) {
+      attempts[questionId] = {
+        selectedOptionId: attempt.selectedOptionId,
+        reviewed: attempt.reviewed,
+      }
+    }
+  })
+
+  return { attempts }
+}
+
 export default function LearningWorkspace({ path, storageOwner }: LearningWorkspaceProps) {
   const firstChapter = path.chapters[0]
   const firstExample = firstChapter?.examples[0]
   const storageKey = `clevercrack:learning:v1:${storageOwner}:${path.id}`
+  const masteryStorageKey = `clevercrack:learning-mastery:v1:${storageOwner}:${path.id}`
   const [activeChapterId, setActiveChapterId] = useState(firstChapter?.id ?? '')
   const [activeExampleId, setActiveExampleId] = useState(firstExample?.id ?? '')
   const [completedExampleIds, setCompletedExampleIds] = useState<string[]>([])
+  const [masteryAttempts, setMasteryAttempts] = useState<LearningMasteryAttempts>({})
+  const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>('learn')
   const [storageReady, setStorageReady] = useState(false)
+  const [masteryStorageReady, setMasteryStorageReady] = useState(false)
 
   useEffect(() => {
     let progress: StoredLearningProgress | undefined
@@ -94,6 +141,23 @@ export default function LearningWorkspace({ path, storageOwner }: LearningWorksp
   }, [firstChapter?.id, firstExample?.id, path, storageKey])
 
   useEffect(() => {
+    let progress: StoredMasteryProgress = { attempts: {} }
+
+    try {
+      const storedValue = window.localStorage.getItem(masteryStorageKey)
+      const parsedValue: unknown = storedValue ? JSON.parse(storedValue) : undefined
+      progress = sanitizeMasteryProgress(parsedValue, path)
+    } catch {
+      progress = { attempts: {} }
+    }
+
+    startTransition(() => {
+      setMasteryAttempts(progress.attempts)
+      setMasteryStorageReady(true)
+    })
+  }, [masteryStorageKey, path])
+
+  useEffect(() => {
     if (!storageReady) {
       return
     }
@@ -108,6 +172,20 @@ export default function LearningWorkspace({ path, storageOwner }: LearningWorksp
       // Progress remains available in memory when browser storage is blocked.
     }
   }, [activeChapterId, activeExampleId, completedExampleIds, storageKey, storageReady])
+
+  useEffect(() => {
+    if (!masteryStorageReady) {
+      return
+    }
+
+    try {
+      window.localStorage.setItem(masteryStorageKey, JSON.stringify({
+        attempts: masteryAttempts,
+      } satisfies StoredMasteryProgress))
+    } catch {
+      // Mastery attempts remain available in memory when browser storage is blocked.
+    }
+  }, [masteryAttempts, masteryStorageKey, masteryStorageReady])
 
   const completedIds = new Set(completedExampleIds)
   const chapterIndex = Math.max(path.chapters.findIndex((chapter) => chapter.id === activeChapterId), 0)
@@ -133,6 +211,9 @@ export default function LearningWorkspace({ path, storageOwner }: LearningWorksp
     const firstIncomplete = selectedChapter.examples.find((item) => !completedIds.has(item.id))
     setActiveChapterId(selectedChapter.id)
     setActiveExampleId(firstIncomplete?.id ?? selectedChapter.examples[0]?.id ?? '')
+    if (selectedChapter.masteryTopics.length === 0) {
+      setWorkspaceMode('learn')
+    }
   }
 
   function setExampleComplete(shouldComplete: boolean) {
@@ -168,12 +249,19 @@ export default function LearningWorkspace({ path, storageOwner }: LearningWorksp
   function resetProgress() {
     try {
       window.localStorage.removeItem(storageKey)
+      window.localStorage.removeItem(masteryStorageKey)
     } catch {
       // Reset in-memory progress even when browser storage is blocked.
     }
     setActiveChapterId(firstChapter?.id ?? '')
     setActiveExampleId(firstExample?.id ?? '')
     setCompletedExampleIds([])
+    setMasteryAttempts({})
+    setWorkspaceMode('learn')
+  }
+
+  function setMasteryAttempt(questionId: string, attempt: LearningMasteryAttempts[string]) {
+    setMasteryAttempts((current) => ({ ...current, [questionId]: attempt }))
   }
 
   return (
@@ -260,7 +348,33 @@ export default function LearningWorkspace({ path, storageOwner }: LearningWorksp
               {chapter.outcomes.map((outcome) => <span key={outcome}><Check size={14} />{outcome}</span>)}
             </div>
 
-            <div className={styles.exampleWorkspace}>
+            {chapter.masteryTopics.length > 0 ? (
+              <div className={styles.workspaceModeBar}>
+                <div className={styles.workspaceModeTabs} role="tablist" aria-label="Learning mode">
+                  <button
+                    className={workspaceMode === 'learn' ? styles.activeWorkspaceMode : undefined}
+                    type="button"
+                    role="tab"
+                    aria-selected={workspaceMode === 'learn'}
+                    onClick={() => setWorkspaceMode('learn')}
+                  >
+                    <BookOpen size={15} /> Learn
+                  </button>
+                  <button
+                    className={workspaceMode === 'mastery' ? styles.activeWorkspaceMode : undefined}
+                    type="button"
+                    role="tab"
+                    aria-selected={workspaceMode === 'mastery'}
+                    onClick={() => setWorkspaceMode('mastery')}
+                  >
+                    <BrainCircuit size={15} /> Mastery test
+                  </button>
+                </div>
+                <span>{chapter.masteryTopics.reduce((total, topic) => total + topic.questionTarget, 0)} checks / {chapter.masteryTopics.length} topics</span>
+              </div>
+            ) : null}
+
+            {workspaceMode === 'learn' ? <div className={styles.exampleWorkspace}>
               <nav className={styles.exampleIndex} aria-label={`${chapter.title} examples`}>
                 <header><span>Worked examples</span><strong>{chapter.examples.length}</strong></header>
                 {chapter.examples.map((item, index) => (
@@ -357,7 +471,14 @@ export default function LearningWorkspace({ path, storageOwner }: LearningWorksp
                   )}
                 </div>
               </article>
-            </div>
+            </div> : (
+              <LearningMasteryPanel
+                key={chapter.id}
+                chapter={chapter}
+                attempts={masteryAttempts}
+                onAttemptChange={setMasteryAttempt}
+              />
+            )}
           </section>
         </div>
       </div>

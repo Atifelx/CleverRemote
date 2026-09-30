@@ -3,6 +3,7 @@ import { softwareBackendLessonDetails } from './software-core-content-backend'
 import { softwareDesignLessonDetails } from './software-core-content-design'
 import { softwareFoundationsLessonDetails } from './software-core-content-foundations'
 import { softwareOperationsLessonDetails } from './software-core-content-operations'
+import { programmingFundamentalsMasteryTopics } from './software-core-mastery-fundamentals'
 import type { SoftwareLessonDetails } from './software-core-lesson-types'
 import {
   defineLearningPath,
@@ -51,6 +52,7 @@ export const softwareCoreLearningPath = defineLearningPath({
       summary: 'Reason clearly about values, control flow, functions, state, errors, and cost before reaching for frameworks.',
       outcomes: ['Trace a program by hand', 'Choose clear control flow', 'Explain runtime and memory costs'],
       platformFocus: 'Commonly appears as screening questions, code reading, or the opening discussion in a live exercise.',
+      masteryTopics: programmingFundamentalsMasteryTopics,
       examples: [
         {
           title: 'Values and types',
