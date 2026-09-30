@@ -3,6 +3,7 @@
 import {
   Check,
   CheckCircle2,
+  ChevronLeft,
   ChevronRight,
   Circle,
   RotateCcw,
@@ -68,6 +69,10 @@ export default function LearningMasteryPanel({
   const isPassed = isLearningMasteryAttemptPassed(activeQuestion, attempt)
   const passedCount = getPassedCount(activeTopic, attempts)
   const topicMastered = passedCount === questions.length
+  const previousQuestion = questions[activeQuestionIndex - 1]
+  const nextQuestion = questions[activeQuestionIndex + 1]
+  const previousTopic = chapter.masteryTopics[activeTopicIndex - 1]
+  const nextTopic = chapter.masteryTopics[activeTopicIndex + 1]
   const masteredTopicCount = chapter.masteryTopics.filter((topic) => (
     getPassedCount(topic, attempts) === topic.questionTarget
   )).length
@@ -87,6 +92,32 @@ export default function LearningMasteryPanel({
 
     setActiveTopicId(topic.id)
     setActiveQuestionId(nextQuestion?.id ?? '')
+  }
+
+  function goToPreviousQuestion() {
+    if (previousQuestion) {
+      setActiveQuestionId(previousQuestion.id)
+      return
+    }
+
+    if (previousTopic) {
+      const previousTopicQuestions = getLearningMasteryQuestions(previousTopic)
+      setActiveTopicId(previousTopic.id)
+      setActiveQuestionId(previousTopicQuestions.at(-1)?.id ?? '')
+    }
+  }
+
+  function goToNextQuestion() {
+    if (nextQuestion) {
+      setActiveQuestionId(nextQuestion.id)
+      return
+    }
+
+    if (nextTopic) {
+      const nextTopicQuestions = getLearningMasteryQuestions(nextTopic)
+      setActiveTopicId(nextTopic.id)
+      setActiveQuestionId(nextTopicQuestions[0]?.id ?? '')
+    }
   }
 
   function advance() {
@@ -187,6 +218,24 @@ export default function LearningMasteryPanel({
               )
             })}
           </fieldset>
+
+          <nav className={styles.masteryQuestionNavigation} aria-label={`${activeTopic.title} question navigation`}>
+            <button
+              type="button"
+              disabled={!previousQuestion && !previousTopic}
+              onClick={goToPreviousQuestion}
+            >
+              <ChevronLeft size={15} /> Previous
+            </button>
+            <span>{activeQuestionIndex + 1} of {questions.length}</span>
+            <button
+              type="button"
+              disabled={!nextQuestion && !nextTopic}
+              onClick={goToNextQuestion}
+            >
+              Next <ChevronRight size={15} />
+            </button>
+          </nav>
 
           {!attempt.reviewed ? (
             <div className={styles.masteryCheckBar}>

@@ -5,6 +5,7 @@ import { softwareFoundationsLessonDetails } from './software-core-content-founda
 import { softwareOperationsLessonDetails } from './software-core-content-operations'
 import { dsaMasteryTopics } from './software-core-mastery-dsa'
 import { programmingFundamentalsMasteryTopics } from './software-core-mastery-fundamentals'
+import { oopCleanCodeMasteryTopics } from './software-core-mastery-oop-clean-code'
 import { pythonEngineeringMasteryTopics } from './software-core-mastery-python'
 import type { SoftwareLessonDetails } from './software-core-lesson-types'
 import {
@@ -163,6 +164,7 @@ calculateTax('abc')    // throws a validation error`,
       summary: 'Design small, coherent units whose names and dependencies communicate the system clearly.',
       outcomes: ['Model responsibilities cleanly', 'Prefer composition deliberately', 'Refactor without changing behavior'],
       platformFocus: 'Frequently evaluated through code review, project discussion, and maintainability questions.',
+      masteryTopics: oopCleanCodeMasteryTopics,
       examples: [
         ['Encapsulation', 'Keep invariants with the state they protect.', 'Let BankAccount.withdraw reject an overdraft instead of exposing balance for arbitrary mutation.'],
         ['Abstraction', 'Expose what callers need while hiding replaceable details.', 'Give callers a FileStore interface without revealing S3 request construction.'],

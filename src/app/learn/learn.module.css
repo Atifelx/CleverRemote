@@ -941,6 +941,58 @@
   background: #fff2f0;
 }
 
+.masteryQuestionNavigation {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.masteryQuestionNavigation > span {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.masteryQuestionNavigation button {
+  min-height: 38px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.68rem;
+  font-weight: 800;
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+}
+
+.masteryQuestionNavigation button:first-child {
+  justify-self: start;
+}
+
+.masteryQuestionNavigation button:last-child {
+  justify-self: end;
+}
+
+.masteryQuestionNavigation button:hover:not(:disabled),
+.masteryQuestionNavigation button:focus-visible {
+  color: var(--path-accent);
+  border-color: var(--path-accent);
+}
+
+.masteryQuestionNavigation button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
 .masteryCheckBar,
 .masteryReview {
   margin-top: 24px;
@@ -1611,6 +1663,20 @@
   .masteryReview > div:last-child,
   .masteryReview button,
   .masteryCheckBar button {
+    width: 100%;
+  }
+
+  .masteryQuestionNavigation {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .masteryQuestionNavigation > span {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    text-align: center;
+  }
+
+  .masteryQuestionNavigation button {
     width: 100%;
   }
 

@@ -133,6 +133,7 @@ export function defineLearningMasteryTopics(
   topics: readonly LearningMasteryTopicSeed[],
 ): readonly LearningMasteryTopic[] {
   const topicIds = new Set<string>()
+  const questionPrompts = new Set<string>()
   let questionOffset = 0
 
   return topics.map((topic) => {
@@ -154,6 +155,22 @@ export function defineLearningMasteryTopics(
 
     const questions = topic.questions.map((question, questionIndex) => {
       const id = `${pathId}:${chapterId}:${topic.id}:q${String(questionIndex + 1).padStart(2, '0')}`
+      const normalizedPrompt = question.prompt.trim().replaceAll(/\s+/g, ' ').toLowerCase()
+
+      if (normalizedPrompt.length < 12 || question.explanation.trim().length < 12) {
+        throw new Error(`Mastery question needs a substantive prompt and explanation: ${id}`)
+      }
+      if (questionPrompts.has(normalizedPrompt)) {
+        throw new Error(`Duplicate mastery question prompt: ${id}`)
+      }
+      if (question.platforms.length === 0) {
+        throw new Error(`Mastery question needs platform alignment: ${id}`)
+      }
+      if (new Set(question.options).size !== question.options.length) {
+        throw new Error(`Mastery question options must be unique: ${id}`)
+      }
+      questionPrompts.add(normalizedPrompt)
+
       const desiredCorrectOptionIndex = (questionOffset + questionIndex) % question.options.length
       const optionShift = (
         question.correctOptionIndex - desiredCorrectOptionIndex + question.options.length
