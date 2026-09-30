@@ -105,14 +105,14 @@ export default function LearningMasteryPanel({
       <header className={styles.masteryHeader}>
         <div>
           <span>Knowledge verification</span>
-          <h3 id="mastery-title">Programming fundamentals mastery</h3>
+          <h3 id="mastery-title">{chapter.title} mastery</h3>
           <p>Demonstrate recall, tracing, and engineering judgment under platform-style constraints.</p>
         </div>
         <strong>{masteredTopicCount}/{chapter.masteryTopics.length} topics mastered</strong>
       </header>
 
       <div className={styles.masteryLayout}>
-        <nav className={styles.masteryTopicList} aria-label="Programming fundamentals topics">
+        <nav className={styles.masteryTopicList} aria-label={`${chapter.title} topics`}>
           {chapter.masteryTopics.map((topic) => {
             const topicPassedCount = getPassedCount(topic, attempts)
             const isMastered = topicPassedCount === topic.questionTarget

@@ -3,7 +3,9 @@ import { softwareBackendLessonDetails } from './software-core-content-backend'
 import { softwareDesignLessonDetails } from './software-core-content-design'
 import { softwareFoundationsLessonDetails } from './software-core-content-foundations'
 import { softwareOperationsLessonDetails } from './software-core-content-operations'
+import { dsaMasteryTopics } from './software-core-mastery-dsa'
 import { programmingFundamentalsMasteryTopics } from './software-core-mastery-fundamentals'
+import { pythonEngineeringMasteryTopics } from './software-core-mastery-python'
 import type { SoftwareLessonDetails } from './software-core-lesson-types'
 import {
   defineLearningPath,
@@ -117,6 +119,7 @@ calculateTax('abc')    // throws a validation error`,
       summary: 'Use Python idioms deliberately while keeping production behavior typed, testable, and resource-aware.',
       outcomes: ['Write idiomatic Python', 'Control resources and failures', 'Use typing and async appropriately'],
       platformFocus: 'Python-focused assessments often combine language behavior, practical data manipulation, and readable implementation.',
+      masteryTopics: pythonEngineeringMasteryTopics,
       examples: [
         ['Comprehensions', 'Use comprehensions for simple transformations, not hidden multi-step logic.', 'Build active_user_ids from users with one readable filtered list comprehension.'],
         ['Generators', 'Generators stream values and avoid materializing an entire input.', 'Process a ten-million-line event file one record at a time with a generator.'],
@@ -129,6 +132,8 @@ calculateTax('abc')    // throws a validation error`,
         ['Iterators', 'The iterator protocol separates traversal from storage.', 'Implement an iterator that pages through an API without exposing pagination to callers.'],
         ['Decorators', 'Decorators wrap cross-cutting behavior while preserving the function contract.', 'Add timing telemetry around handlers without mixing metrics code into business logic.'],
         ['Async I/O', 'Async improves throughput for waiting-heavy work, not CPU-heavy computation.', 'Fetch independent customer endpoints concurrently while limiting concurrency with a semaphore.'],
+        ['Threading', 'Threads overlap blocking I/O but require deliberate shared-state coordination.', 'Audit synchronous vendor endpoints with a bounded thread pool and observe every worker result.'],
+        ['Multiprocessing', 'Processes parallelize coarse CPU-bound work across isolated interpreters.', 'Distribute independent numeric batches across a process pool with a safe application entry point.'],
       ],
     },
     {
@@ -137,6 +142,7 @@ calculateTax('abc')    // throws a validation error`,
       summary: 'Master the small set of data structures and patterns that dominate practical coding screens.',
       outcomes: ['Select structures by operation cost', 'Recognize reusable patterns', 'State complexity precisely'],
       platformFocus: 'Expect basic-to-medium problem solving; FDE screens usually value practical clarity over competitive-programming tricks.',
+      masteryTopics: dsaMasteryTopics,
       examples: [
         ['Arrays and lists', 'Contiguous indexed collections give fast lookup but costly middle insertion.', 'Store hourly metrics in an array when reads by position dominate.'],
         ['Hash maps', 'Hash maps trade memory for average constant-time lookup.', 'Group anagrams by mapping each normalized character signature to its words.'],

@@ -755,4 +755,96 @@ balances = await asyncio.gather(
       answer: 'Async helps when many tasks spend substantial time waiting on compatible non-blocking I/O. Blocking HTTP clients, file operations, or CPU-heavy work inside the event loop prevent other coroutines from progressing. Unbounded task creation can also overload memory and dependencies, so concurrency, timeouts, cancellation, and failure aggregation must be designed explicitly.',
     },
   },
+  Threading: {
+    explanation: [
+      'Threads run concurrent call stacks inside one process and share its memory. In conventional CPython they are strongest when work spends time waiting on blocking I/O, because the interpreter can run another thread while one waits; the global interpreter lock usually prevents pure-Python CPU loops from scaling across cores.',
+      'Treat shared memory as an explicit coordination problem. Prefer queues, events, and narrow critical sections over scattered mutable state, protect invariants rather than individual lines, and give every worker a shutdown and error-reporting path. Non-daemon workers should be joined so the application knows whether work completed.',
+    ],
+    whyItMatters: 'Many mature Python clients and operating-system APIs are synchronous. A bounded thread pool can integrate that work without serial waits, but races, deadlocks, hidden worker failures, and abrupt daemon shutdown can make a superficially fast service unreliable.',
+    useCases: [
+      'Calling a bounded number of synchronous vendor APIs concurrently',
+      'Reading several independent files with a blocking parser',
+      'Moving blocking legacy-client calls off an asyncio event-loop thread',
+    ],
+    workedExample: {
+      scenario: 'A health audit must call 40 vendor endpoints through a synchronous HTTP client, record every failure, and avoid creating an unbounded thread per endpoint.',
+      steps: [
+        'Put the blocking request in a function with an explicit timeout and a small serializable result.',
+        'Use a ThreadPoolExecutor to bound the number of active calls and map each future back to its URL.',
+        'Consume futures as they complete and call result so worker exceptions become visible to the coordinating thread.',
+      ],
+      code: {
+        language: 'Python',
+        code: `from concurrent.futures import ThreadPoolExecutor, as_completed
+
+def check_endpoint(url: str) -> int:
+    response = requests.get(url, timeout=3)
+    response.raise_for_status()
+    return response.status_code
+
+statuses: dict[str, int] = {}
+failures: dict[str, str] = {}
+
+with ThreadPoolExecutor(max_workers=8) as pool:
+    pending = {pool.submit(check_endpoint, url): url for url in urls}
+    for future in as_completed(pending):
+        url = pending[future]
+        try:
+            statuses[url] = future.result()
+        except requests.RequestException as error:
+            failures[url] = str(error)`,
+      },
+      result: 'At most eight blocking calls run at once, each endpoint is associated with its outcome, and leaving the executor context waits for managed workers instead of abandoning them during shutdown.',
+    },
+    interview: {
+      prompt: 'How do you decide whether threads are appropriate, and how do you keep them safe?',
+      answer: 'I use threads when independent tasks mostly wait on blocking I/O or a native library releases the GIL. I bound the pool, avoid sharing mutable state where message passing works, lock complete invariants when sharing is necessary, and make cancellation, timeouts, joining, and exception observation explicit. For sustained pure-Python CPU work, I evaluate processes instead.',
+    },
+  },
+  Multiprocessing: {
+    explanation: [
+      'Multiprocessing runs work in separate interpreter processes with isolated memory, allowing CPU-bound Python code to use multiple cores in conventional CPython. Isolation removes ordinary shared-memory races but introduces process startup, serialization, inter-process communication, and result-collection costs.',
+      'Design process work as coarse, independent units with importable top-level callables and serializable inputs and outputs. Protect the application entry point for spawn-based startup, observe every worker result, and prefer cooperative pool shutdown over terminating workers that may be using queues or locks.',
+    ],
+    whyItMatters: 'Parallel processes can turn a long CPU-bound batch into tractable work, but they are not a free replacement for threads. Small tasks can lose to overhead, live connections cannot be safely passed as ordinary data, and platform start methods make implicit inherited state fragile.',
+    useCases: [
+      'Parsing and validating large independent document batches',
+      'Running CPU-heavy feature extraction across image or event chunks',
+      'Executing isolated simulation units whose inputs and outputs are plain data',
+    ],
+    workedExample: {
+      scenario: 'A nightly job must count prime candidates across several large integer batches, and a single pure-Python process misses its completion window.',
+      steps: [
+        'Keep the CPU-bound worker at module scope and make each batch large enough to amortize process overhead.',
+        'Create a ProcessPoolExecutor only from the guarded application entry point so spawn-based workers can import the module safely.',
+        'Collect the mapped results so worker exceptions propagate, then combine the independent counts in the parent process.',
+      ],
+      code: {
+        language: 'Python',
+        code: `from concurrent.futures import ProcessPoolExecutor
+from math import isqrt
+
+def count_primes(numbers: list[int]) -> int:
+    def is_prime(value: int) -> bool:
+        return value >= 2 and all(
+            value % divisor for divisor in range(2, isqrt(value) + 1)
+        )
+
+    return sum(is_prime(value) for value in numbers)
+
+def main() -> int:
+    with ProcessPoolExecutor() as pool:
+        batch_counts = pool.map(count_primes, number_batches)
+        return sum(batch_counts)
+
+if __name__ == "__main__":
+    total = main()`,
+      },
+      result: 'Independent batches can execute on multiple CPU cores, failures surface while results are consumed, and the guarded entry point works with startup methods that import the main module.',
+    },
+    interview: {
+      prompt: 'What costs and correctness boundaries do you consider before choosing multiprocessing?',
+      answer: 'I confirm the work is CPU-bound, independent, and large enough to repay startup and serialization costs. Worker functions and arguments must work with the selected start method, live resources stay process-local, and results or exceptions cross an explicit IPC boundary. I also plan graceful pool shutdown because forceful termination can leave queues and locks damaged.',
+    },
+  },
 } satisfies Record<string, SoftwareLessonDetails>
