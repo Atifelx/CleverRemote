@@ -6,6 +6,7 @@ import {
 import { fdeTuringPractice } from './fde-turing-practice'
 import { historicalPracticeQuestions } from './historical-practice-questions'
 import type { PracticeQuestion, StagePractice } from './practice-model'
+import { programmingFundamentalsQuestions } from './programming-fundamentals-questions'
 
 type CurriculumKey = `${RoleId}:${CompanyId}`
 type QuestionSelection = readonly [string, string, string, string]
@@ -16,6 +17,7 @@ type StageSelection = {
 
 const allQuestions = [
   ...fdeTuringPractice.flatMap((stage) => stage.questions),
+  ...programmingFundamentalsQuestions,
   ...historicalPracticeQuestions,
 ]
 
@@ -114,14 +116,14 @@ const practiceCurricula: Record<CurriculumKey, StagePractice[]> = {
   'forward-deployed-engineer:andela': buildCurriculum('forward-deployed-engineer', 'andela', [
     { stageId: 'profile-review', questionIds: ['pd-101', 'be-201', 'be-501', 'pd-113'] },
     { stageId: 'english-screen', questionIds: ['pd-109', 'be-401', 'be-404', 'be-202'] },
-    { stageId: 'skills-assessment', questionIds: ['lct-301', 'lct-603', 'rd-003', 'ei-101'] },
+    { stageId: 'skills-assessment', questionIds: ['pf-019', 'pf-073', 'lct-301', 'ei-101'] },
     { stageId: 'expert-interview', questionIds: ['pd-108', 'pd-102', 'sd-003', 'sd-007'] },
     { stageId: 'client-interview', questionIds: ['fce-101', 'fce-201', 'fce-210', 'fce-214'] },
   ]),
   'forward-deployed-engineer:toptal': buildCurriculum('forward-deployed-engineer', 'toptal', [
     { stageId: 'language-personality', questionIds: ['pd-109', 'pd-110', 'pd-119', 'be-202'] },
-    { stageId: 'technical-screen', questionIds: ['sd-003', 'sd-009', 'pd-108', 'rd-007'] },
-    { stageId: 'live-screening', questionIds: ['lct-208', 'lct-206', 'lct-301', 'lct-605'] },
+    { stageId: 'technical-screen', questionIds: ['pf-045', 'pf-076', 'sd-003', 'pd-108'] },
+    { stageId: 'live-screening', questionIds: ['lct-208', 'lct-206', 'lct-301', 'de-019'] },
     { stageId: 'test-project', questionIds: ['lct-401', 'lct-403', 'lct-405', 'cd-505'] },
     { stageId: 'excellence-review', questionIds: ['be-401', 'fce-210', 'pd-113', 'pd-111'] },
   ]),

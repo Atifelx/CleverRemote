@@ -196,6 +196,60 @@
   line-height: 1.7;
 }
 
+.learningPrimer {
+  max-width: 500px;
+  min-height: 68px;
+  margin-top: 28px;
+  padding: 12px 14px;
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 20px;
+  align-items: center;
+  gap: 12px;
+  color: var(--ink);
+  text-decoration: none;
+  background: var(--lime);
+  border: 1px solid var(--ink);
+  border-radius: 6px;
+  box-shadow: 5px 5px 0 var(--ink);
+  transition:
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.learningPrimer > span:first-child {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: var(--ink);
+  border-radius: 5px;
+}
+
+.learningPrimer > span:nth-child(2) {
+  min-width: 0;
+  display: grid;
+}
+
+.learningPrimer small {
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.learningPrimer strong {
+  margin-top: 3px;
+  font-size: 0.8rem;
+}
+
+.learningPrimer:hover,
+.learningPrimer:focus-visible {
+  box-shadow: 2px 2px 0 var(--ink);
+  transform: translate(3px, 3px);
+  outline: none;
+}
+
 .routePreview {
   margin-top: 52px;
   border-top: 1px solid var(--line);

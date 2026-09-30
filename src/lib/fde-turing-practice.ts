@@ -1,5 +1,6 @@
 import { getHistoricalPracticeQuestion } from './historical-practice-questions'
 import type { StagePractice } from './practice-model'
+import { getProgrammingFundamentalsQuestion } from './programming-fundamentals-questions'
 
 export const fdeTuringPractice: StagePractice[] = [
   {
@@ -95,74 +96,9 @@ export const fdeTuringPractice: StagePractice[] = [
     ],
     completionRule: 'Submit a solution or debug plan for each drill, compare it with the benchmark, and score 70% or better.',
     questions: [
+      getProgrammingFundamentalsQuestion('pf-035'),
+      getProgrammingFundamentalsQuestion('pf-038'),
       getHistoricalPracticeQuestion('de-019'),
-      {
-        id: 'lct-603',
-        source: 'data/questions/27-live-coding-take-home.json',
-        kind: 'code-review',
-        difficulty: 'medium',
-        topic: 'NDJSON transformation',
-        timeMinutes: 25,
-        prompt: 'Process a 50GB NDJSON file line by line, keep records where price is greater than 100, and write valid NDJSON output.',
-        referenceAnswer: `const fs = require('fs')
-const readline = require('readline')
-
-async function filter(inputPath, outputPath) {
-  const lines = readline.createInterface({ input: fs.createReadStream(inputPath) })
-  const output = fs.createWriteStream(outputPath)
-
-  for await (const line of lines) {
-    try {
-      const record = JSON.parse(line)
-      if (record.price > 100 && !output.write(JSON.stringify(record) + '\\n')) {
-        await new Promise((resolve) => output.once('drain', resolve))
-      }
-    } catch {
-      // Record or report malformed lines according to the product requirement.
-    }
-  }
-  output.end()
-}`,
-        criteria: [
-          { label: 'Processes input incrementally with bounded memory', weight: 3 },
-          { label: 'Parses and emits one valid NDJSON record per line', weight: 2 },
-          { label: 'Defines behavior for malformed records', weight: 2 },
-          { label: 'Waits for drain when the output applies backpressure', weight: 3 },
-          { label: 'Closes the output and accounts for stream errors', weight: 2 },
-        ],
-        minimumAnswerLength: 180,
-      },
-      {
-        id: 'lct-605',
-        source: 'data/questions/27-live-coding-take-home.json',
-        kind: 'code-review',
-        difficulty: 'medium',
-        topic: 'Timeout and retry',
-        timeMinutes: 15,
-        prompt: 'Implement fetch with an AbortController timeout. Retry a timed-out request up to three total attempts.',
-        referenceAnswer: `async function fetchWithTimeout(url, timeoutMs = 5000, attempts = 3) {
-  for (let attempt = 0; attempt < attempts; attempt += 1) {
-    const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), timeoutMs)
-    try {
-      return await fetch(url, { signal: controller.signal })
-    } catch (error) {
-      const isTimeout = error instanceof Error && error.name === 'AbortError'
-      if (!isTimeout || attempt === attempts - 1) throw error
-    } finally {
-      clearTimeout(timer)
-    }
-  }
-  throw new Error('Unreachable')
-}`,
-        criteria: [
-          { label: 'Creates a fresh controller and timeout for every attempt', weight: 3 },
-          { label: 'Always clears the timeout', weight: 3 },
-          { label: 'Retries timeout failures without swallowing unrelated errors', weight: 3 },
-          { label: 'Stops after three total attempts and surfaces the final error', weight: 2 },
-        ],
-        minimumAnswerLength: 140,
-      },
       {
         id: 'rd-003',
         source: 'data/questions/16-refactoring-debugging.json',

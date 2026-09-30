@@ -1,0 +1,1177 @@
+.learnScreen {
+  --canvas: #f2f3ee;
+  --paper: #fff;
+  --ink: #171915;
+  --muted: #62685e;
+  --line: #d7dbd1;
+  --lime: #d9f56f;
+  --blue: #3157d5;
+  --path-accent: #3157d5;
+  min-height: 100vh;
+  color: var(--ink);
+  background-color: var(--canvas);
+  background-image:
+    linear-gradient(rgba(23, 25, 21, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(23, 25, 21, 0.035) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.topbar {
+  min-height: 76px;
+  padding: 0 4.5vw;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(16px);
+}
+
+.topbarNav,
+.workspaceActions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.topbarNav > a {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.topbarNav > a:hover,
+.topbarNav > a:focus-visible {
+  color: var(--blue);
+}
+
+.libraryShell,
+.workspaceShell {
+  width: min(1260px, 91vw);
+  margin: 0 auto;
+}
+
+.libraryShell {
+  padding: clamp(58px, 8vw, 108px) 0 80px;
+}
+
+.libraryIntro {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+  gap: clamp(48px, 8vw, 120px);
+  align-items: end;
+  padding-bottom: 58px;
+  border-bottom: 1px solid var(--line);
+}
+
+.kicker {
+  color: var(--path-accent, var(--blue));
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.libraryIntro h1 {
+  margin-top: 18px;
+  font-family: var(--font-display, Georgia, serif);
+  font-size: clamp(3rem, 6vw, 6.2rem);
+  font-weight: 500;
+  line-height: 0.94;
+  letter-spacing: 0;
+}
+
+.libraryIntroCopy > p {
+  color: var(--muted);
+  font-size: 1.02rem;
+  line-height: 1.75;
+}
+
+.libraryTotals {
+  margin-top: 30px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.libraryTotals span {
+  min-width: 0;
+  padding: 17px 12px;
+  display: grid;
+  color: var(--muted);
+  font-size: 0.67rem;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.libraryTotals span + span {
+  border-left: 1px solid var(--line);
+}
+
+.libraryTotals strong {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+}
+
+.pathIndex {
+  padding: 72px 0;
+}
+
+.sectionHeading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 40px;
+  margin-bottom: 28px;
+}
+
+.sectionHeading span,
+.sequenceTitle span {
+  color: var(--blue);
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.sectionHeading h2,
+.sequenceTitle h2 {
+  margin-top: 8px;
+  font-size: 1.65rem;
+  letter-spacing: 0;
+}
+
+.sectionHeading > p {
+  max-width: 460px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+.pathList {
+  display: grid;
+  gap: 12px;
+}
+
+.pathCard {
+  position: relative;
+  min-height: 150px;
+  padding: 24px 26px;
+  display: grid;
+  grid-template-columns: 36px 52px minmax(0, 1fr) auto 24px;
+  align-items: center;
+  gap: 20px;
+  overflow: hidden;
+  color: var(--ink);
+  text-decoration: none;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.pathCard::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  content: "";
+  background: var(--path-accent);
+}
+
+.pathCard:hover,
+.pathCard:focus-visible {
+  border-color: var(--ink);
+  box-shadow: 8px 8px 0 var(--lime);
+  transform: translate(-3px, -3px);
+  outline: none;
+}
+
+.pathOrder {
+  align-self: start;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+}
+
+.pathIcon {
+  width: 50px;
+  height: 50px;
+  display: grid;
+  place-items: center;
+  color: var(--path-accent);
+  background: color-mix(in srgb, var(--path-accent) 10%, white);
+  border-radius: 6px;
+}
+
+.pathCopy {
+  min-width: 0;
+  display: grid;
+}
+
+.pathCopy small {
+  color: var(--path-accent);
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.pathCopy > strong {
+  margin-top: 5px;
+  font-size: 1.16rem;
+}
+
+.pathCopy > span {
+  max-width: 670px;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.79rem;
+  line-height: 1.55;
+}
+
+.pathStats {
+  display: grid;
+  grid-template-columns: repeat(2, 92px);
+  color: var(--muted);
+  text-align: center;
+}
+
+.pathStats > span {
+  display: grid;
+  font-size: 0.64rem;
+  text-transform: uppercase;
+}
+
+.pathStats > span + span {
+  border-left: 1px solid var(--line);
+}
+
+.pathStats strong {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 1.12rem;
+}
+
+.studySequence {
+  display: grid;
+  grid-template-columns: 0.75fr 1.25fr;
+  gap: 48px;
+  padding: 34px;
+  background: #171915;
+  color: white;
+  border-radius: 7px;
+}
+
+.sequenceTitle {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+}
+
+.sequenceTitle > svg,
+.sequenceTitle span {
+  color: var(--lime);
+}
+
+.sequenceRows {
+  display: grid;
+}
+
+.sequenceRows p {
+  min-height: 52px;
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr) 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  font-size: 0.78rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.sequenceRows p:first-child {
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.sequenceRows strong {
+  color: var(--lime);
+}
+
+.sequenceRows span {
+  color: #d8ddd4;
+}
+
+.workspaceShell {
+  padding: 25px 0 70px;
+}
+
+.breadcrumbs {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.breadcrumbs a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.breadcrumbs a:hover {
+  color: var(--path-accent);
+}
+
+.pathHeader {
+  min-height: 214px;
+  padding: 34px 38px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 50px;
+  color: #fff;
+  background: #171915;
+  border-top: 5px solid var(--path-accent);
+}
+
+.pathHeaderCopy h1 {
+  margin-top: 10px;
+  font-family: var(--font-display, Georgia, serif);
+  font-size: clamp(2rem, 4vw, 3.6rem);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.pathHeaderCopy > p:not(.kicker) {
+  max-width: 650px;
+  margin-top: 12px;
+  color: #b9c0b5;
+  font-size: 0.82rem;
+}
+
+.platformTags {
+  margin-top: 20px;
+  display: flex;
+  gap: 8px;
+}
+
+.platformTags span {
+  padding: 5px 9px;
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 4px;
+}
+
+.overallProgress {
+  width: min(320px, 32vw);
+  flex: none;
+}
+
+.overallProgress > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.overallProgress span,
+.overallProgress small {
+  color: #adb5a9;
+  font-size: 0.67rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.overallProgress strong {
+  font-family: var(--font-mono);
+  font-size: 1.7rem;
+}
+
+.overallProgress > i {
+  height: 6px;
+  margin: 8px 0 10px;
+  display: block;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.overallProgress b {
+  height: 100%;
+  display: block;
+  background: var(--path-accent);
+  transition: width 220ms ease;
+}
+
+.learningGrid {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  align-items: start;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-top: 0;
+}
+
+.chapterRail {
+  position: sticky;
+  top: 0;
+  max-height: 100vh;
+  overflow: auto;
+  border-right: 1px solid var(--line);
+}
+
+.chapterRail > header,
+.exampleIndex > header {
+  min-height: 58px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--line);
+}
+
+.chapterRail > header strong,
+.exampleIndex > header strong {
+  color: var(--ink);
+  font-family: var(--font-mono);
+}
+
+.chapterRail ol {
+  list-style: none;
+}
+
+.chapterButton {
+  width: 100%;
+  min-height: 70px;
+  padding: 11px 14px;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 16px;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.chapterButton > span:first-child {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+}
+
+.chapterButton > span:nth-child(2) {
+  min-width: 0;
+  display: grid;
+}
+
+.chapterButton strong {
+  overflow: hidden;
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chapterButton small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.62rem;
+}
+
+.chapterButton:hover,
+.chapterButton:focus-visible,
+.activeChapter {
+  background: color-mix(in srgb, var(--path-accent) 7%, white);
+  outline: none;
+}
+
+.activeChapter {
+  box-shadow: inset 4px 0 0 var(--path-accent);
+}
+
+.activeChapter > span:first-child,
+.completedChapter > span:first-child {
+  color: #fff;
+  background: var(--path-accent);
+  border-color: var(--path-accent);
+}
+
+.chapterWorkspace {
+  min-width: 0;
+  padding: 34px;
+}
+
+.chapterHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 36px;
+}
+
+.chapterHeader > div:first-child > span,
+.exampleLesson > header > span:first-child {
+  color: var(--path-accent);
+  font-size: 0.66rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.chapterHeader h2 {
+  margin-top: 7px;
+  font-size: clamp(1.55rem, 3vw, 2.25rem);
+  letter-spacing: 0;
+}
+
+.chapterHeader p {
+  max-width: 700px;
+  margin-top: 9px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+.chapterStatus {
+  min-width: 112px;
+  padding: 11px 13px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  background: #f5f6f2;
+  border: 1px solid var(--line);
+}
+
+.chapterStatus > span {
+  display: grid;
+}
+
+.chapterStatus strong {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+}
+
+.chapterStatus small {
+  font-size: 0.58rem;
+  text-transform: uppercase;
+}
+
+.chapterStatusComplete {
+  color: #237147;
+  background: #edf8f1;
+  border-color: #a8d7ba;
+}
+
+.outcomeStrip {
+  margin-top: 25px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.outcomeStrip span {
+  min-height: 58px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+.outcomeStrip span + span {
+  border-left: 1px solid var(--line);
+}
+
+.outcomeStrip svg {
+  flex: none;
+  color: var(--path-accent);
+}
+
+.exampleWorkspace {
+  margin-top: 30px;
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  align-items: start;
+  border: 1px solid var(--line);
+}
+
+.exampleIndex {
+  border-right: 1px solid var(--line);
+}
+
+.exampleButton {
+  width: 100%;
+  min-height: 58px;
+  padding: 9px 13px;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  color: var(--muted);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  background: #fafbf8;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.exampleButton > span {
+  min-width: 0;
+  display: grid;
+}
+
+.exampleButton small {
+  font-size: 0.56rem;
+  text-transform: uppercase;
+}
+
+.exampleButton strong {
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 0.69rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.exampleButton:hover,
+.exampleButton:focus-visible,
+.activeExample {
+  color: var(--path-accent);
+  background: color-mix(in srgb, var(--path-accent) 8%, white);
+  outline: none;
+}
+
+.activeExample {
+  box-shadow: inset 3px 0 0 var(--path-accent);
+}
+
+.exampleLesson {
+  min-width: 0;
+  padding: clamp(24px, 4vw, 46px);
+}
+
+.exampleLesson > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.exampleLesson > header > span:last-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.exampleLesson > header .understood {
+  color: #237147;
+}
+
+.exampleLesson h3 {
+  margin-top: 18px;
+  font-family: var(--font-display, Georgia, serif);
+  font-size: clamp(1.75rem, 3vw, 2.7rem);
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: 0;
+}
+
+.principleBlock,
+.workedBlock,
+.platformBlock {
+  margin-top: 28px;
+}
+
+.principleBlock > span,
+.workedBlock > span,
+.platformBlock > span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.principleBlock p {
+  margin-top: 10px;
+  font-size: 1.06rem;
+  line-height: 1.7;
+}
+
+.principleBlock p + p {
+  color: #3f453d;
+  font-size: 0.9rem;
+}
+
+.workedBlock {
+  padding: 20px 22px;
+  background: #f0f6ff;
+  border-left: 4px solid var(--path-accent);
+}
+
+.workedBlock > span {
+  color: var(--path-accent);
+}
+
+.workedBlock p,
+.platformBlock p {
+  margin-top: 8px;
+  color: #3f453d;
+  font-size: 0.86rem;
+  line-height: 1.65;
+}
+
+.workedBlock ol {
+  margin: 18px 0 0 20px;
+  display: grid;
+  gap: 10px;
+  color: #30362e;
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+.workedBlock li {
+  padding-left: 5px;
+}
+
+.codeSample {
+  margin-top: 20px;
+  overflow: hidden;
+  background: #171915;
+  border: 1px solid #30342d;
+  border-radius: 6px;
+}
+
+.codeSample > span {
+  padding: 8px 13px;
+  display: block;
+  color: #b9c0b5;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  border-bottom: 1px solid #30342d;
+}
+
+.codeSample pre {
+  padding: 17px;
+  overflow-x: auto;
+  color: #eff5ea;
+  font-family: var(--font-mono);
+  font-size: 0.73rem;
+  line-height: 1.65;
+  tab-size: 2;
+}
+
+.exampleResult {
+  padding-top: 15px;
+  border-top: 1px solid color-mix(in srgb, var(--path-accent) 20%, transparent);
+}
+
+.exampleResult strong,
+.interviewCheck strong {
+  margin-bottom: 4px;
+  display: block;
+  color: var(--ink);
+  font-size: 0.64rem;
+  text-transform: uppercase;
+}
+
+.contextGrid {
+  margin-top: 28px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.contextGrid section {
+  padding: 20px 0;
+}
+
+.contextGrid section + section {
+  padding-left: 24px;
+  border-left: 1px solid var(--line);
+}
+
+.contextGrid span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--path-accent);
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.contextGrid p,
+.contextGrid ul {
+  margin-top: 10px;
+  color: #3f453d;
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.contextGrid ul {
+  margin-left: 17px;
+  display: grid;
+  gap: 5px;
+}
+
+.platformBlock {
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+
+.interviewCheck {
+  margin-top: 17px;
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: 18px;
+}
+
+.interviewCheck p {
+  margin: 0;
+  padding: 15px;
+  background: #f5f6f2;
+  border: 1px solid var(--line);
+}
+
+.lessonActions {
+  margin-top: 34px;
+  padding-top: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 9px;
+  border-top: 1px solid var(--line);
+}
+
+.lessonActions button,
+.lessonActions a,
+.iconButton {
+  min-height: 38px;
+  padding: 0 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.69rem;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+}
+
+.lessonActions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.lessonActions .completeButton {
+  color: #fff;
+  background: var(--path-accent);
+  border-color: var(--path-accent);
+}
+
+.lessonActions button:hover:not(:disabled),
+.lessonActions button:focus-visible,
+.lessonActions a:hover,
+.lessonActions a:focus-visible,
+.iconButton:hover,
+.iconButton:focus-visible {
+  color: #fff;
+  background: #171915;
+  border-color: #171915;
+  outline: none;
+}
+
+.savedLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.iconButton {
+  width: 38px;
+  padding: 0;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 1040px) {
+  .libraryIntro,
+  .studySequence {
+    grid-template-columns: 1fr;
+  }
+
+  .pathCard {
+    grid-template-columns: 34px 48px minmax(0, 1fr) 24px;
+  }
+
+  .pathStats {
+    display: none;
+  }
+
+  .learningGrid {
+    grid-template-columns: 250px minmax(0, 1fr);
+  }
+
+  .exampleWorkspace {
+    grid-template-columns: 185px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 820px) {
+  .topbar {
+    padding: 0 20px;
+  }
+
+  .libraryShell,
+  .workspaceShell {
+    width: min(100% - 32px, 720px);
+  }
+
+  .sectionHeading,
+  .pathHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .pathHeader {
+    gap: 28px;
+  }
+
+  .overallProgress {
+    width: 100%;
+  }
+
+  .learningGrid {
+    display: block;
+  }
+
+  .chapterRail {
+    position: static;
+    max-height: none;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .chapterRail ol {
+    display: flex;
+    overflow-x: auto;
+  }
+
+  .chapterRail li {
+    min-width: 210px;
+  }
+
+  .chapterButton {
+    border-right: 1px solid var(--line);
+  }
+
+  .activeChapter {
+    box-shadow: inset 0 -4px 0 var(--path-accent);
+  }
+
+  .chapterWorkspace {
+    padding: 26px;
+  }
+
+  .exampleWorkspace {
+    grid-template-columns: 1fr;
+  }
+
+  .exampleIndex {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .exampleIndex > header {
+    grid-column: 1 / -1;
+  }
+
+  .exampleButton:nth-of-type(odd) {
+    border-right: 1px solid var(--line);
+  }
+}
+
+@media (max-width: 620px) {
+  .topbar {
+    min-height: 68px;
+  }
+
+  .topbarNav > a,
+  .savedLabel,
+  .workspaceActions > div:last-child {
+    display: none;
+  }
+
+  .libraryShell {
+    padding-top: 44px;
+  }
+
+  .libraryIntro h1 {
+    font-size: 3.25rem;
+  }
+
+  .libraryTotals {
+    grid-template-columns: 1fr;
+  }
+
+  .libraryTotals span + span {
+    border-top: 1px solid var(--line);
+    border-left: 0;
+  }
+
+  .sectionHeading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .pathCard {
+    min-height: 0;
+    padding: 20px;
+    grid-template-columns: 32px 42px minmax(0, 1fr);
+    align-items: start;
+    gap: 12px;
+  }
+
+  .pathCard > svg {
+    display: none;
+  }
+
+  .pathIcon {
+    width: 42px;
+    height: 42px;
+  }
+
+  .pathCopy > span {
+    margin-top: 8px;
+  }
+
+  .studySequence {
+    padding: 24px;
+  }
+
+  .sequenceRows p {
+    padding: 14px 0;
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .sequenceRows svg {
+    transform: rotate(90deg);
+  }
+
+  .pathHeader {
+    min-height: 0;
+    padding: 28px 23px;
+  }
+
+  .chapterWorkspace {
+    padding: 22px 16px;
+  }
+
+  .chapterHeader {
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .chapterStatus {
+    width: 100%;
+  }
+
+  .outcomeStrip {
+    grid-template-columns: 1fr;
+  }
+
+  .outcomeStrip span + span {
+    border-top: 1px solid var(--line);
+    border-left: 0;
+  }
+
+  .exampleIndex {
+    grid-template-columns: 1fr;
+    max-height: 290px;
+    overflow: auto;
+  }
+
+  .exampleButton:nth-of-type(odd) {
+    border-right: 0;
+  }
+
+  .exampleLesson {
+    padding: 24px 18px;
+  }
+
+  .lessonActions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .lessonActions .completeButton {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pathCard,
+  .overallProgress b {
+    transition: none;
+  }
+}

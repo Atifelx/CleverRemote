@@ -2,6 +2,7 @@ import type { LucideIcon } from 'lucide-react'
 import {
   ArrowRight,
   Bot,
+  BookOpenCheck,
   BriefcaseBusiness,
   Check,
   Network,
@@ -42,6 +43,15 @@ export default function Home() {
           <p className={styles.lede}>
             Your target role changes the interview sequence, technical depth, and practice plan.
           </p>
+
+          <Link className={styles.learningPrimer} href="/learn">
+            <span><BookOpenCheck size={20} /></span>
+            <span>
+              <small>New to the core topics?</small>
+              <strong>Learn first, then take the tests</strong>
+            </span>
+            <ArrowRight size={18} aria-hidden="true" />
+          </Link>
 
           <div className={styles.routePreview}>
             <div className={styles.routePreviewItem}>
