@@ -3,10 +3,16 @@ import { softwareBackendLessonDetails } from './software-core-content-backend'
 import { softwareDesignLessonDetails } from './software-core-content-design'
 import { softwareFoundationsLessonDetails } from './software-core-content-foundations'
 import { softwareOperationsLessonDetails } from './software-core-content-operations'
+import { apiBackendMasteryTopics } from './software-core-mastery-apis-backend'
+import { debuggingMasteryTopics } from './software-core-mastery-debugging'
 import { dsaMasteryTopics } from './software-core-mastery-dsa'
+import { engineeringFundamentalsMasteryTopics } from './software-core-mastery-engineering-fundamentals'
 import { programmingFundamentalsMasteryTopics } from './software-core-mastery-fundamentals'
+import { gitDevelopmentMasteryTopics } from './software-core-mastery-git-development'
 import { oopCleanCodeMasteryTopics } from './software-core-mastery-oop-clean-code'
 import { pythonEngineeringMasteryTopics } from './software-core-mastery-python'
+import { sqlDatabasesMasteryTopics } from './software-core-mastery-sql-databases'
+import { testingMasteryTopics } from './software-core-mastery-testing'
 import type { SoftwareLessonDetails } from './software-core-lesson-types'
 import {
   defineLearningPath,
@@ -185,6 +191,7 @@ calculateTax('abc')    // throws a validation error`,
       summary: 'Build explicit service boundaries that remain correct under retries, invalid input, and partial failure.',
       outcomes: ['Design HTTP contracts', 'Protect integration boundaries', 'Handle retries and scale safely'],
       platformFocus: 'Practical API and integration scenarios are especially relevant to FDE and client-facing engineering screens.',
+      masteryTopics: apiBackendMasteryTopics,
       examples: [
         ['HTTP methods', 'Choose methods by semantics and idempotency, not by payload size.', 'Use PATCH for a partial profile update and GET only for side-effect-free retrieval.'],
         ['Status codes', 'Status codes should let clients distinguish retryable, client, and server failures.', 'Return 409 for a version conflict and 503 when a dependency is temporarily unavailable.'],
@@ -205,6 +212,7 @@ calculateTax('abc')    // throws a validation error`,
       summary: 'Model durable data, write explainable queries, and preserve correctness under concurrent changes.',
       outcomes: ['Design relational schemas', 'Query and index intentionally', 'Use transactions and migrations safely'],
       platformFocus: 'SQL transformations and database tradeoffs often appear in data-heavy and AI engineering assessments.',
+      masteryTopics: sqlDatabasesMasteryTopics,
       examples: [
         ['Relational modeling', 'Normalize facts that change independently and join them through stable keys.', 'Store customers and orders separately instead of repeating customer details on every order.'],
         ['Primary and foreign keys', 'Keys establish identity and enforce valid relationships.', 'Reference orders.customer_id to customers.id with an explicit deletion policy.'],
@@ -225,6 +233,7 @@ calculateTax('abc')    // throws a validation error`,
       summary: 'Use version control as a communication, review, recovery, and delivery tool.',
       outcomes: ['Create reviewable history', 'Recover safely from mistakes', 'Collaborate through disciplined review'],
       platformFocus: 'Take-home projects are judged on repository hygiene, commits, documentation, and delivery discipline.',
+      masteryTopics: gitDevelopmentMasteryTopics,
       examples: [
         ['Atomic commits', 'Each commit should represent one coherent, working change.', 'Commit the schema migration separately from the UI that consumes the new field.'],
         ['Branching', 'Use short-lived branches to limit divergence and integration risk.', 'Merge a small payment validation branch after review instead of accumulating a month of work.'],
@@ -245,6 +254,7 @@ calculateTax('abc')    // throws a validation error`,
       summary: 'Build a layered test strategy that catches meaningful failures without making delivery brittle.',
       outcomes: ['Choose the right test boundary', 'Design reliable cases', 'Use doubles without hiding integration risk'],
       platformFocus: 'Testing judgment appears in live exercises, code review, take-homes, and discussions of production quality.',
+      masteryTopics: testingMasteryTopics,
       examples: [
         ['Unit tests', 'Unit tests isolate a small behavior and run quickly.', 'Test discount calculation with fixed inputs without starting a database.'],
         ['Integration tests', 'Integration tests verify contracts across real collaborating components.', 'Run a repository test against PostgreSQL to verify transaction behavior.'],
@@ -265,6 +275,7 @@ calculateTax('abc')    // throws a validation error`,
       summary: 'Turn vague symptoms into reproducible evidence, isolate the cause, and prevent recurrence.',
       outcomes: ['Form falsifiable hypotheses', 'Use runtime evidence', 'Close incidents with prevention'],
       platformFocus: 'Interviewers value a disciplined debugging narrative as much as finding the final line of code.',
+      masteryTopics: debuggingMasteryTopics,
       examples: [
         ['Reproduce first', 'A reliable reproduction turns an anecdote into a testable failure.', 'Capture the exact payload and environment that trigger a checkout crash.'],
         ['Minimize the case', 'Remove variables until the smallest failing input remains.', 'Reduce a thousand-row import to the two rows that expose the duplicate-key bug.'],
@@ -285,6 +296,7 @@ calculateTax('abc')    // throws a validation error`,
       summary: 'Connect code-level choices to requirements, operations, security, delivery, and business outcomes.',
       outcomes: ['Translate requirements into constraints', 'Make explicit tradeoffs', 'Own software beyond implementation'],
       platformFocus: 'Project deep-dives and technical interviews use these signals to distinguish production engineers from puzzle solvers.',
+      masteryTopics: engineeringFundamentalsMasteryTopics,
       examples: [
         ['Requirement clarification', 'Resolve ambiguous terms into observable behavior before implementation.', 'Ask whether “real time” means under one second or within five minutes.'],
         ['Tradeoff analysis', 'A decision should compare options against named constraints.', 'Choose a managed queue for delivery speed while accepting service cost and vendor dependency.'],

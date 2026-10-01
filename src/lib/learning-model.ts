@@ -11,7 +11,7 @@ export type LearningPlatform = 'Turing' | 'Andela' | 'Toptal'
 export type LearningMasteryLevel = 'L1' | 'L2'
 export type LearningQuestionDifficulty = 'easy' | 'medium' | 'hard'
 export type LearningQuestionFrequency = 'core' | 'frequent' | 'targeted'
-export type LearningQuestionTarget = 5 | 10 | 15 | 20
+export type LearningQuestionTarget = 5 | 8 | 10 | 12 | 15 | 16 | 20
 
 export type LearningQuestionOption = {
   id: string
@@ -144,10 +144,10 @@ export function defineLearningMasteryTopics(
       throw new Error(`Mastery topic question count must match its target: ${pathId}:${chapterId}:${topic.id}`)
     }
     const targetMatchesFrequency = topic.frequency === 'targeted'
-      ? topic.questionTarget === 5
+      ? topic.questionTarget === 5 || topic.questionTarget === 8
       : topic.frequency === 'frequent'
-        ? topic.questionTarget === 10
-        : topic.questionTarget === 15 || topic.questionTarget === 20
+        ? topic.questionTarget === 10 || topic.questionTarget === 12
+        : topic.questionTarget === 15 || topic.questionTarget === 16 || topic.questionTarget === 20
     if (!targetMatchesFrequency) {
       throw new Error(`Mastery question target does not match frequency: ${pathId}:${chapterId}:${topic.id}`)
     }
