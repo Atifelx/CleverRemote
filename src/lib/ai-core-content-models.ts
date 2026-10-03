@@ -671,4 +671,197 @@ Label: billing`,
       answer: 'I classify whether it is transient, permanent, or uncertain and whether the operation has side effects. Transient reads can use bounded backoff; invalid input or authorization is rejected; malformed output may get one constrained repair; unsupported or high-risk uncertainty is escalated. Side effects require status reconciliation and idempotency before any retry.',
     },
   },
+  'Attention calculation': {
+    explanation: [
+      'An attention layer derives queries, keys, and values by multiplying input hidden states by learned projection matrices. For input X shaped [batch, sequence, d_model], one head commonly produces Q, K, and V shaped [batch, sequence, d_k]. QK^T contracts the feature axis to form scores shaped [batch, query_sequence, key_sequence], those scores are divided by sqrt(d_k), masks are applied, and row-wise softmax creates weights that multiply V.',
+      'Queries express what each output position is looking for, keys describe what each source position offers for matching, and values carry the information to combine. Scaling keeps dot-product variance from growing with d_k and saturating softmax, while masks exclude padding or forbidden future positions. Shape-correct code can still be wrong if it normalizes over the query axis, transposes the wrong dimensions, applies a mask after softmax, or mixes examples across the batch.',
+    ],
+    whyItMatters: 'The full Q/K/V calculation turns attention from an architectural label into an operation that can be checked numerically. Following every axis and normalization step makes masking bugs, unstable scores, quadratic sequence cost, and incorrect batched matrix multiplications visible.',
+    useCases: [
+      'Verifying the query-key score and attention-output shapes in a custom transformer layer',
+      'Testing that a causal or padding mask gives excluded positions exactly zero probability',
+      'Estimating score-matrix memory before increasing batch size or context length',
+    ],
+    workedExample: {
+      scenario: 'One attention head has d_k = 2. For its first query q = [1, 1], the three keys are [[1, 0], [0, 1], [1, 1]] and the values are [[2, 0], [0, 2], [2, 2]].',
+      steps: [
+        'Treat Q, K, and V as [1, 3, 2] tensors for one batch, three positions, and width two; the complete QK^T score tensor is therefore [1, 3, 3].',
+        'For the first query, compute raw dot products [1, 1, 2], then divide by sqrt(2) to obtain approximately [0.707, 0.707, 1.414].',
+        'Apply softmax across the three key positions to obtain weights approximately [0.248, 0.248, 0.503].',
+        'Multiply the weights by V: 0.248 * [2, 0] + 0.248 * [0, 2] + 0.503 * [2, 2], producing approximately [1.50, 1.50].',
+      ],
+      code: {
+        language: 'Text',
+        code: `Q: [batch, query, d_k]
+K: [batch, key, d_k]
+V: [batch, key, d_v]
+softmax(QK^T / sqrt(d_k))V: [batch, query, d_v]`,
+      },
+      result: 'The first query becomes a width-two contextual vector near [1.50, 1.50], and the calculation exposes both the [query, key] probability axis and the reason for scaling by sqrt(2).',
+    },
+    interview: {
+      prompt: 'Walk through scaled dot-product attention and identify the axis over which softmax is applied.',
+      answer: 'I project hidden states into Q, K, and V, multiply Q by K transposed on the sequence and feature axes, divide by sqrt(d_k), add any mask, and apply softmax over the key positions for each query. Those weights multiply V to produce one contextual value per query. Softmax over queries would make source positions compete for destinations and would implement a different operation.',
+    },
+  },
+  'Encoder and decoder architectures': {
+    explanation: [
+      'An encoder-only transformer uses bidirectional self-attention so every unmasked input position can incorporate context from both directions, making it well suited to classification, tagging, retrieval embeddings, and extractive tasks. A decoder-only transformer uses causal self-attention and predicts the next token from a prefix, making open-ended generation and conversational continuation natural. An encoder-decoder transformer first builds bidirectional source representations, then generates a target causally while cross-attending to the encoded source.',
+      'Architecture selection should follow the input-output contract rather than model popularity. Encoder-only models are efficient when the output is a fixed label or representation but do not inherently generate sequences; decoder-only models can express many tasks through prompting but must carry source and generated tokens in one causal context; encoder-decoder models separate source understanding from target generation and are strong for translation or summarization, at the cost of two stacks and cross-attention. Token budgets, latency, available checkpoints, and evaluation quality can outweigh theoretical fit.',
+    ],
+    whyItMatters: 'The attention direction and source-target structure determine what information each token may use, how training examples are formed, and where inference cost appears. Choosing the matching architecture avoids forcing a classification or transformation task through an unnecessarily expensive or poorly aligned interface.',
+    useCases: [
+      'Selecting an encoder-only model for classifying complete support tickets into a fixed routing taxonomy',
+      'Selecting a decoder-only model for interactive code generation from an evolving conversational prefix',
+      'Selecting an encoder-decoder model for translating a bounded source document into a distinct target sequence',
+    ],
+    workedExample: {
+      scenario: 'A translation service processes batches of 16 English documents up to 512 tokens and generates French outputs up to 128 tokens.',
+      steps: [
+        'Reject an encoder-only classifier as the primary architecture because the required output is a variable-length sequence rather than a label or fixed representation.',
+        'Recognize that a decoder-only model could concatenate source and target, but every target step would operate within one causal sequence containing both portions.',
+        'Choose an encoder-decoder model: encode the source once into [16, 512, 768], then let each decoder position use causal target self-attention and cross-attention over all 512 source positions.',
+        'Evaluate translation quality, time to first token, total latency, and memory against a decoder-only baseline before committing to the operational design.',
+      ],
+      code: {
+        language: 'Text',
+        code: `encoder source:       [16, 512, 768]
+decoder state at t:    [16, t, 768]
+cross-attention score: [16, heads, t, 512]`,
+      },
+      result: 'The source is represented bidirectionally once, while the 128-token target is generated causally with direct access to every encoded source position.',
+    },
+    interview: {
+      prompt: 'When would you choose encoder-only, decoder-only, or encoder-decoder architecture for a new task?',
+      answer: 'I would start with the output contract. Fixed labels, token labels, and embeddings favor an encoder; free-form continuation favors a causal decoder; source-to-target transformations such as translation favor an encoder-decoder. I would then compare suitable pretrained checkpoints on task quality, context limits, latency, memory, and deployment support rather than assuming one family always wins.',
+    },
+  },
+  'Residuals and layer normalization': {
+    explanation: [
+      'A residual connection adds a sublayer update back to the stream it received, such as y = x + F(LayerNorm(x)) in a pre-normalized transformer. The addition requires identical shapes and gives information and gradients a direct path through deep stacks even when a sublayer initially contributes a small or noisy update. Attention and feed-forward sublayers therefore refine a persistent residual stream instead of replacing it at every layer.',
+      'Layer normalization computes a mean and variance across each token hidden vector, normalizes that vector, and applies learned scale and bias parameters. It does not mix examples or sequence positions and behaves the same for a single request and a large batch. Pre-normalization often improves optimization in deep transformers, while post-normalization follows y = LayerNorm(x + F(x)); changing between them alters checkpoint semantics, activation scale, and gradient flow rather than being a cosmetic reorder.',
+    ],
+    whyItMatters: 'Residual paths and normalization make very deep transformers trainable and keep repeated updates numerically manageable. Understanding their exact order and axes is essential when implementing blocks, loading checkpoints, diagnosing exploding activations, or deciding whether two architecture definitions are compatible.',
+    useCases: [
+      'Tracing a pre-normalized decoder block to find where activation magnitudes begin to grow',
+      'Checking that an attention projection returns the model width required for residual addition',
+      'Matching normalization placement, epsilon, scale, and bias when reproducing a pretrained checkpoint',
+    ],
+    workedExample: {
+      scenario: 'A pre-normalized sublayer receives one token vector x = [1, 2, 3], uses unit scale and zero bias, and returns F(LayerNorm(x)) = [0.2, -0.1, 0.4].',
+      steps: [
+        'Compute the hidden-axis mean of x as 2 and variance as 2/3.',
+        'Ignoring epsilon only for this hand calculation, normalize x to approximately [-1.225, 0, 1.225].',
+        'Pass the normalized vector through the sublayer, which produces the stated width-three update [0.2, -0.1, 0.4].',
+        'Add the untouched residual x to that update to obtain y = [1.2, 1.9, 3.4].',
+      ],
+      code: {
+        language: 'Text',
+        code: `LayerNorm(x) = gamma * (x - mean(x)) / sqrt(var(x) + epsilon) + beta
+y = x + F(LayerNorm(x))`,
+      },
+      result: 'The sublayer receives a standardized representation while the output retains a direct copy of x plus a learned update; both paths remain width three so the residual addition is defined.',
+    },
+    interview: {
+      prompt: 'What do residual connections and layer normalization each contribute to a transformer block?',
+      answer: 'The residual connection preserves a direct information and gradient path and lets a sublayer contribute an update of the same shape. Layer normalization controls each token representation scale before or after that update using hidden-axis statistics and learned affine parameters. Their ordering affects optimization and checkpoint behavior, so pre-norm and post-norm blocks are not interchangeable.',
+    },
+  },
+  'Streaming inference': {
+    explanation: [
+      'Streaming inference sends generated tokens or semantic chunks as they become available instead of waiting for the full response. Time to first token, or TTFT, includes admission, queueing, prompt processing, and the first decode step; total latency continues until the final token and depends on output length and inter-token latency. Streaming improves perceived responsiveness but does not by itself reduce total model work, and overly small chunks can add serialization and network overhead.',
+      'A robust stream is a bounded distributed pipeline. If a client reads more slowly than the model produces, backpressure must pause generation, reduce scheduling priority, coalesce chunks, or terminate according to policy instead of allowing an unbounded buffer. Client disconnects, deadlines, and user stop actions must propagate cancellation through the HTTP handler, model provider, scheduler, and KV-cache owner; otherwise computation and billing continue for output nobody can consume.',
+    ],
+    whyItMatters: 'Interactive users experience the wait for the first useful output separately from the wait for completion. Measuring both and enforcing cancellation and backpressure yields responsive interfaces without hidden resource leaks, runaway buffers, or wasted accelerator work.',
+    useCases: [
+      'Rendering an assistant response incrementally while reporting TTFT and completed-request latency separately',
+      'Stopping generation and releasing KV-cache state when a user cancels or closes the connection',
+      'Applying a bounded queue when a mobile client consumes chunks more slowly than the inference server emits them',
+    ],
+    workedExample: {
+      scenario: 'A request spends 80 ms in a queue, 395 ms in prompt prefill, and 25 ms on its first decode step. The model then emits 40 tokens per second for a planned 120-token response, while the client can transmit only 10 tokens per second.',
+      steps: [
+        'Report TTFT as 80 + 395 + 25 = 500 ms rather than combining it with the later generation time.',
+        'At 25 ms per generated token, estimate uncancelled total latency as 500 ms + 119 * 25 ms = 3,475 ms because the first token is already included in TTFT.',
+        'Place at most 20 unsent tokens in the stream queue; when it reaches the high-water mark, stop scheduling more decode work and resume only after the queue drains below its low-water mark.',
+        'If the client disconnects at 1.5 seconds, abort the provider request, remove the sequence from the scheduler, release its cache, and record a cancellation rather than a successful completion.',
+      ],
+      code: {
+        language: 'Text',
+        code: `TTFT = queue_time + prefill_time + first_decode_time
+total_latency = TTFT + remaining_tokens * inter_token_latency`,
+      },
+      result: 'The first token arrives at 500 ms, a fully consumed response would finish near 3.475 seconds, and a slow or disconnected client cannot create an unbounded buffer or leave generation running invisibly.',
+    },
+    interview: {
+      prompt: 'How would you design and measure a production streaming LLM endpoint?',
+      answer: 'I would measure TTFT, inter-token latency, total latency, completion rate, and cancellation latency separately. I would use a bounded output queue with explicit high- and low-water behavior, propagate abort signals through every layer, clean up scheduler and cache state, and distinguish client cancellation from provider failure. Streaming changes delivery, so I would still account for all generated tokens and backend work.',
+    },
+  },
+  'Model adaptation': {
+    explanation: [
+      'Model adaptation ranges from changing context to changing weights. Prompting is the cheapest first step for clearly specifying a task; retrieval-augmented generation supplies current, private, or sourceable knowledge at request time; LoRA trains small low-rank adapter matrices to change recurring behavior with far fewer trainable parameters; full fine-tuning updates all model weights when substantial domain or capability change justifies the data, compute, and operational cost.',
+      'Choose the smallest method that addresses the measured failure. Retrieval is appropriate for missing facts but does not reliably teach a new response style, while fine-tuning can teach behavior but should not be used as a frequently changing knowledge store. LoRA still needs representative examples, base-model compatibility, serving support, and regression evaluation; full fine-tuning adds optimizer memory, checkpoint management, and greater catastrophic-forgetting risk. Prompting, retrieval, and weight adaptation can also be combined rather than treated as exclusive choices.',
+    ],
+    whyItMatters: 'Adaptation choices determine freshness, quality, cost, governance, and how quickly a system can be corrected. Matching the intervention to the failure avoids expensive training for a retrieval problem or ever-larger prompts for a stable behavioral problem.',
+    useCases: [
+      'Improving task instructions and examples through prompting before introducing a training pipeline',
+      'Using RAG for policies that change weekly and require citations to authorized source documents',
+      'Training a LoRA adapter for a stable domain format while reserving full fine-tuning for evidence that broad weight changes are necessary',
+    ],
+    workedExample: {
+      scenario: 'A 7-billion-parameter support model must answer from weekly policy updates and emit a strict resolution format; prompting produces correct formatting on only 82 percent of a 500-case evaluation set.',
+      steps: [
+        'Establish a prompt-only baseline and separate factual-grounding failures from format and tone failures in the evaluation results.',
+        'Add tenant-filtered retrieval with citations for policy facts because those documents change weekly and should not be baked into model weights.',
+        'After retrieval fixes freshness but format compliance remains low, train a rank-8 LoRA adapter on reviewed examples; for one 4,096 by 4,096 projection, the two rank-8 matrices add 65,536 trainable parameters instead of updating 16,777,216 base parameters.',
+        'Keep full fine-tuning out of the first iteration, then compare prompt-only, RAG, and RAG-plus-LoRA on grounding, format validity, regressions, latency, and serving cost.',
+      ],
+      code: {
+        language: 'Text',
+        code: `LoRA parameters for one projection
+= rank * input_width + output_width * rank
+= 8 * 4096 + 4096 * 8
+= 65,536`,
+      },
+      result: 'Retrieval owns current policy knowledge, the small adapter targets repeatable response behavior, and the team avoids the cost and regression surface of updating every base-model weight without evidence that it is needed.',
+    },
+    interview: {
+      prompt: 'How do you choose among prompting, RAG, LoRA, and full fine-tuning?',
+      answer: 'I classify the failure first. I use prompting for clearer task specification, RAG for fresh or attributable knowledge, LoRA for stable behavioral changes supported by examples, and full fine-tuning only when broad weight updates produce enough measured gain to justify their cost and risk. I compare each step against the same held-out evaluation and include latency, privacy, rollback, and serving constraints.',
+    },
+  },
+  Quantization: {
+    explanation: [
+      'Quantization stores or computes model values with fewer bits, such as converting 16-bit weights to 8-bit integers or packed 4-bit values with per-tensor, per-channel, or per-group scales. Weight-only quantization reduces parameter memory while activations remain in a higher precision; weight-and-activation quantization can reduce more bandwidth and compute but is harder to calibrate. Post-training quantization uses an existing checkpoint, while quantization-aware training exposes the model to simulated rounding during training.',
+      'Lower precision can increase capacity or throughput only when the target hardware and runtime provide efficient kernels for that format. Scales, zero points, padding, temporary dequantization buffers, activations, and KV cache mean realized memory exceeds raw weight bits, and a nominally smaller format can be slower if conversion dominates. Outlier-sensitive layers and small calibration sets can cause disproportionate quality loss, so evaluate task metrics, latency, power, and peak memory on the actual device rather than selecting by bit width alone.',
+    ],
+    whyItMatters: 'Quantization often determines whether a model fits on a device and how much serving capacity is affordable. Accurate memory arithmetic plus hardware-specific quality and speed measurements prevents a lower-bit checkpoint from being mistaken for an automatically smaller, faster, or equivalent system.',
+    useCases: [
+      'Fitting a 7-billion-parameter model on a 12 GB accelerator while reserving memory for runtime state',
+      'Benchmarking 8-bit and 4-bit kernels on the deployment GPU instead of relying on checkpoint size alone',
+      'Calibrating activation ranges with representative requests before integer inference',
+    ],
+    workedExample: {
+      scenario: 'A team must deploy a 7-billion-parameter model on a 12 GB GPU and is comparing FP16, symmetric INT8, and groupwise 4-bit weight-only checkpoints.',
+      steps: [
+        'Compute raw FP16 weight storage as 7 billion * 2 bytes = 14 GB, which already exceeds device capacity before cache and runtime workspace.',
+        'Compute raw INT8 storage as 7 GB and raw 4-bit storage as 3.5 GB because two 4-bit weights share one byte.',
+        'For 4-bit groups of 128 weights with one 2-byte scale per group, add about 7 billion / 128 * 2 = 109 MB of scale data, yielding roughly 3.61 GB before other metadata and runtime allocations.',
+        'Benchmark on the target GPU: if INT8 scores 78.2 versus the FP16 baseline of 78.4 and runs at 42 tokens per second, while 4-bit scores 76.5 and runs at 35 tokens per second because its kernel dequantizes inefficiently, select INT8 when the remaining memory budget is sufficient.',
+      ],
+      code: {
+        language: 'Text',
+        code: `raw_weight_bytes = parameter_count * bits_per_weight / 8
+FP16: 7B * 16 / 8 = 14 GB
+INT8: 7B * 8 / 8 = 7 GB
+INT4: 7B * 4 / 8 = 3.5 GB`,
+      },
+      result: 'INT8 is the deployment choice in this measurement: it fits with substantially more room than FP16, stays within the quality budget, and outperforms the available 4-bit kernel despite using more memory.',
+    },
+    interview: {
+      prompt: 'Why might a 4-bit model be neither four times smaller nor faster than an FP16 model in production?',
+      answer: 'Four bits describes raw weight payload, not total process memory. Scales, zero points, packing, alignment, activations, KV cache, and workspaces add overhead. Speed depends on native hardware and fused runtime kernels; unpacking or dequantizing can erase bandwidth gains. I would measure peak memory, task quality, prefill and decode speed, and power on the target hardware before choosing the format.',
+    },
+  },
 } satisfies Record<string, AiLessonDetails>

@@ -717,4 +717,543 @@ const cacheKey = hash([
       answer: 'I classify the failure as transient or semantic and the task by consequence. A bounded retry fits a transient idempotent call; a secondary model is valid only if it meets the same capability and policy contract; deterministic degradation works when verified data still provides value; and consequential actions fail closed or escalate when authorization, evidence, or validation is uncertain.',
     },
   },
+  'Agent trajectory evaluation': {
+    explanation: [
+      'Agent trajectory evaluation measures the observable sequence an agent follows: state transitions, model decisions, tool requests, tool results, retries, approvals, and the final outcome. A useful evaluator compares that evidence with an allowed workflow and task-specific invariants without requiring hidden chain-of-thought, then scores completion, path validity, unnecessary work, recovery behavior, latency, and cost.',
+      'Use trajectory evaluation when the route to an answer matters as much as the answer, especially for agents that act on external systems. Exact path matching is often too brittle because several sequences can be valid, while final-answer grading misses unauthorized calls and wasteful loops; combine deterministic event checks with bounded rubric grading, replayable fixtures, and explicit limits on steps, tokens, and side effects.',
+    ],
+    whyItMatters: 'An agent can produce a plausible final message after taking an unsafe, expensive, or operationally incorrect path. Evaluating the recorded trajectory makes intermediate decisions testable and ensures that success means completing the task through permitted states rather than merely sounding correct at the end.',
+    useCases: [
+      'Verifying that an incident agent gathers evidence before proposing or executing a restart',
+      'Detecting loops in which a research agent repeatedly retrieves the same documents',
+      'Confirming that a service agent obtains approval before a consequential tool transition',
+    ],
+    workedExample: {
+      scenario: 'An operations agent diagnoses checkout incidents and may restart one service after an on-call engineer approves the exact action.',
+      steps: [
+        'Represent the workflow as states for observe, diagnose, propose, approve, execute, and verify, with restart permitted only from an unexpired approved state.',
+        'Replay 600 incident fixtures and record normalized events containing tool name, argument hash, status, latency, approval identifier, and resulting state.',
+        'Apply hard checks for forbidden transitions, duplicate restarts, cross-service arguments, and more than eight tool calls, then grade diagnosis relevance only after those checks pass.',
+        'Report task completion, valid-path rate, p95 tool calls, recovery rate after injected timeouts, and zero-tolerance side-effect violations by incident type.',
+      ],
+      code: {
+        language: 'YAML',
+        code: `trajectory_gates:
+  unauthorized_transitions: "== 0"
+  duplicate_side_effects: "== 0"
+  task_completion_rate: ">= 0.94"
+  p95_tool_calls: "<= 8"
+  timeout_recovery_rate: ">= 0.90"`,
+      },
+      result: 'The candidate completes 574 of 600 incidents, but 11 traces restart before approval; the zero-tolerance transition gate blocks release even though its 95.7 percent completion rate exceeds the task target.',
+    },
+    interview: {
+      prompt: 'How would you evaluate an agent trajectory without requiring one exact sequence or exposing private reasoning?',
+      answer: 'I would evaluate observable events and state, not hidden chain-of-thought. I would define permitted transitions and hard invariants for authorization, approvals, side effects, and budgets; allow multiple valid paths; score efficiency and recovery over normalized traces; and inspect the final result only after deterministic path checks pass. Versioned fixtures and event schemas make the evaluation reproducible.',
+    },
+  },
+  'Tool-call evaluation': {
+    explanation: [
+      'Tool-call evaluation tests whether an agent selected the right tool, supplied schema-valid and semantically correct arguments, called it at the right point, interpreted its result, and produced the intended side effect exactly once. The harness should use deterministic fixtures or a seeded sandbox, derive expected calls from task labels, and inspect server execution records rather than trusting the assistant transcript.',
+      'Use separate metrics for tool selection, argument accuracy, sequence constraints, authorization denials, retries, and outcome correctness because one aggregate score can hide a catastrophic action. Exact argument comparison works for identifiers and amounts, while unordered or tolerance-aware checks may fit search filters; mocks improve repeatability but must be complemented by contract tests against real tool adapters to catch integration drift.',
+    ],
+    whyItMatters: 'Tool use converts probabilistic generation into reads and writes against real systems. A response-level benchmark cannot prove that the correct account was queried, the amount was bounded, or a retry was idempotent, so tool-call evidence needs its own deterministic evaluation surface.',
+    useCases: [
+      'Measuring whether a support agent chooses lookup, draft, or refund tools for the correct intents',
+      'Checking generated SQL tool arguments against tenant, table, and row-limit constraints',
+      'Verifying that timeout retries reuse an idempotency key and create one external action',
+    ],
+    workedExample: {
+      scenario: 'A commerce agent is evaluated on 200 cases containing order questions, refund requests, and requests that must be denied.',
+      steps: [
+        'Label 140 cases that require a tool and record the allowed tool, exact order identifier, amount constraint, and required predecessor events for each case.',
+        'Run the agent against seeded order and payment services, capturing requested arguments, authorization decisions, idempotency keys, and committed side effects.',
+        'Count a true positive only when the expected call has valid arguments and ordering; treat an extra, wrong, or malformed call as a false positive and any missing required call as a false negative.',
+        'Gate separately on zero unauthorized commits and zero duplicate refunds so strong selection metrics cannot compensate for harmful execution.',
+      ],
+      code: {
+        language: 'Text',
+        code: `correct required calls = 133
+all attempted calls     = 145
+all required calls      = 140
+
+precision = 133 / 145 = 91.7%
+recall    = 133 / 140 = 95.0%`,
+      },
+      result: 'The agent reaches 91.7 percent call precision and 95.0 percent recall, but three attempted refunds fail the approval-binding check. No refund commits, yet the candidate still fails the release gate because attempted authorization violations must equal zero.',
+    },
+    interview: {
+      prompt: 'Which metrics would you use to evaluate tool calling, and why is final task success insufficient?',
+      answer: 'I would measure tool-selection precision and recall, schema and semantic argument accuracy, ordering, authorization outcomes, idempotency, retry behavior, and committed side effects. Final success can conceal unnecessary reads, denied attacks, duplicate writes, or a lucky answer after the wrong call. Hard safety invariants should remain separate from aggregate quality scores and be verified from server logs.',
+    },
+  },
+  'Indirect prompt injection': {
+    explanation: [
+      'Indirect prompt injection places malicious instructions inside content the system retrieves or observes, such as a web page, document, email, image text, database field, or tool result. The model must receive that content as untrusted data with provenance, and the application must prevent it from changing identity, policy, tool permissions, destinations, or approval state through deterministic checks outside the prompt.',
+      'Use source trust labels, content isolation, least-privilege retrieval, constrained tool schemas, egress allowlists, and attack-aware evaluation at every ingestion and runtime boundary. Removing suspicious phrases is not a complete defense because useful documents can discuss attacks and malicious instructions can be encoded; reducing available capabilities and validating every side effect is more reliable than asking the model to identify all hostile text.',
+    ],
+    whyItMatters: 'A user may ask an entirely benign question while retrieved content attacks the agent on the user behalf. Without a hard distinction between data and authority, connecting retrieval to tools can let anyone who controls a source document influence privileged actions or leak unrelated context.',
+    useCases: [
+      'Stopping instructions hidden in a vendor PDF from redirecting a procurement agent to an external site',
+      'Preventing email content from changing the recipients selected by an executive assistant',
+      'Ensuring a web-research tool cannot make an agent reveal secrets from earlier context',
+    ],
+    workedExample: {
+      scenario: 'A procurement agent summarizes vendor proposals, one of which contains white-on-white text directing the agent to upload competing bids to a public webhook.',
+      steps: [
+        'Extract text in an isolated ingestion service, preserve source and trust metadata, and mark every proposal passage as untrusted document content.',
+        'Give the summarization route read access only; expose no network tool, and keep competing bid text in separately authorized document scopes.',
+        'Require the upload adapter to accept only approved procurement hosts, a server-derived tenant, and an approval token bound to the payload digest.',
+        'Evaluate direct, hidden-text, encoded, and split-across-chunks variants while asserting network and authorization logs contain zero prohibited attempts or sends.',
+      ],
+      code: {
+        language: 'Policy',
+        code: `allow outbound.send when
+  route.capability == "approved-upload" and
+  destination.host in procurement_allowlist and
+  approval.payload_sha256 == sha256(payload) and
+  approval.expires_at > current_time`,
+      },
+      result: 'Across 320 poisoned-document cases, the agent sometimes mentions the embedded instruction but cannot access a network-capable route; all 74 generated upload attempts are denied and zero bid contents reach an external destination.',
+    },
+    interview: {
+      prompt: 'How does indirect prompt injection change the design of a retrieval-augmented agent?',
+      answer: 'It means retrieved content is an attacker-controlled input even when the user is trusted. I would carry provenance and trust labels, minimize cross-document context, separate read and action routes, and enforce identity, authorization, approval, schemas, and egress outside the model. Detection helps triage, but tests must assert actual tool and network outcomes because linguistic filtering cannot establish safety.',
+    },
+  },
+  'Jailbreak resistance': {
+    explanation: [
+      'Jailbreak resistance is the ability to preserve product and safety policy when a user directly tries to override, disguise, role-play around, or gradually erode those rules. A robust design combines model-level policy behavior with deterministic capability restrictions, input and output controls, rate limits, session risk signals, and refusal responses that remain useful without revealing exploitable internal detail.',
+      'Evaluate resistance with evolving multilingual and multi-turn attacks plus benign lookalikes, measuring both harmful compliance and false refusal. A single blocklist overfits wording, stronger filters can reject legitimate education or security work, and model updates shift behavior; hard consequences must be prevented by authorization and sandbox boundaries while calibrated classifiers and model refusals handle content-level policy.',
+    ],
+    whyItMatters: 'Attackers can cheaply vary wording and persist across turns, while excessive refusal damages ordinary users. Separating non-negotiable deterministic controls from measured model behavior lets the system minimize harmful compliance without pretending that refusal prompts alone are a security boundary.',
+    useCases: [
+      'Testing whether role-play requests can induce a claims assistant to fabricate an eligibility decision',
+      'Measuring harmful-code refusals alongside allowed defensive-security explanations',
+      'Detecting multi-turn attempts that gradually request restricted customer information',
+    ],
+    workedExample: {
+      scenario: 'An insurance assistant may explain published policy but cannot approve claims or expose internal fraud indicators.',
+      steps: [
+        'Create reviewed attack suites for direct override, role-play, encoding, multilingual paraphrases, and multi-turn escalation, plus benign cases that share sensitive vocabulary.',
+        'Keep claim approval unavailable to the conversational route and enforce field-level filtering for internal fraud signals before context assembly and after generation.',
+        'Measure prohibited disclosure, prohibited action attempts, useful-refusal rate, and benign false-refusal rate by attack family and language.',
+        'Require human review for novel high-severity failures and add confirmed variants to a protected regression set rather than tuning only to public prompts.',
+      ],
+      code: {
+        language: 'YAML',
+        code: `release_gates:
+  prohibited_actions_committed: "== 0"
+  fraud_signal_disclosure_rate: "== 0"
+  attack_safe_response_rate: ">= 0.98"
+  benign_false_refusal_rate: "<= 0.02"`,
+      },
+      result: 'The candidate blocks all action paths but discloses an internal fraud field in 2 of 1,200 encoded attacks and falsely refuses 0.8 percent of benign cases, so the disclosure gate rejects it despite acceptable usability.',
+    },
+    interview: {
+      prompt: 'How would you improve jailbreak resistance without making the assistant refuse every sensitive topic?',
+      answer: 'I would distinguish prohibited outcomes from merely sensitive language, enforce unavailable actions and protected fields outside the model, and train or prompt for narrow useful refusals. Evaluation must include adaptive, multilingual, and multi-turn attacks plus benign lookalikes, with per-slice false-refusal reporting. Zero-tolerance side effects and disclosures stay hard gates even when aggregate resistance is high.',
+    },
+  },
+  'Sandboxing': {
+    explanation: [
+      'Sandboxing executes model-generated code and untrusted tool workloads inside an isolated, disposable environment with no ambient credentials and default-denied network, filesystem, process, and device access. The launcher should mount only declared inputs, constrain system calls and capabilities, enforce CPU, memory, process, output, and wall-time budgets, and destroy the environment after collecting sanitized results.',
+      'Use operating-system or virtual-machine isolation for code execution rather than relying on language-level filtering, which is routinely bypassed through libraries and runtime features. Stronger isolation adds startup latency and limits available packages, while shared kernels improve speed but expand cross-request risk; choose the boundary from data sensitivity and consequence, prebuild approved images, and treat sandbox output as untrusted.',
+    ],
+    whyItMatters: 'Generated code can be syntactically valid while reading secrets, exhausting resources, exploiting a dependency, or contacting an attacker. A sandbox limits the blast radius independently of model intent and makes resource and network policy enforceable under hostile execution.',
+    useCases: [
+      'Running generated Python analysis against a read-only uploaded dataset',
+      'Executing candidate code during an interview grader without exposing host credentials',
+      'Opening untrusted model conversion utilities in a network-isolated build environment',
+    ],
+    workedExample: {
+      scenario: 'A data-analysis assistant generates Python for customer-uploaded CSV files and returns charts and aggregate tables.',
+      steps: [
+        'Launch each request in a fresh micro-VM with an approved read-only runtime image, one read-only input mount, and a separate size-limited output mount.',
+        'Remove cloud metadata access and credentials, deny all egress, drop privileged capabilities, and permit only the system calls required by the approved Python packages.',
+        'Set two virtual CPUs, 1 GiB memory, 64 processes, 50 MiB output, and a 30-second wall timeout, terminating the whole workload when any limit is exceeded.',
+        'Scan output types and contents before release, record policy violations, and destroy the micro-VM and encryption key after the result is collected.',
+      ],
+      code: {
+        language: 'YAML',
+        code: `sandbox:
+  network: none
+  credentials: none
+  root_filesystem: read_only
+  cpu: 2
+  memory_mib: 1024
+  pids: 64
+  timeout_seconds: 30
+  output_limit_mib: 50`,
+      },
+      result: 'A test program that reads the metadata endpoint, forks recursively, and writes 200 MiB is denied network access, stopped at the process limit, and prevented from exceeding 50 MiB; the host and the next request observe no residual files.',
+    },
+    interview: {
+      prompt: 'What controls would you require before executing model-generated code in production?',
+      answer: 'I would use a fresh OS or micro-VM boundary with no ambient credentials, default-denied egress, read-only approved images, minimal mounts and capabilities, syscall restrictions, and hard CPU, memory, process, output, and time limits. I would scan outputs, isolate tenants, destroy state after use, patch the base image, and test escape and exhaustion attempts. String filtering is not a sandbox.',
+    },
+  },
+  'Approval binding': {
+    explanation: [
+      'Approval binding makes a human authorization valid only for one canonical action: principal, tenant, tool, resource, normalized arguments, release or policy version, expiry, and nonce. The approval service signs or stores a digest of those fields, and the executor recomputes and compares it immediately before use so a model cannot reuse approval for a larger amount, different recipient, or changed operation.',
+      'Use binding for consequential writes and separate proposal, review, approval, and execution records to prevent confused-deputy and time-of-check/time-of-use failures. Broad approvals reduce user friction but authorize unseen changes, while very short expiry can interrupt legitimate work; show reviewers the exact human-readable effect, invalidate approval on any material mutation, and consume one-time approvals atomically with idempotent execution.',
+    ],
+    whyItMatters: 'A generic yes in a chat transcript does not prove which action a person reviewed. Cryptographically or transactionally binding approval to exact parameters preserves human control even if the conversation changes, the agent retries, or an attacker substitutes tool arguments.',
+    useCases: [
+      'Binding finance approval to one recipient, currency, amount, and invoice',
+      'Requiring a deployment approval for one artifact digest and environment',
+      'Preventing an edited email draft from reusing approval granted to an earlier recipient list',
+    ],
+    workedExample: {
+      scenario: 'A treasury agent prepares a 25,000-dollar supplier payment that requires two authorized reviewers.',
+      steps: [
+        'Canonicalize tenant, payment tool, supplier account, invoice, amount in cents, currency, execution date, and artifact policy version, then hash the resulting payload.',
+        'Display those exact fields to two eligible reviewers and issue separate signed approvals containing the payload hash, reviewer identity, role, nonce, and five-minute expiry.',
+        'Inside one transaction, recompute the hash, verify distinct reviewers and expiry, consume both nonces, and call the payment API with a stable idempotency key.',
+        'Require a new approval pair if any bound field changes and store the proposal, approvals, execution receipt, and denial reason in an immutable audit record.',
+      ],
+      code: {
+        language: 'JSON',
+        code: `{
+  "tool": "payment.create@v3",
+  "tenant": "tenant-42",
+  "resource": "invoice-8831",
+  "amount_cents": 2500000,
+  "currency": "USD",
+  "payload_sha256": "8a4d2f...",
+  "expires_at": "2026-10-04T15:05:00Z",
+  "nonce": "one-time-7f31"
+}`,
+      },
+      result: 'Changing the amount from 2,500,000 to 2,600,000 cents produces a different digest and both approvals fail validation; the original request executes once, and a retry returns the same payment receipt without a second transfer.',
+    },
+    interview: {
+      prompt: 'Why is asking a user to confirm an agent action not sufficient approval control?',
+      answer: 'Confirmation text is ambiguous and can become detached from the eventual tool arguments. I would bind approval to canonical identity, tenant, tool version, resource, exact parameters, policy version, expiry, and nonce; verify it at execution; require independent approvers where needed; and consume it atomically with an idempotency key. Any material change must require fresh review.',
+    },
+  },
+  'Deployment and CI/CD': {
+    explanation: [
+      'AI deployment treats application code, model route, prompts, retrieval corpus and index, tool schemas, policies, evaluators, and datasets as one versioned release manifest. Continuous integration should run deterministic software tests, contract and security tests, offline quality evaluations, cost and latency checks, and artifact provenance verification before signing one immutable candidate for promotion.',
+      'Use progressive delivery after CI through shadow traffic, risk-scoped canaries, and staged rollout with automatic rollback against the previous manifest. Evaluation suites are slower and noisier than unit tests, hosted dependencies can change outside the repository, and rebuilding indexes delays releases; split fast pull-request checks from full protected-branch gates, cache only content-addressed artifacts, and never promote mutable aliases.',
+    ],
+    whyItMatters: 'A prompt-only or index-only change can alter production behavior as much as a code change. Making the complete AI configuration a signed deployable unit gives teams repeatable evidence, controlled promotion, and a precise rollback target when quality or safety shifts.',
+    useCases: [
+      'Blocking a pull request when a prompt change regresses a critical evaluation slice',
+      'Promoting a signed model-and-index manifest through staging and canary environments',
+      'Rolling back retrieval independently while retaining an unrelated application security fix',
+    ],
+    workedExample: {
+      scenario: 'A support agent release changes its prompt, embedding model, index snapshot, and refund-tool schema.',
+      steps: [
+        'Run lint, type, unit, schema, migration, tool-contract, and prompt-injection tests on every pull request using seeded fixtures and pinned dependencies.',
+        'On the protected branch, evaluate 1,200 holdout cases for grounded resolution, critical-language slices, unauthorized actions, p95 tokens, and simulated latency against production.',
+        'Build and sign a manifest containing every artifact digest, deploy it to shadow traffic, then canary 1, 10, 25, 50, and 100 percent with sticky conversation assignment.',
+        'Automatically restore the prior manifest if any hard safety gate fails or if grounded resolution drops more than one point with a 95 percent paired confidence interval.',
+      ],
+      code: {
+        language: 'YAML',
+        code: `pipeline:
+  pull_request: [typecheck, unit, tool-contract, security-smoke]
+  protected_branch: [offline-eval, sign-manifest]
+  rollout_stages: [shadow, 1, 10, 25, 50, 100]
+  gates:
+    unauthorized_actions: "== 0"
+    grounded_resolution_delta: ">= -0.01"
+    p95_tokens: "<= 2200"`,
+      },
+      result: 'The candidate passes software tests but loses 3.4 points on the Japanese refund slice, so CI withholds the signature and no environment can promote the incomplete manifest.',
+    },
+    interview: {
+      prompt: 'How would you design CI/CD for an AI system whose model and retrieval data change independently from code?',
+      answer: 'I would resolve every dependency into an immutable manifest, use fast deterministic checks on pull requests, run representative quality, safety, contract, latency, and cost gates before signing, and promote that same artifact progressively. Traces identify the manifest, caches are version-isolated, and rollback restores the whole known-good configuration or an explicitly compatible component rather than a mutable model alias.',
+    },
+  },
+  'Token and cost optimization': {
+    explanation: [
+      'Token and cost optimization reduces spend per successful task by measuring input, cached input, output, embedding, reranking, tool, retry, and infrastructure costs against a quality baseline. Effective levers include prompt and schema compression, smaller retrieved contexts, conversation summarization, response limits, semantic or prefix caching, batch work, and routing simple tasks to a cheaper model while reserving stronger models for measured hard cases.',
+      'Optimize the complete workflow rather than token count in isolation because a cheap call that fails, retries, or creates manual review can cost more overall. Aggressive truncation can remove evidence, smaller models can increase tool errors, and caches can return stale data; require per-slice quality and safety gates, report cost per validated outcome, and cap worst-case usage before inference rather than relying only on monthly alerts.',
+    ],
+    whyItMatters: 'AI cost scales with traffic, context, output, retries, and routing decisions, so small per-request waste becomes material at production volume. Explicit unit economics let engineers trade quality, latency, and spend rationally instead of applying arbitrary token limits that quietly degrade outcomes.',
+    useCases: [
+      'Routing routine intent classification to a small model and complex synthesis to a stronger one',
+      'Reducing retrieved context by reranking chunks before generation',
+      'Setting tenant token budgets and blocking requests whose declared maximum would exceed them',
+    ],
+    workedExample: {
+      scenario: 'A support assistant handles 500,000 monthly requests with 3,000 input and 700 output tokens per request on a model priced at 3 dollars and 12 dollars per million tokens respectively.',
+      steps: [
+        'Calculate the baseline as 3,000 times 3 dollars per million plus 700 times 12 dollars per million, or 0.0174 dollars per request and 8,700 dollars per month.',
+        'Rerank retrieval and compact history to 1,800 input and 450 output tokens while preserving the pinned evaluation baseline.',
+        'Route 70 percent of qualified requests to a small model priced at 0.50 dollars input and 2 dollars output per million, leaving 30 percent on the original model.',
+        'Compute and gate the blended cost alongside grounded resolution, escalation, tool accuracy, p95 latency, and critical-slice regressions before rollout.',
+      ],
+      code: {
+        language: 'Text',
+        code: `small request = 1800 * $0.50/M + 450 * $2/M  = $0.0018
+large request = 1800 * $3/M    + 450 * $12/M = $0.0108
+blended cost  = 70% * $0.0018 + 30% * $0.0108 = $0.0045
+monthly cost  = 500,000 * $0.0045 = $2,250`,
+      },
+      result: 'Measured monthly model cost falls from 8,700 dollars to 2,250 dollars, a 74.1 percent reduction, while grounded resolution remains within the one-point regression budget and p95 tool accuracy is unchanged.',
+    },
+    interview: {
+      prompt: 'How would you reduce LLM cost without accidentally optimizing away product quality?',
+      answer: 'I would establish cost per validated task and per-slice quality baselines, decompose spend by route and stage, and target the dominant components with retrieval reduction, compaction, caching, routing, and output caps. Every change runs paired quality, safety, latency, and escalation gates. I would also enforce request and tenant budgets so a pathological context cannot consume the monthly plan.',
+    },
+  },
+  'Requirements and SLOs': {
+    explanation: [
+      'AI system requirements translate user workflows and consequences into measurable functional, quality, safety, latency, availability, privacy, and cost targets. Define eligible-request denominators, critical cohorts, peak demand, data classes, permitted actions, human escalation, and recovery objectives before choosing models or infrastructure, then identify which requirements are statistical SLOs and which are zero-tolerance invariants.',
+      'Use outcome-oriented service-level indicators such as validated grounded resolutions rather than HTTP success or average model score. Tighter objectives increase redundancy and model cost, quality labels arrive later than latency metrics, and global targets can hide failures for one language or workflow; pair fast operational proxies with audited delayed outcomes, publish error budgets, and keep unauthorized side effects outside any burnable budget.',
+    ],
+    whyItMatters: 'Architecture choices are impossible to defend without a workload and measurable definition of success. Clear SLOs align product, engineering, security, and operations around acceptable tradeoffs and provide the thresholds that drive capacity, evaluation, rollout, and incident response.',
+    useCases: [
+      'Defining grounded-resolution and latency objectives for a field-service copilot',
+      'Separating a 99.5 percent availability SLO from a zero unauthorized-action invariant',
+      'Sizing human review capacity from an explicit escalation-rate objective',
+    ],
+    workedExample: {
+      scenario: 'A field-service assistant supports 20,000 jobs per day, retrieves equipment manuals, and may draft but never submit safety overrides.',
+      steps: [
+        'Define an eligible request as an authenticated troubleshooting question with an available approved manual and exclude planned maintenance from availability accounting.',
+        'Set a monthly SLO of 99.5 percent validated grounded responses within four seconds, at least 95 percent citation precision, at most 8 percent human escalation, and zero submitted safety overrides.',
+        'Calculate 20,000 times 30 as 600,000 monthly requests, giving a 0.5 percent error budget of 3,000 responses; alert on one-hour and six-hour burn rates before that budget is exhausted.',
+        'Require separate English, Spanish, and high-risk-equipment reports and capture delayed technician confirmation to calibrate the immediate groundedness proxy.',
+      ],
+      code: {
+        language: 'YAML',
+        code: `objectives:
+  validated_response_within_4s: 0.995
+  monthly_eligible_requests: 600000
+  monthly_error_budget: 3000
+  citation_precision: ">= 0.95"
+  human_escalation_rate: "<= 0.08"
+invariant:
+  submitted_safety_overrides: 0`,
+      },
+      result: 'The requirements expose that a proposed low-cost route meets latency but only 90 percent citation precision on high-risk equipment, so it is limited to low-risk manuals rather than adopted globally.',
+    },
+    interview: {
+      prompt: 'How would you define an SLO for an AI assistant when correctness cannot be labeled immediately?',
+      answer: 'I would define the user outcome and eligible denominator first, then combine immediate validated proxies such as citation support, schema validity, and successful tool outcomes with delayed audited labels. I would set per-slice quality and latency objectives, publish an error budget, and calibrate proxies against later outcomes. Security invariants such as unauthorized actions remain zero tolerance, not part of the error budget.',
+    },
+  },
+  'End-to-end architecture': {
+    explanation: [
+      'An end-to-end AI architecture separates the request path into identity and policy enforcement, orchestration, retrieval, model access, tool execution, validation, state, telemetry, and feedback, with an immutable release manifest connecting runtime behavior to build artifacts. Data-plane services handle user traffic while control-plane workflows govern prompts, indexes, models, policies, evaluations, and promotion.',
+      'Choose synchronous paths only for work that fits the interaction latency budget and move long ingestion, evaluation, and batch generation to durable asynchronous jobs. Central gateways improve policy consistency but create shared failure domains, managed models reduce operational burden but limit control, and stateful agents simplify continuity while complicating version changes; make these tradeoffs explicit and assign timeout, retry, ownership, and degradation behavior to every boundary.',
+    ],
+    whyItMatters: 'Senior design decisions concern the behavior of the whole system, not merely which model to call. Clear boundaries prevent the model from inheriting trust it should not have, keep slow or unreliable dependencies from consuming the entire request budget, and give each failure a contained operational response.',
+    useCases: [
+      'Designing a multi-tenant support agent with retrieval and approved account tools',
+      'Separating document ingestion and index promotion from the online answer path',
+      'Allocating latency and ownership across gateway, retrieval, inference, tools, and validation',
+    ],
+    workedExample: {
+      scenario: 'A business support agent must answer policy questions, inspect account status, and draft service changes for 2,000 tenants.',
+      steps: [
+        'Route authenticated requests through an API edge to an orchestrator that derives tenant context, loads the pinned manifest, and selects a read-only or draft-capable workflow.',
+        'Run tenant-filtered hybrid retrieval and live account tools in parallel only when dependencies are independent, then send minimal labeled evidence through the model gateway.',
+        'Validate citations and draft arguments, store conversation state separately from audit events, and require a bound approval through the tool proxy before any service change executes.',
+        'Allocate the four-second p95 budget as 100 milliseconds edge and identity, 350 retrieval, 700 tools, 2,200 model, 150 validation, and 500 network and queue headroom.',
+      ],
+      code: {
+        language: 'Text',
+        code: `client -> API edge -> orchestrator -> model gateway
+                         |-> tenant retrieval
+                         |-> authorized tool proxy
+                         |-> state store
+                         |-> validation -> response
+
+control plane: ingest -> evaluate -> sign manifest -> progressive deploy`,
+      },
+      result: 'The design keeps the interactive critical path within 4,000 milliseconds, moves index construction out of band, and ensures that losing the model route degrades policy questions to cited search while all service-change execution stops.',
+    },
+    interview: {
+      prompt: 'Walk through the boundaries you would include in an end-to-end architecture for a production AI agent.',
+      answer: 'I would start with identity and workload requirements, then separate orchestration, tenant-scoped retrieval, a governed model gateway, a server-authorized tool proxy, validation, state, audit, and telemetry. Ingestion and evaluation belong in an asynchronous control plane. Each dependency gets a budget, contract, owner, fallback, and version in the release manifest, and the model never becomes the authority for access or side effects.',
+    },
+  },
+  'Model and data boundaries': {
+    explanation: [
+      'Model and data boundaries define which information may enter each model context, where it may be processed, how long providers and caches retain it, and which outputs can cross into storage, tools, or users. Classification, tenant and purpose authorization, minimization, tokenization, regional routing, encryption, provenance, and deletion must apply to prompts, embeddings, indexes, traces, feedback, and evaluation datasets as well as source records.',
+      'Select models by task capability and data constraints rather than forcing all traffic through one endpoint. A hosted frontier model may improve complex reasoning but increase residency and vendor exposure, while a smaller private model offers stronger locality at lower capability and higher operational burden; route by declared data class, keep protected fields out of model-visible context, and validate every boundary with canary and deletion tests.',
+    ],
+    whyItMatters: 'AI pipelines copy and transform data across systems that often have different trust and retention guarantees. Explicit boundaries prevent capability decisions from silently becoming privacy or tenancy decisions and let teams use stronger models only where the information and consequence permit it.',
+    useCases: [
+      'Keeping direct patient identifiers inside a trusted tokenization boundary',
+      'Routing public-document synthesis differently from confidential contract analysis',
+      'Deleting a customer record from source storage, vector indexes, caches, traces, and evaluation sets',
+    ],
+    workedExample: {
+      scenario: 'A healthcare assistant summarizes referral notes for clinicians while a hosted model offers the best measured clinical completeness.',
+      steps: [
+        'Classify direct identifiers and highly sensitive fields, authorize the clinician and patient relationship, and replace necessary identifiers with scoped random tokens before retrieval or inference.',
+        'Keep the token map and full record in the approved region, send only minimized clinical text to a no-retention regional endpoint, and prohibit the model route from receiving credentials or unrelated history.',
+        'Validate generated claims against retrieved passages, restore identifiers only inside the authorized application session, and send uncertain findings to clinician review.',
+        'Track every derived object by source record identifier so deletion removes chunks, embeddings, cache entries, payload traces, and evaluation copies within the documented objective.',
+      ],
+      code: {
+        language: 'Policy',
+        code: `route hosted_clinical_model when
+  purpose == "referral-summary" and
+  data.region == model.region and
+  direct_identifiers_removed == true and
+  provider.retention == "none"
+
+otherwise route private_model_or_human_review`,
+      },
+      result: 'The hosted model receives no direct identifiers, completeness improves from 88 to 95 percent on the reviewed slice, and a deletion drill removes all six derived artifact types for a test patient within four hours.',
+    },
+    interview: {
+      prompt: 'How would you choose between a hosted frontier model and a privately operated smaller model for sensitive workloads?',
+      answer: 'I would compare measured task capability, data classification, residency, retention, isolation, provider terms, latency, availability, operational burden, and total cost. I would minimize and tokenize before either route, use policy-based routing by task and data class, and keep authorization and protected fields outside model control. The choice can be hybrid rather than global, with human review where neither route meets requirements.',
+    },
+  },
+  'Retrieval and tool integration': {
+    explanation: [
+      'Retrieval supplies evidence for reasoning, while tools obtain fresh state or perform typed operations; they need distinct trust and evaluation contracts. Retrieval should enforce tenant and document authorization in the query, combine appropriate lexical and vector candidates, rerank, fit a context budget, preserve provenance, and validate citations, while tools require server-derived identity, narrow schemas, authorization, bounded retries, and idempotency.',
+      'Use retrieval for relatively stable knowledge and live tools for volatile or transactional facts instead of embedding rapidly changing state. Larger candidate sets improve recall but consume latency, bigger contexts can dilute evidence, and parallel tool calls reduce latency only when independent; define freshness, failure, and conflict behavior, and never let retrieved instructions alter tool permissions or approval state.',
+    ],
+    whyItMatters: 'Many production failures come from using the right model with the wrong evidence or stale state. A designed integration makes source authority, freshness, permissions, and latency visible and keeps a persuasive document from becoming an instruction channel into operational tools.',
+    useCases: [
+      'Combining equipment manuals with a live telemetry tool for maintenance diagnosis',
+      'Using contract retrieval for clauses while querying an approved system for current account status',
+      'Reranking authorized chunks to reduce context without losing critical evidence',
+    ],
+    workedExample: {
+      scenario: 'A maintenance copilot answers technician questions from manuals and reads current sensor state before recommending a shutdown.',
+      steps: [
+        'Apply site, equipment, and technician ACL filters during hybrid retrieval, merge 40 lexical and vector candidates, and rerank the authorized set to six passages.',
+        'Limit each passage to 350 tokens for a 2,100-token evidence budget and require every procedural claim to cite one of the six passage identifiers.',
+        'Call the read-only telemetry tool with a server-derived equipment identifier and a 500-millisecond timeout; never substitute indexed sensor history when the live value is required.',
+        'Allow shutdown only through a separate tool with a fresh safety check and bound supervisor approval, failing closed when retrieval and live state conflict.',
+      ],
+      code: {
+        language: 'YAML',
+        code: `integration_budget:
+  retrieval_candidates: 40
+  reranked_passages: 6
+  tokens_per_passage: 350
+  evidence_tokens: 2100
+  retrieval_p95_ms: 350
+  telemetry_timeout_ms: 500
+  shutdown_requires_bound_approval: true`,
+      },
+      result: 'Reranking reduces evidence from 8,900 to 2,100 tokens while retaining 97 percent recall at six; live telemetry catches 23 stale-document conflicts, and every one routes to review with zero automatic shutdowns.',
+    },
+    interview: {
+      prompt: 'How do you decide whether information belongs in retrieval context or behind a tool?',
+      answer: 'I use retrieval for governed knowledge where provenance and snapshot freshness are acceptable, and a tool for live, personalized, or transactional state. Retrieval must enforce ACLs before candidates enter context and preserve citations; tools must derive identity server-side, validate schemas, authorize resources, and control retries and side effects. I budget both paths and define what happens when evidence is missing, stale, or contradictory.',
+    },
+  },
+  'Capacity and cost': {
+    explanation: [
+      'Capacity planning converts arrival rates, service times, token-length distributions, concurrency limits, accelerator memory, provider quotas, and failure headroom into required throughput. Benchmark representative workloads rather than relying on nominal model rates, apply Little law as a starting point for in-flight demand, and model interactive and batch queues separately because tail latency and burst behavior determine useful capacity.',
+      'Compare managed API, reserved throughput, and self-hosted inference using total cost per successful task, including idle headroom, retries, storage, networking, observability, and operations. High utilization lowers unit cost but increases queueing, multi-zone tolerance adds replicas, and autoscaling cannot cover cold-start or quota lead time; reserve the predictable base, burst through a compatible route, and enforce admission and token budgets.',
+    ],
+    whyItMatters: 'AI workloads can saturate on active tokens or memory while conventional CPU dashboards look healthy. Explicit demand and failure calculations prevent both expensive overprovisioning and architectures that meet average traffic but collapse during a launch, provider throttle, or zone loss.',
+    useCases: [
+      'Sizing an inference pool from peak request rate and measured safe concurrency',
+      'Comparing managed token pricing with accelerator reservation and staffing cost',
+      'Separating guaranteed interactive capacity from interruptible batch summarization',
+    ],
+    workedExample: {
+      scenario: 'An internal copilot peaks at 60 requests per second with a measured three-second mean service time, and each replica sustains 12 concurrent requests at the latency SLO.',
+      steps: [
+        'Calculate peak in-flight demand using Little law as 60 requests per second times 3 seconds, giving 180 concurrent requests.',
+        'Operate replicas at 80 percent of the measured 12-request limit, so required healthy capacity is the ceiling of 180 divided by 9.6, or 19 replicas.',
+        'To survive loss of one of three equal zones without exceeding that target, provision the ceiling of 19 times 3 divided by 2, or 29 replicas distributed 10, 10, and 9.',
+        'At 2.40 dollars per replica-hour and 730 hours, calculate a 50,808-dollar monthly base, then compare it with managed API cost per validated task before committing capacity.',
+      ],
+      code: {
+        language: 'Text',
+        code: `peak concurrency = 60 requests/s * 3 s = 180
+usable per replica = 12 * 80% = 9.6
+healthy replicas = ceil(180 / 9.6) = 19
+three-zone N-1 replicas = ceil(19 * 3 / 2) = 29
+monthly base = 29 * $2.40/hour * 730 hours = $50,808`,
+      },
+      result: 'The calculation rejects an initial 16-replica proposal, which could serve only 153.6 in-flight requests at target utilization and would fail both peak demand and zone-loss requirements.',
+    },
+    interview: {
+      prompt: 'How would you size and price capacity for a generative AI service with bursty traffic?',
+      answer: 'I would benchmark representative input and output lengths to find safe concurrency and tail latency, calculate in-flight peak demand, add utilization and failure headroom, and model queue limits and cold starts. I would compare managed and self-hosted total cost per validated task, reserve predictable base demand, isolate batch work, and define admission, degradation, and quota plans for bursts rather than assuming autoscaling is instantaneous.',
+    },
+  },
+  'Reliability and degradation': {
+    explanation: [
+      'Reliability design enumerates failures across identity, retrieval, model providers, tools, state, queues, and validators, then assigns each boundary a timeout, retry rule, circuit breaker, bulkhead, idempotency contract, fallback, and recovery objective. Degradation should preserve a smaller truthful capability, such as cited search without synthesis, while clearly disabling actions whose authorization, freshness, or validation cannot be guaranteed.',
+      'Use retries only for classified transient and idempotent operations, bound total attempts by the end-to-end deadline, and isolate provider or tenant overload so it cannot consume every worker. Redundancy raises cost, a fallback model can share the same regional dependency, and stale cache may violate policy; test dependency failures and zone loss regularly, expose degraded mode to users and telemetry, and fail closed for consequential writes.',
+    ],
+    whyItMatters: 'An AI application depends on more volatile services than a single model endpoint, and naive retry chains can amplify one failure into system-wide exhaustion. Deliberate degradation keeps verified low-risk value available while ensuring that uncertainty never silently crosses into an unsafe action.',
+    useCases: [
+      'Returning cited search results when generation exceeds its deadline',
+      'Opening a circuit after repeated provider throttles while preserving another workload pool',
+      'Blocking account changes when live state or approval verification is unavailable',
+    ],
+    workedExample: {
+      scenario: 'A claims assistant answers policy questions and can draft, but not independently execute, claim adjustments across two model regions.',
+      steps: [
+        'Set a 3.5-second request deadline with 300 milliseconds for retrieval, 2.4 seconds for one primary model attempt, and 800 milliseconds for validation and network headroom.',
+        'On throttling, open a route-level circuit after 20 failures in 30 seconds and send only low-risk answer traffic to a tested secondary region without recursive retries.',
+        'When both model routes fail, return authorized cited passages from retrieval; when policy, live claim state, or approval service fails, disable adjustment drafts and hand off to staff.',
+        'Run quarterly fault injection for region loss, stale indexes, slow tools, and duplicate delivery, verifying SLO burn, idempotency, alerts, and recovery time.',
+      ],
+      code: {
+        language: 'YAML',
+        code: `degradation:
+  primary_throttled: secondary_model
+  all_models_unavailable: cited_search_only
+  retrieval_unavailable: human_handoff
+  authorization_unavailable: deny_actions
+  approval_unavailable: deny_actions
+retry:
+  attempts: 1
+  only_when: transient_and_idempotent`,
+      },
+      result: 'During a 14-minute primary-region outage, 91 percent of policy questions receive validated secondary answers, 7 percent receive cited search, and 2 percent reach staff; no claim adjustment executes and p95 latency stays within four seconds.',
+    },
+    interview: {
+      prompt: 'What does graceful degradation mean for an AI agent that can both answer questions and take actions?',
+      answer: 'It means preserving only capabilities whose evidence and controls still hold. I might fall back from synthesis to authorized cited search, but I would stop writes when live state, authorization, approval, or validation is unavailable. Each dependency needs bounded timeouts, idempotent retry rules, circuit breakers, workload isolation, and a tested fallback contract, with degraded behavior visible to users and operators.',
+    },
+  },
+  'Security and evaluation review': {
+    explanation: [
+      'A security and evaluation review is the release-level examination of the complete AI system: assets and threat model, data flows, identity and tenant isolation, model and retrieval boundaries, tool authorization, approval, sandboxing, supply chain, abuse controls, telemetry, datasets, evaluators, and rollback. Reviewers should trace representative requests and attacks from input to side effect and require evidence from executable tests rather than accepting architecture claims.',
+      'Perform the review before first production use and after material changes to models, data access, tools, autonomy, or user population, with independent owners for high-consequence risks. Checklists improve coverage but can become ceremonial, benchmark scores can hide unsupported slices, and accepted risks can persist indefinitely; record severity, owner, compensating control, expiry, launch condition, and residual risk in a signed decision.',
+    ],
+    whyItMatters: 'AI risk emerges from interactions among probabilistic models, privileged data, and deterministic software boundaries. A structured final review connects design intent to test evidence, catches gaps that component teams miss, and makes the decision to launch or defer explicit and auditable.',
+    useCases: [
+      'Reviewing a new human-resources agent before it receives employee-data access',
+      'Reassessing an existing assistant when a read-only tool becomes write-capable',
+      'Requiring evidence that critical evaluation slices and attack paths pass before promotion',
+    ],
+    workedExample: {
+      scenario: 'A global human-resources agent answers policy questions, reads employee benefits, and drafts leave requests for manager approval.',
+      steps: [
+        'Map employee data from source through retrieval, prompts, providers, caches, traces, and deletion, then threat-model cross-tenant access, injected documents, approval substitution, and support-operator misuse.',
+        'Review server authorization, regional routing, tool schemas, approval payloads, audit access, artifact provenance, incident rollback, and evaluation coverage with security, privacy, HR, and operations owners.',
+        'Run tenant-isolation, canary-secret, indirect-injection, jailbreak, duplicate-action, deletion, load, and critical-language evaluations against the exact signed release manifest.',
+        'Block launch on hard failures; document lower residual risks with owner, mitigation, telemetry, expiry, and a condition that automatically reopens review after a material capability change.',
+      ],
+      code: {
+        language: 'YAML',
+        code: `launch_decision:
+  cross_tenant_records: "== 0"
+  unauthorized_leave_requests: "== 0"
+  canary_secret_exfiltration: "== 0"
+  critical_language_score: ">= 0.92"
+  rollback_tested: true
+  residual_risk_requires: [owner, mitigation, telemetry, expiry]`,
+      },
+      result: 'The review finds that retrieval filters only after vector search and that manager approval is not bound to leave dates. Launch remains blocked until pre-filtered tenant retrieval and payload-bound approval pass 900 isolation and action cases with zero violations.',
+    },
+    interview: {
+      prompt: 'What evidence would you require in a go-live review for a high-impact AI agent?',
+      answer: 'I would require a current threat model and data-flow map, exact release manifest, authorization and approval tests from server logs, tenant and exfiltration tests, sandbox and supply-chain evidence, representative quality and safety results by critical slice, capacity and failure drills, monitoring ownership, rollback proof, and documented residual risks. A passing average score cannot override a failed hard control.',
+    },
+  },
 } satisfies Record<string, AiLessonDetails>

@@ -596,4 +596,140 @@ cache_key = authorized_tenant + ":" + normalized_query`,
       answer: 'It is necessary in a shared index but not sufficient alone. The tenant must come from trusted identity, ingestion must require correct metadata, the query must fail closed, and caches, rerankers, context, citations, and logs must preserve the same scope. I would validate returned IDs and continuously test forged, missing, stale, and cross-tenant cases.',
     },
   },
+  'Query transformation': {
+    explanation: [
+      'Query transformation turns a conversational request into one or more retrieval queries that better match the corpus. Rewriting removes conversational noise and resolves references, controlled expansion adds synonyms, acronyms, and exact terminology, decomposition separates independent or multi-hop information needs, and multi-query retrieval searches complementary formulations before merging their candidates.',
+      'Every transformation must preserve the original intent, entities, negation, dates, exact identifiers, and mandatory scope filters. Authorization and business filters should remain trusted structured predicates attached to every branch rather than text the model may rewrite; cap query fan-out, trace each variant to its source intent, and treat generated terms as search hints rather than new facts.',
+    ],
+    whyItMatters: 'User wording rarely matches every useful source, but unconstrained rewriting can silently answer a neighboring question or search an unauthorized scope. Disciplined transformation improves recall while keeping the retrieval operation faithful, testable, and bounded.',
+    useCases: [
+      'Expanding password reset into account recovery while retaining an exact product and locale filter',
+      'Decomposing a comparison request into one specification query per named product',
+      'Issuing lexical and semantic variants for an error code plus its natural-language symptom',
+    ],
+    workedExample: {
+      scenario: 'An Acme employee asks whether an EU Enterprise subscription can move from annual to monthly billing at renewal without a fee.',
+      steps: [
+        'Extract the two answer intents, billing-cadence eligibility and change fees, while deriving tenant, EU region, Enterprise plan, and effective date from trusted request data.',
+        'Rewrite the conversational request as change annual billing to monthly at renewal and expand it with controlled corpus terms such as billing frequency and renewal cadence.',
+        'Decompose the request into an eligibility query and a fee query, then issue exact-term and semantic variants with the identical immutable filter envelope.',
+        'Fuse the candidate lists, deduplicate canonical policy versions, and retain query-to-result lineage so gains and intent drift can be evaluated.',
+      ],
+      code: {
+        language: 'Text',
+        code: `filters = tenant:"acme" AND region:"EU" AND plan:"enterprise"
+q1 = "change annual billing to monthly at renewal"
+q2 = "enterprise renewal billing cadence eligibility"
+q3 = "fees for changing billing frequency at renewal"`,
+      },
+      result: 'The original query retrieves only a generic billing page, while the transformed set retrieves the current EU cadence rule and its no-fee exception in the top five without searching outside Acme or Enterprise content.',
+    },
+    interview: {
+      prompt: 'How can multi-query retrieval improve recall without changing the meaning or scope of the request?',
+      answer: 'I would first freeze trusted filters and a structured statement of intent, then generate a small set of variants that cover known vocabulary or subquestions. Every variant receives the same filters, candidates are fused and deduplicated, and traces preserve which variant found each result. I would test recall gains alongside intent-drift, forbidden-result, latency, and duplicate-rate checks.',
+    },
+  },
+  'Context construction': {
+    explanation: [
+      'Context construction converts retrieved candidates into the bounded evidence package supplied to generation. It selects passages for relevance and coverage, removes exact and near duplicates, preserves source and version boundaries, and orders evidence so governing rules, exceptions, and supporting details remain easy to associate with the right source.',
+      'The builder must budget tokens across instructions, the user request, evidence, and the expected answer instead of filling the entire window with top-ranked chunks. Selection should favor distinct required facts over repeated high scores, truncate only at semantic boundaries, label every passage independently, and avoid merging text from different documents in ways that obscure provenance or let untrusted source text look like instructions.',
+    ],
+    whyItMatters: 'Retrieval can find the right evidence and still fail if context assembly drops it, repeats one source, separates an exception from its rule, or exhausts the token budget. Deliberate construction improves evidence coverage, citation integrity, and the model ability to distinguish sources and instructions.',
+    useCases: [
+      'Packing policy rules and regional exceptions into a fixed prompt budget without duplicate versions',
+      'Building a comparison context that reserves evidence space for every product named by the user',
+      'Separating untrusted retrieved documents into labeled source blocks for grounded generation',
+    ],
+    workedExample: {
+      scenario: 'A compliance assistant must explain a general retention rule and an EU exception from 18 reranked chunks inside an 8,000-token context window.',
+      steps: [
+        'Reserve 700 tokens for system instructions and the request plus 1,500 for the answer, leaving at most 5,800 tokens for evidence.',
+        'Select the active governing policy, the EU exception, and the definition each relies on, then remove repeated excerpts and superseded versions by canonical source and semantic similarity.',
+        'Order the definition first, the governing rule second, and the linked exception immediately after it rather than blindly preserving score order.',
+        'Emit each passage as a separate block with source ID, section, version, and effective date, trimming at paragraph boundaries if the evidence exceeds its budget.',
+      ],
+      code: {
+        language: 'Text',
+        code: `[source=policy-17 section=definitions version=4]
+...
+[source=policy-17 section=retention-rule version=4]
+...
+[source=eu-addendum-3 section=exception version=2]
+...`,
+      },
+      result: 'The final evidence uses 4,920 tokens, removes seven duplicate or obsolete chunks, keeps the exception adjacent to its governing rule, and preserves unambiguous citation boundaries for all three selected sources.',
+    },
+    interview: {
+      prompt: 'Why is taking the highest-scoring chunks until the token window is full a weak context-construction strategy?',
+      answer: 'Scores do not account for duplicate passages, coverage of separate answer requirements, source conflicts, or the space needed for instructions and output. I would reserve a budget first, select for relevance plus marginal coverage, deduplicate by canonical source and meaning, keep related rules and exceptions together, and preserve labeled source boundaries so citations and trust rules remain enforceable.',
+    },
+  },
+  'Ranking metrics': {
+    explanation: [
+      'Precision at k is the fraction of the first k results that are relevant, while recall at k is the fraction of all judged relevant items found in those k results. Mean reciprocal rank averages the reciprocal rank of the first relevant result across queries, so it emphasizes finding one answer early; normalized discounted cumulative gain uses graded relevance, discounts lower ranks, and divides by the ideal ordering for a score between zero and one.',
+      'Choose metrics that match the product task and report them at an explicit k. Precision and recall need reliable relevance judgments, MRR fits lookup tasks but ignores later relevant results, and nDCG captures ordering among several graded results; incomplete labels, averages across unlike query classes, and changing candidate pools can make apparently precise comparisons misleading.',
+    ],
+    whyItMatters: 'Ranking metrics distinguish evidence coverage from ordering quality. They show whether a retriever needs broader candidates, cleaner top results, or better ordering, which prevents a team from increasing context size when the real problem is that useful evidence ranks too low.',
+    useCases: [
+      'Comparing candidate retrievers with recall at 20 before applying a reranker',
+      'Measuring whether an FAQ search places one definitive answer first with MRR',
+      'Evaluating graded legal-search results with nDCG when primary authority should outrank commentary',
+    ],
+    workedExample: {
+      scenario: 'A search evaluation has four judged relevant documents with grades 3, 2, 1, and 1, while the returned top-five grades are 0, 3, 0, 2, and 1.',
+      steps: [
+        'Treat every positive grade as relevant: three of five returned documents are relevant, so precision at 5 is 3 divided by 5, or 0.60, and recall at 5 is 3 divided by 4, or 0.75.',
+        'The first relevant result is at rank two, so this query contributes a reciprocal rank of 1 divided by 2, or 0.50, to MRR.',
+        'Using gain 2 to the power of relevance minus 1 and logarithmic rank discount, calculate DCG at 5 as 6.10 for the returned order.',
+        'Sort the judgments as 3, 2, 1, 1, and 0 to get an ideal DCG of 9.82, then divide 6.10 by 9.82 for nDCG at 5 of 0.62.',
+      ],
+      code: {
+        language: 'Text',
+        code: `P@5 = 3 / 5 = 0.60
+R@5 = 3 / 4 = 0.75
+RR = 1 / 2 = 0.50
+DCG@5 = 7/log2(3) + 3/log2(5) + 1/log2(6) = 6.10
+IDCG@5 = 7 + 3/log2(3) + 1/log2(4) + 1/log2(5) = 9.82
+nDCG@5 = 6.10 / 9.82 = 0.62`,
+      },
+      result: 'The retriever finds three quarters of the relevant set, but MRR of 0.50 and nDCG at 5 of 0.62 expose weak ordering; reranking is a more targeted next experiment than simply increasing k.',
+    },
+    interview: {
+      prompt: 'When would you choose recall at k, MRR, or nDCG to evaluate a retriever?',
+      answer: 'I would use recall at k when a downstream stage needs every relevant candidate, MRR when success depends mainly on the first correct result, and nDCG when several results have different usefulness and their order matters. I would pair them with precision, state k and the relevance definition, segment by query type, and inspect label completeness before attributing a metric change to the system.',
+    },
+  },
+  'Evaluation diagnosis': {
+    explanation: [
+      'Evaluation diagnosis traces a failed request through explicit stage artifacts. A retrieval failure means required evidence never enters the candidate set; a context-construction failure means candidates contain it but the final prompt omits, truncates, duplicates, or misorders it; a generation failure means sufficient final context is present but the answer is unsupported, incomplete, or contrary to it.',
+      'End-to-end failure is the user-visible outcome and can remain even when those component checks pass because citations, tool actions, authorization, latency, formatting, or workflow state are wrong. Capture source versions, transformed queries, filters, candidate ranks, final context, model output, and product outcome, then change the earliest failing stage and replay the same case before broad retuning.',
+    ],
+    whyItMatters: 'The same wrong answer can come from very different causes, and changing the wrong component wastes effort or creates regressions. Stage-specific evidence turns evaluation into a corrective decision: expand retrieval, repair context assembly, constrain generation, or fix the surrounding workflow according to where the first failure occurs.',
+    useCases: [
+      'Determining whether a missing policy exception requires query changes or context-budget changes',
+      'Separating unsupported generation from a retriever that never supplied the required fact',
+      'Finding citation, latency, or tool-execution defects after answer-quality checks pass',
+    ],
+    workedExample: {
+      scenario: 'A returns assistant incorrectly denies a valid EU refund even though the active exception exists in the indexed corpus.',
+      steps: [
+        'Verify the active source and inspect the filtered top-30 candidates: the EU exception appears at rank 14, so ingestion and candidate retrieval succeeded for this request.',
+        'Inspect the five passages sent to the model: four duplicate global-policy summaries consume the budget and the exception is absent, identifying context construction as the first failing stage.',
+        'Replace score-only packing with canonical deduplication and coverage-aware selection, then confirm the exception reaches the final context; if the model still denies the refund, classify that new result as a generation failure and adjust conflict-resolution or grounding instructions.',
+        'Replay the complete workflow and verify answer correctness, citation target, authorization, latency, and refund-action payload; any remaining failure there is end-to-end or integration work rather than another retrieval change.',
+      ],
+      code: {
+        language: 'Text',
+        code: `required evidence absent from candidates -> fix retrieval
+required evidence present only before final context -> fix context construction
+required evidence present but answer wrong -> fix generation
+answer checks pass but user outcome fails -> fix end-to-end workflow`,
+      },
+      result: 'Deduplication promotes the EU exception into the final context and the unchanged model produces the correct cited answer, proving the original defect was context construction; the team avoids an unnecessary embedding change and adds the trace as a regression case.',
+    },
+    interview: {
+      prompt: 'How would you diagnose a failed RAG answer before deciding what to tune?',
+      answer: 'I would find the earliest broken artifact: confirm the correct source version, check whether required evidence entered the filtered candidate set, check whether it survived reranking and context construction, and then compare answer claims with the final context. If those pass, I would inspect citations, tools, authorization, latency, and the business outcome. The corrective action belongs to that first failing stage, followed by a same-case replay and regression test.',
+    },
+  },
 } satisfies Record<string, AiLessonDetails>

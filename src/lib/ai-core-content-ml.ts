@@ -577,4 +577,97 @@ actual legitimate         70                 890`,
       answer: 'I need threshold-level outcomes under real prevalence, probability calibration if costs use probabilities, review or action capacity, latency and reliability, subgroup effects, and incremental value over the current process. I would freeze the selected policy, validate it on untouched data, and use a shadow test or experiment when deployment changes behavior.',
     },
   },
+  'Learning task taxonomy': {
+    explanation: [
+      'Learning tasks are organized first by whether examples include a target. Supervised learning uses input-target pairs to learn predictions: classification predicts one of a finite set of labels or their probabilities, while regression predicts a continuous numeric value. Unsupervised learning has no outcome label; clustering is an unsupervised task that groups observations according to similarity or density in a chosen representation.',
+      'Choose the task by writing the decision and output before choosing an algorithm: ask whether a reliable target exists, whether that target is categorical or continuous, and whether the goal is prediction or exploratory structure. Supervised methods assume labels are consistently defined and representative of deployment, while clustering assumes features and distance encode meaningful similarity; clusters are not discovered ground-truth classes and must be checked for stability, interpretation, and usefulness.',
+    ],
+    whyItMatters: 'Correct task framing determines the data, model family, loss, and evaluation evidence the project needs. Misclassifying an exploratory grouping problem as prediction, or treating a numeric category code as a regression target, can produce mathematically valid output that answers the wrong question.',
+    useCases: [
+      'Classifying incoming support requests into known resolution queues',
+      'Predicting continuous delivery time from route and order features',
+      'Clustering unlabeled product-usage patterns to propose customer segments',
+    ],
+    workedExample: {
+      scenario: 'An account team has product activity for 12,000 customers and asks for a model to understand customers without defining the output it needs.',
+      steps: [
+        'Write the operational question and identify whether a target outcome is available for each historical customer.',
+        'For predicting renewal, use verified renewed or not-renewed outcomes as categorical labels and frame supervised classification.',
+        'For predicting next-quarter spend, use the numeric spend outcome and frame supervised regression with a loss that reflects forecast costs.',
+        'For exploring behavior without an outcome label, standardize relevant usage features, run clustering, and validate whether stable groups support distinct actions.',
+      ],
+      result: 'The same customer table supports three different tasks only after the desired output is explicit: a renewal class, a continuous spend estimate, or provisional clusters that require external validation.',
+    },
+    interview: {
+      prompt: 'A stakeholder asks you to cluster customers so the system can predict churn. How would you decide whether clustering is the right task?',
+      answer: 'If reliable churn outcomes exist and the goal is to predict them, this is supervised classification because churn is the categorical target. Clustering can explore unlabeled behavior or create candidate features, but its groups do not automatically correspond to churn. I would define the decision and prediction horizon, verify label and feature availability, and use clustering only if the goal is genuinely exploratory and the resulting groups can be validated.',
+    },
+  },
+  'Accuracy and baselines': {
+    explanation: [
+      'Accuracy is the fraction of predictions that are correct: for binary classification, true positives plus true negatives divided by all examples. It is easy to interpret when classes are reasonably balanced and error types have similar consequences, but it compresses false positives and false negatives into one count and says nothing about probability quality.',
+      'A baseline is the simplest credible rule a model must beat, such as always predicting the majority class, carrying forward the last observed value, or applying an existing business rule. Majority accuracy can be high under class imbalance, so improvement over that baseline, class-specific metrics, and concrete error costs are needed; accuracy is misleading when rare cases matter most or one error direction is substantially more harmful.',
+    ],
+    whyItMatters: 'A headline accuracy has no useful scale without a reference point. Baselines reveal whether the model adds signal beyond prevalence or an existing rule, while imbalance checks prevent abundant easy negatives from hiding failure on the cases that motivated the system.',
+    useCases: [
+      'Comparing a churn classifier with an always-renew majority prediction',
+      'Checking whether a fraud model improves on the naive legitimate-transaction rule',
+      'Deciding whether accuracy is suitable for a balanced image-labeling task with similar error costs',
+    ],
+    workedExample: {
+      scenario: 'A test set contains 1,000 transactions: 50 are fraudulent and 950 are legitimate.',
+      steps: [
+        'Predict legitimate for every transaction to establish a majority baseline of 950 correct predictions divided by 1,000, or 95% accuracy.',
+        'Evaluate a model that catches 30 frauds, misses 20 frauds, falsely flags 20 legitimate transactions, and correctly clears 930 legitimate transactions.',
+        'Calculate model accuracy as 30 plus 930 divided by 1,000, or 96%, which is only one percentage point above the baseline.',
+        'Calculate recall as 30 divided by 50, or 60%, and precision as 30 divided by 50 flagged transactions, or 60%, then judge the threshold using fraud and review costs.',
+      ],
+      code: {
+        language: 'Text',
+        code: `majority accuracy = 950 / 1000 = 95%
+model accuracy    = (30 + 930) / 1000 = 96%
+model recall      = 30 / 50 = 60%
+model precision   = 30 / (30 + 20) = 60%`,
+      },
+      result: 'The model improves accuracy by one point over the naive baseline and detects 60% of fraud, a much more qualified result than reporting 96% accuracy alone.',
+    },
+    interview: {
+      prompt: 'A classifier reports 97% accuracy. What would you ask before deciding whether that result is good?',
+      answer: 'I would ask about class prevalence, the majority and current-system baselines, the confusion matrix, and the costs of each error type. I would also verify that the split represents deployment and that no leakage is present. If positives are only 3%, an always-negative rule already reaches 97% while finding none, so recall, precision, threshold-level counts, and business impact are essential.',
+    },
+  },
+  'Regression metrics': {
+    explanation: [
+      'Mean absolute error averages the absolute residual magnitudes, while mean squared error averages squared residuals and therefore gives large misses disproportionate weight. Root mean squared error is the square root of MSE, preserving that sensitivity while returning to the target unit. R-squared equals one minus residual sum of squares divided by total sum of squares and measures improvement over predicting the evaluation-set mean.',
+      'These metrics assume representative held-out targets and a consistent target definition. MAE matches roughly linear error costs and is less dominated by outliers; MSE is useful when large errors deserve stronger penalties or for convenient optimization, and RMSE communicates that penalty in original units. R-squared is scale-free for the same target but can be negative and does not show absolute error, so metric selection should follow operational cost rather than whichever score looks most favorable.',
+    ],
+    whyItMatters: 'Regression metrics encode different definitions of a costly mistake. Reporting more than one metric, with units and a naive baseline, separates typical error from sensitivity to large misses and prevents relative fit from being mistaken for operational usefulness.',
+    useCases: [
+      'Using MAE when each hour of delivery-time error has approximately constant cost',
+      'Using RMSE when large energy-demand misses create disproportionate reserve costs',
+      'Using R-squared alongside an error metric to compare a model with the mean-prediction baseline',
+    ],
+    workedExample: {
+      scenario: 'A delivery model predicts 3, 5, 4, and 8 hours for orders that actually take 2, 4, 6, and 8 hours.',
+      steps: [
+        'Compute residuals as 1, 1, -2, and 0 hours, giving absolute errors that sum to 4 and MAE of 4 divided by 4, or 1 hour.',
+        'Square the residuals to get 1, 1, 4, and 0; MSE is 6 divided by 4, or 1.5 square hours, and RMSE is the square root of 1.5, or approximately 1.22 hours.',
+        'Compute the actual-value mean as 5 hours and total sum of squares as 9 plus 1 plus 1 plus 9, or 20.',
+        'Use residual sum of squares 6 to calculate R-squared as 1 minus 6 divided by 20, or 0.70, then compare the error profile with operational tolerances.',
+      ],
+      code: {
+        language: 'Text',
+        code: `residuals = [3 - 2, 5 - 4, 4 - 6, 8 - 8] = [1, 1, -2, 0]
+MAE  = (1 + 1 + 2 + 0) / 4 = 1 hour
+MSE  = (1 + 1 + 4 + 0) / 4 = 1.5 square hours
+RMSE = sqrt(1.5) = 1.22 hours
+R^2  = 1 - (6 / 20) = 0.70`,
+      },
+      result: 'The model misses by 1 hour on average, has RMSE of about 1.22 hours because the two-hour miss receives extra weight, and explains 70% of the variation relative to the mean baseline.',
+    },
+    interview: {
+      prompt: 'How would you choose between MAE, RMSE, and R-squared for a regression project?',
+      answer: 'I would start from the cost of errors. MAE fits roughly linear costs and is easier to interpret robustly, while RMSE emphasizes occasional large misses and remains in target units. R-squared describes relative improvement over the mean for the same target and split, but it does not express error size or business acceptability and can be negative. I would select a primary cost-aligned metric and report complementary metrics plus a naive baseline.',
+    },
+  },
 } satisfies Record<string, AiLessonDetails>

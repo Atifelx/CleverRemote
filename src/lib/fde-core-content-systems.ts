@@ -8,9 +8,9 @@ export const fdeSystemsLessonDetails = {
     ],
     whyItMatters: 'Architecture choices are only good relative to a workload and its constraints. A clear job statement gives the team a stable basis for evaluating tradeoffs, testing behavior, and rejecting complexity that does not serve the required outcome.',
     useCases: [
-      'Separating an order-submission workflow from later fulfillment and reporting work',
-      'Determining whether a search feature needs exact results or useful ranked results',
-      'Clarifying whether a file-processing service must return synchronously or may complete in the background',
+      'Real world: define whether checkout ends at accepted payment or completed warehouse fulfillment',
+      'Real world: decide whether a document upload must finish processing immediately or may return a job to track',
+      'Developer today: record scale, latency, data-residency, and recovery needs before selecting Azure App Service and Service Bus or AWS ECS and SQS',
     ],
     workedExample: {
       scenario: 'A retailer asks for a system that prevents overselling during flash sales, but has not defined what counts as a successful reservation.',
@@ -34,9 +34,9 @@ export const fdeSystemsLessonDetails = {
     ],
     whyItMatters: 'Measurable quality targets turn vague expectations such as fast or reliable into constraints that can guide architecture and verification. They also expose conflicts early, when a team can negotiate priorities instead of discovering them during an incident.',
     useCases: [
-      'Defining a checkout latency target separately from a slower analytics freshness target',
-      'Choosing a recovery time and recovery point objective for customer records',
-      'Specifying how an API should degrade when a recommendation dependency is unavailable',
+      'Real world: require 95% of checkout requests to finish within 500 ms at peak load',
+      'Real world: set a four-hour recovery time and one-hour data-loss limit for customer records',
+      'Developer today: publish service metrics and alerts with Azure Monitor or Amazon CloudWatch against the targets users actually experience',
     ],
     workedExample: {
       scenario: 'A document-signing service is described as highly available, but no one knows whether that applies equally to signing and audit export.',
@@ -60,9 +60,9 @@ export const fdeSystemsLessonDetails = {
     ],
     whyItMatters: 'A rough but explicit load model distinguishes a system that fits on one process from one that needs partitioning, buffering, or specialized storage. It also makes capacity decisions reviewable because others can challenge assumptions instead of guessing how a number was produced.',
     useCases: [
-      'Sizing an ingestion path from events per device and active device count',
-      'Estimating storage growth for retained audit records and their indexes',
-      'Checking whether a launch burst can exceed a downstream API rate limit',
+      'Real world: convert device count and events per device into average and peak ingestion rates',
+      'Real world: estimate monthly audit storage including indexes, replicas, backups, and retention',
+      'Developer today: load-test the expected peak and compare Azure Monitor or Amazon CloudWatch measurements with the estimate before scaling',
     ],
     workedExample: {
       scenario: 'A support platform expects 2 million active users, each creating 3 tickets per month with an average stored ticket size of 12 KB.',
@@ -92,9 +92,9 @@ primary growth/month = 6,000,000 x 12 KB = 72 GB`,
     ],
     whyItMatters: 'Most difficult production behavior occurs where ownership, trust, or failure domains meet. Explicit boundaries reveal missing contracts and dependencies while helping teams decide which data and decisions belong together.',
     useCases: [
-      'Showing where customer identity leaves an application trust boundary for a payment provider',
-      'Separating an order domain from a warehouse system owned by another team',
-      'Identifying which component owns validation and persistence for uploaded documents',
+      'Real world: show customer and payment data crossing from your application to an external processor',
+      'Real world: separate the order domain from a warehouse system owned and released by another team',
+      'Developer today: map private and public crossings before using Azure VNets and Private Link or AWS VPC and PrivateLink',
     ],
     workedExample: {
       scenario: 'A travel application books trips through an external airline API and stores customer itineraries internally.',
@@ -118,9 +118,9 @@ primary growth/month = 6,000,000 x 12 KB = 72 GB`,
     ],
     whyItMatters: 'Storage technology cannot compensate for an ambiguous model of identity and invariants. A deliberate model makes valid states explicit, supports expected queries, and reduces data corruption that application code alone may not prevent under concurrency.',
     useCases: [
-      'Modeling an order separately from its immutable line-item price snapshots',
-      'Choosing a uniqueness constraint for one active subscription per account',
-      'Keeping an append-only status history while maintaining a current-state projection',
+      'Real world: preserve the purchased price on each order line even after the catalog price changes',
+      'Real world: enforce that one room-night cannot have two confirmed reservations',
+      'Developer today: use transactions and constraints in Azure SQL or Amazon RDS, or model keys and conditional writes deliberately in Cosmos DB or DynamoDB',
     ],
     workedExample: {
       scenario: 'A booking system must prevent two confirmed reservations for the same room and night while preserving price history.',
@@ -144,9 +144,9 @@ primary growth/month = 6,000,000 x 12 KB = 72 GB`,
     ],
     whyItMatters: 'APIs outlive many internal implementations and coordinate change between independently deployed callers and providers. Precise semantics reduce accidental coupling, unsafe retries, and client-specific interpretations of the same operation.',
     useCases: [
-      'Designing a payment creation endpoint with an idempotency key',
-      'Using cursor pagination for a changing ordered collection',
-      'Applying conditional updates to reject edits based on stale resource versions',
+      'Real world: prevent duplicate payment creation when a mobile client retries after a timeout',
+      'Real world: paginate a changing event feed without skipping or repeating records',
+      'Developer today: expose and protect APIs with Azure API Management or Amazon API Gateway while the service still enforces domain authorization and idempotency',
     ],
     workedExample: {
       scenario: 'A mobile client creates expense reports over an unreliable connection and may resend a request after a timeout.',
@@ -170,16 +170,16 @@ Idempotency-Key: 7f85b54e
       answer: 'I would define identity, authorization, validation, error categories, retry and idempotency behavior, concurrency rules, pagination and ordering, rate expectations, and whether completion is synchronous or asynchronous. I would also state compatibility rules. Schemas describe shape, but callers need behavioral semantics to use the contract safely.',
     },
   },
-  'Scale stateless work': {
+  'Load balancing & stateless services': {
     explanation: [
       'A stateless worker handles each request using request data and shared durable systems rather than relying on memory owned by one process. Because any healthy instance can perform the next request, a load balancer can distribute traffic and the platform can add, replace, or remove instances without moving client sessions.',
       'Stateless does not mean the system has no state; it means durable state has an explicit external owner. This improves horizontal scaling and recovery, but adds network calls and pressure on shared stores, and careless in-memory caches or local files can reintroduce hidden affinity and inconsistent behavior.',
     ],
     whyItMatters: 'Removing per-instance ownership from request handling makes capacity elastic and instance failure routine. It also forces state and concurrency rules into systems designed to preserve them instead of leaving correctness dependent on which process receives a request.',
     useCases: [
-      'Running interchangeable API instances behind a load balancer',
-      'Scaling image transformation workers that read and write object storage',
-      'Replacing local login sessions with signed tokens or a shared session store',
+      'Real world: distribute checkout traffic across interchangeable API instances and remove unhealthy instances',
+      'Real world: scale image-processing workers while keeping source and output files in shared object storage',
+      'Developer today: choose Azure Application Gateway or AWS Application Load Balancer for HTTP routing, and Azure Load Balancer or AWS Network Load Balancer for Layer 4 traffic',
     ],
     workedExample: {
       scenario: 'A web application stores shopping carts in each server process, so users lose carts when traffic moves to another instance.',
@@ -203,9 +203,9 @@ Idempotency-Key: 7f85b54e
     ],
     whyItMatters: 'Without a buffer or explicit rejection, a short spike can overload every downstream dependency at once. Controlled queuing preserves accepted work and protects bounded resources while making delay visible and manageable.',
     useCases: [
-      'Queuing thumbnail generation after a large media upload campaign',
-      'Smoothing webhook delivery when a customer endpoint slows down',
-      'Batching telemetry writes from devices that reconnect after an outage',
+      'Real world: queue thumbnail jobs after a campaign triggers thousands of uploads at once',
+      'Real world: buffer webhook deliveries while a customer endpoint is slow or rate-limited',
+      'Developer today: use Azure Service Bus or Queue Storage, or Amazon SQS, then scale consumers from queue age and depth within downstream limits',
     ],
     workedExample: {
       scenario: 'A ticket release creates 60,000 email confirmations in one minute, while the email provider accepts only 200 requests per second.',
@@ -229,9 +229,9 @@ Idempotency-Key: 7f85b54e
     ],
     whyItMatters: 'Distributed operations can complete even when their responses are lost, leaving callers uncertain rather than simply failed. Explicit failure states prevent unsafe repetition and give users and operators a path from ambiguity to a known result.',
     useCases: [
-      'Reconciling a payment whose provider response timed out after submission',
-      'Serving cached catalog data while a recommendation service is unavailable',
-      'Moving repeatedly malformed messages to a quarantine path for inspection',
+      'Real world: reconcile a payment whose provider response disappeared after submission',
+      'Real world: omit optional recommendations when that dependency is slow while keeping checkout available',
+      'Developer today: combine bounded retries and dead-letter queues with OpenTelemetry traces viewed in Azure Monitor/Application Insights or Amazon CloudWatch/X-Ray',
     ],
     workedExample: {
       scenario: 'A transfer service debits an account, calls an external settlement provider, and times out before receiving the provider response.',

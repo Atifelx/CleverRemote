@@ -574,4 +574,316 @@ export const aiAgentsLessonDetails = {
       answer: 'I would prototype the riskiest real path and measure durable resume, state migration, authorization placement, idempotent retries, approval binding, tracing, evaluation integration, deployment fit, and upgrade behavior. I would also estimate operational complexity and confirm that domain tools and policy can remain portable.',
     },
   },
+  Routing: {
+    explanation: [
+      'Routing chooses the next model, tool, workflow, or human queue from the current request and trusted state. Deterministic routing should own rules that must always hold, such as tenant boundaries, entitlement checks, risk thresholds, and known request types; a model router is useful for semantically ambiguous intent, but it should return a small schema-bound label with evidence or calibrated confidence rather than an arbitrary destination.',
+      'A strong router combines hard filters, a bounded candidate set, model classification only where language understanding adds value, and an explicit fallback for low confidence or conflicting signals. Model-only routing can be nondeterministic, vulnerable to injected text, and difficult to audit, while rules alone become brittle across natural-language variation; test both layers with confusion matrices, adversarial inputs, latency and cost budgets, and route-level outcome metrics.',
+    ],
+    whyItMatters: 'Routing determines which capabilities and policies a request encounters. Separating mandatory deterministic decisions from bounded model judgment keeps flexible classification from becoming an authorization mechanism.',
+    useCases: [
+      'Selecting a specialist support workflow after enforcing tenant and product entitlements',
+      'Choosing a lower-cost model for simple extraction and a stronger model for ambiguous analysis',
+      'Sending low-confidence or high-risk requests to a human review queue',
+    ],
+    workedExample: {
+      scenario: 'A support assistant must route messages to billing, account security, or technical troubleshooting without exposing privileged account actions to the wrong path.',
+      steps: [
+        'Use authenticated account state to deterministically block unavailable products and route lockout or fraud signals directly to the security workflow.',
+        'Ask a model to classify the remaining message into the finite billing, technical, or unclear labels and return supporting spans plus confidence.',
+        'Validate the label against the allowed route map, send unclear or below-threshold results to general triage, and never accept a generated tool or queue name.',
+        'Measure per-class precision, escalation rate, policy violations, latency, and downstream resolution rather than judging the router only by plausible labels.',
+      ],
+      result: 'Natural-language requests reach an appropriate specialist, fixed security rules remain invariant, and uncertain cases fail into a reviewable path instead of gaining unintended capabilities.',
+    },
+    interview: {
+      prompt: 'When should routing be deterministic, and when is a model-based router appropriate?',
+      answer: 'Use deterministic routing for authorization, compliance, exact state transitions, explicit user choices, and other invariants. Use a model only when semantic ambiguity makes fixed rules inadequate, constrain it to validated labels, and provide confidence-aware fallback; the model may recommend a route but must not grant permissions or invent destinations.',
+    },
+  },
+  ReAct: {
+    explanation: [
+      'ReAct interleaves model reasoning with actions and observations: the agent evaluates the current evidence, selects one permitted action, receives its result, and repeats until it can answer or must stop. In production, the interface should capture a structured action, arguments, cited evidence, and a concise decision summary; private chain-of-thought is neither required nor appropriate to expose, persist, or present as an audit trail.',
+      'Use ReAct when later actions genuinely depend on facts discovered by earlier tools, such as diagnosis or research. Each extra loop increases latency, cost, injection exposure, and the chance of cycling or duplicate effects, so bound turns and budgets, sanitize observations, keep writes idempotent and separately authorized, and evaluate trajectories for useful evidence gathering, termination, and final-answer grounding.',
+    ],
+    whyItMatters: 'ReAct gives an agent adaptive tool use without requiring a complete plan up front. A structured action-observation trace provides operational accountability while avoiding the false promise and security risk of exposing hidden reasoning.',
+    useCases: [
+      'Investigating an incident by choosing diagnostics based on each preceding result',
+      'Researching a question across search and document tools while collecting citations',
+      'Troubleshooting a customer integration through bounded read-only checks',
+    ],
+    workedExample: {
+      scenario: 'An incident agent investigates elevated API latency using metrics, deployment history, and logs before recommending any remediation.',
+      steps: [
+        'Initialize the loop with the incident scope, read-only tool allowlist, evidence requirements, six-action limit, and explicit stop outcomes.',
+        'Have the model emit a typed next action and short evidence-linked justification, then validate its service, time range, and arguments before execution.',
+        'Return a bounded, untrusted observation to the next turn and record the action, sanitized result, cost, and identifiers without requesting or storing hidden chain-of-thought.',
+        'Stop when evidence satisfies the answer contract or the budget is exhausted, and route any proposed production change through a separate approval workflow.',
+      ],
+      result: 'The agent adapts its diagnostics to observed evidence, operators can audit every external action, and no private reasoning trace or unapproved remediation is exposed.',
+    },
+    interview: {
+      prompt: 'How do you make a ReAct agent observable without logging its chain-of-thought?',
+      answer: 'Log the input state reference, selected tool, validated arguments, concise decision summary, observation, citations, timing, cost, and final outcome. Those artifacts explain what the system did and what evidence it used; hidden token-by-token reasoning is not a reliable control record and may reveal sensitive information.',
+    },
+  },
+  'Planner-executor': {
+    explanation: [
+      'A planner-executor architecture separates decomposition from action. The planner proposes a bounded, typed dependency graph of goals and success criteria, while deterministic validation checks that every step uses an allowed capability, has satisfiable prerequisites, respects policy and budgets, and identifies required approvals before the executor can schedule it.',
+      'This pattern fits long tasks with dependencies, parallelizable work, or expensive mistakes, but planning adds latency and a plan becomes stale as the environment changes. Treat the plan as a revisable hypothesis: the executor validates current preconditions at every step, records receipts, and requests a constrained replan after unexpected observations rather than silently improvising or blindly completing obsolete work.',
+    ],
+    whyItMatters: 'Separating planning from execution makes proposed work inspectable and testable while keeping authority in the runtime. Plan validation prevents a fluent decomposition from turning into an unsafe or impossible sequence of actions.',
+    useCases: [
+      'Coordinating a staged service migration with verification and approval gates',
+      'Producing a research report from parallel evidence-gathering tasks and a synthesis step',
+      'Preparing a multi-file code change with build, test, and review milestones',
+    ],
+    workedExample: {
+      scenario: 'An agent must migrate a customer integration from a legacy endpoint with no downtime and a required production approval.',
+      steps: [
+        'Have the planner emit typed steps for inventory, compatibility testing, staging rollout, verification, production approval, cutover, and rollback readiness.',
+        'Reject plans with unknown tools, missing rollback criteria, production work before approval, cycles, or resource estimates above the workflow budget.',
+        'Execute ready steps, persist artifacts and receipts, and recheck live versions and health before each transition rather than trusting planning-time assumptions.',
+        'If staging verification fails, freeze dependent steps and ask the planner to revise only the affected suffix using the new evidence and original constraints.',
+      ],
+      result: 'The workflow gains the efficiency of explicit decomposition while every executable step remains current, authorized, recoverable, and linked to measurable completion evidence.',
+    },
+    interview: {
+      prompt: 'What should a planner-executor runtime validate before accepting a generated plan?',
+      answer: 'Validate the schema, allowed tools, dependencies, cycle and size limits, required inputs, policy constraints, budgets, approval placement, success criteria, and rollback or compensation needs. The executor must still revalidate state and authorization immediately before each action because a valid plan can become stale.',
+    },
+  },
+  'Multi-agent systems': {
+    explanation: [
+      'A multi-agent system assigns distinct responsibilities to separately prompted or implemented agents and coordinates their results through explicit contracts. It is justified when the task benefits from real specialization, isolated context or credentials, independent critique, different models, or parallel work; merely giving several personas the same context and tools usually adds conversation without adding capability.',
+      'Multiple agents multiply calls, failure modes, attack surfaces, and attribution problems, and agreement among agents is not independent evidence when they share a model or source. Define ownership, least-privilege tools, message schemas, budgets, termination and conflict rules, then compare the design against a single agent with tools; retain multiple agents only when evaluations show better quality, isolation, throughput, or operational control.',
+    ],
+    whyItMatters: 'Multi-agent architecture should buy a measurable property that one well-designed agent cannot provide cheaply. Clear boundaries turn specialization into an engineering advantage instead of an expensive role-playing loop.',
+    useCases: [
+      'Running security and reliability reviews with different evidence sets and permissions',
+      'Parallelizing independent research streams before a cited synthesis',
+      'Separating an external-facing assistant from a privileged internal operations agent',
+    ],
+    workedExample: {
+      scenario: 'A release workflow needs independent application, security, and reliability assessments before deployment.',
+      steps: [
+        'Give each specialist a narrow evidence bundle, rubric, typed finding schema, and only the read tools required for its domain.',
+        'Run independent checks in parallel and attach source references, severity, confidence, and unresolved questions to every finding.',
+        'Have deterministic policy block release on qualifying findings while a coordinator deduplicates evidence and requests human adjudication for conflicts.',
+        'Compare cost, latency, defect recall, false alarms, and privilege exposure with a single-agent baseline before adopting the architecture.',
+      ],
+      result: 'The design preserves meaningful review independence and tool isolation, and its added complexity is accepted only if measured release quality improves.',
+    },
+    interview: {
+      prompt: 'When is a multi-agent system warranted instead of one agent with several tools?',
+      answer: 'Use multiple agents when you need enforceable context or permission isolation, genuinely different specialist models or policies, parallel ownership, or independent review that improves measured outcomes. If roles share the same context, authority, and model and simply pass prose around, a single orchestrated agent is usually cheaper and easier to evaluate.',
+    },
+  },
+  'Memory extraction': {
+    explanation: [
+      'Memory extraction turns conversational or operational evidence into candidate structured facts rather than copying whole transcripts into durable memory. Each candidate should include the subject and scope, normalized value, source reference, extraction time, provenance type, confidence, consent or legal-purpose status, sensitivity, and freshness or expiration rule; high-impact facts should remain pending until confirmed by the user or an authoritative tool.',
+      'Extract only information that has a defined future use and retention policy, because plausible personalization does not justify silently accumulating personal data. Models can misattribute speakers, overgeneralize one-time requests, and preserve stale facts, so deduplicate and resolve conflicts, distinguish explicit preferences from inference, provide inspect and correct controls, and reevaluate freshness before retrieval or action.',
+    ],
+    whyItMatters: 'Extraction is the point where temporary context becomes durable data. Provenance, confidence, consent, and staleness metadata let later systems decide whether a memory is relevant, lawful, and trustworthy enough to use.',
+    useCases: [
+      'Remembering an explicitly requested communication preference across support sessions',
+      'Extracting verified project constraints from a design discussion with source links',
+      'Recording unresolved user goals that should expire when a case closes',
+    ],
+    workedExample: {
+      scenario: 'A travel assistant hears that a user prefers aisle seats but also sees an old trip message requesting a window seat for a child.',
+      steps: [
+        'Extract two scoped candidates with exact source turns, traveler identity, trip context, timestamps, and separate confidence values instead of merging them.',
+        'Classify the aisle statement as a possible durable preference only after checking consent, while keeping the window request scoped to the historical trip.',
+        'Ask the user to confirm the reusable preference, store its confirmation source and review date, and supersede rather than erase conflicting versions.',
+        'At booking time, retrieve only the relevant traveler memory, check expiration and current availability, and request confirmation before purchase.',
+      ],
+      result: 'The assistant can personalize future suggestions without converting a one-off request into a permanent fact or treating stale preference data as booking authority.',
+    },
+    interview: {
+      prompt: 'What metadata should accompany a fact extracted into long-term agent memory?',
+      answer: 'Store subject, scope, value, source and provenance, observed and extracted timestamps, confidence, confirmation status, consent or purpose, sensitivity, owner, expiration or freshness policy, and supersession links. Retrieval should expose this metadata and revalidate sensitive or stale facts before use.',
+    },
+  },
+  'Vector memory': {
+    explanation: [
+      'Vector memory indexes embeddings of bounded chunks so semantically related evidence can be found even when vocabulary differs. The vector should point to a governed source record and carry tenant, subject, document version, visibility, timestamp, and deletion lineage; retrieval should apply authorization filters before approximate similarity, then combine lexical, vector, recency, and quality signals and return source citations.',
+      'Embeddings are lossy search features, not facts, and nearest neighbors can be irrelevant, stale, duplicated, or inaccessible. Tune chunking and thresholds on representative queries, rerank and abstain, re-embed changed sources, and design deletion around stable source and chunk IDs so tombstones propagate through vector indexes, caches, summaries, and replicas before old ingestion jobs can recreate removed data.',
+    ],
+    whyItMatters: 'Vector memory expands recall over large histories, but its value depends on governed retrieval and lifecycle controls. Source linkage makes similarity useful without allowing an opaque index to become a permanent, unauditable memory store.',
+    useCases: [
+      'Finding semantically similar resolved incidents across differently worded reports',
+      'Retrieving relevant clauses from a versioned internal handbook',
+      'Surfacing project decisions whose exact terminology is unknown to the requester',
+    ],
+    workedExample: {
+      scenario: 'An employee assistant retrieves handbook guidance while departments have different policies and old versions must not reappear.',
+      steps: [
+        'Chunk approved handbook versions, attach department, visibility, effective dates, source IDs, and content hashes, and embed only data permitted for this purpose.',
+        'Filter candidates by authenticated employee scope and current effective date before hybrid search, then rerank and require a minimum relevance score.',
+        'Return quoted passages with document citations and abstain on conflict instead of allowing the model to treat vector proximity as policy truth.',
+        'When a policy is withdrawn, tombstone its source and chunk IDs, remove derived vectors and caches, block reingestion, and run deletion canary queries.',
+      ],
+      result: 'Employees receive relevant, current, authorized passages with citations, while withdrawn content is verifiably removed from retrieval and cannot be silently regenerated.',
+    },
+    interview: {
+      prompt: 'How would you make vector memory both useful and deletable?',
+      answer: 'Keep embeddings linked to stable governed source and chunk IDs, apply access and lifecycle filters before similarity, use hybrid retrieval and reranking, and return citations. For deletion, tombstone the source, remove every indexed and cached derivative, prevent reingestion, account for replicas and backups, and verify with targeted retrieval tests.',
+    },
+  },
+  'Persistent user memory': {
+    explanation: [
+      'Persistent user memory stores durable, user-scoped facts that remain useful across sessions, such as an explicitly confirmed locale, accessibility need, or communication preference. Each fact needs a stable owner, purpose, source, confirmation state, version, sensitivity class, and expiration policy, and the application should retrieve it only when the current user and task are authorized for that purpose.',
+      'Persistence should be selective and visible rather than an automatic transcript archive. Inferred preferences can be wrong, shared accounts can confuse identity, and old facts can become harmful, so let users inspect, correct, and delete memories; revalidate consequential facts; encrypt and audit access; and propagate updates or tombstones through indexes, summaries, caches, and backups according to policy.',
+    ],
+    whyItMatters: 'Cross-session personalization is useful only when users can understand and control what is retained. A governed memory record provides continuity without turning model context into an unbounded or unauditable profile.',
+    useCases: [
+      'Remembering a confirmed language preference for future support sessions',
+      'Retaining an approved project region while requiring confirmation before deployment',
+      'Deleting all derived preference records after an account-erasure request',
+    ],
+    workedExample: {
+      scenario: 'A support assistant wants to remember that a customer prefers email summaries but must not retain one-time medical details from the same conversation.',
+      steps: [
+        'Classify the explicit email preference as a reusable low-sensitivity candidate and the medical detail as task-local sensitive context.',
+        'Ask the customer to confirm persistence, then store the preference with account owner, purpose, source turn, confirmation time, and review date.',
+        'Retrieve it only for authenticated communication tasks and show the saved value in the customer memory controls.',
+        'On correction or deletion, write a new version or tombstone and invalidate every cache and vector derivative keyed to the prior record.',
+      ],
+      result: 'Future cases use the confirmed email preference, the medical detail expires with the original task, and the customer can inspect or remove the durable record.',
+    },
+    interview: {
+      prompt: 'What distinguishes safe persistent user memory from simply saving conversation history?',
+      answer: 'Persistent memory stores a small set of purpose-bound, attributable, confirmed facts with ownership, sensitivity, version, expiration, and user controls. Raw history contains transient and sensitive context, ambiguous speakers, and stale statements. I would extract selectively, require consent where appropriate, authorize retrieval, and support correction and complete deletion.',
+    },
+  },
+  'Conditional edges': {
+    explanation: [
+      'Conditional edges in a LangGraph-style workflow compute the next node from validated shared state. The routing function should return one of a finite set of symbolic outcomes mapped to known destinations, with deterministic branches for approvals, authorization, retry counts, errors, and terminal states; a model may classify ambiguous content, but its result must be parsed and mapped rather than used as an arbitrary node name.',
+      'Conditional routing makes branches explicit and independently testable, but overlapping predicates, missing defaults, and cycles can leave workflows stuck or send them down unsafe paths. Order or make predicates mutually exclusive, define fail-closed fallbacks, bound loops, record route reasons, and test each edge plus unreachable and invalid-state cases across schema versions.',
+    ],
+    whyItMatters: 'Edges are the workflow control plane. Keeping route selection finite and state-based lets models contribute semantic judgment without surrendering deterministic policy, reachability, or termination.',
+    useCases: [
+      'Routing a policy exception to approval while sending valid requests directly to fulfillment',
+      'Choosing retry, reconciliation, or manual repair from a typed tool failure',
+      'Looping through evidence collection until confidence or a hard attempt limit is reached',
+    ],
+    workedExample: {
+      scenario: 'A claims graph must route extracted claims to payment, reviewer approval, more evidence, or denial.',
+      steps: [
+        'Parse extraction output into typed state and run deterministic identity, coverage, amount, and document-completeness checks.',
+        'Map missing evidence to collect_evidence, policy failure to deny, and large otherwise-valid claims to await_approval using explicit predicates.',
+        'Use a model only to classify ambiguous document meaning, validate its finite label and confidence, and route invalid or uncertain output to review.',
+        'Record the chosen route and rule results, cap evidence loops, and exercise every branch with path tests before enabling payment.',
+      ],
+      result: 'Every claim follows a known, explainable edge, and neither generated labels nor malformed state can jump directly to a privileged payment node.',
+    },
+    interview: {
+      prompt: 'How should model output participate in a conditional graph edge?',
+      answer: 'Treat it as an untrusted classification input. Parse it into a finite enum, validate confidence and required evidence, combine it with deterministic policy state, and map the outcome to an allowlisted destination with a safe fallback. Never let generated text name or invoke an arbitrary node.',
+    },
+  },
+  'Persistence and interrupts': {
+    explanation: [
+      'Persistence in a LangGraph-style runtime checkpoints typed state under a stable workflow or thread identifier after meaningful transitions. An interrupt deliberately pauses before missing input or a sensitive action and stores the current node, state version, pending request, action digest, and completed receipts so a later process can resume from the checkpoint rather than replaying the conversation.',
+      'A human-in-the-loop resume is a new authenticated command, not appended natural language that automatically inherits authority. Validate the responder and payload, compare the expected checkpoint version, bind approval to the exact proposed action, expire stale decisions, and keep downstream writes idempotent; otherwise duplicate resumes, changed inputs, or worker restarts can bypass review or repeat effects.',
+    ],
+    whyItMatters: 'Checkpointed interrupts turn long human waits into durable workflow states. Correct resume semantics preserve approval integrity and make restarts routine without treating old messages or process memory as authorization.',
+    useCases: [
+      'Pausing a purchase workflow until a budget owner approves the exact order',
+      'Requesting missing evidence from a user and resuming days later',
+      'Stopping before production remediation while preserving completed diagnostics',
+    ],
+    workedExample: {
+      scenario: 'A procurement graph must pause before creating a purchase order above the automatic spending limit.',
+      steps: [
+        'Checkpoint the validated quote, requester identity, policy result, state version, and hash of the proposed supplier, amount, and terms.',
+        'Interrupt with a structured approval request containing the evidence, expiration, and approve, edit, or reject choices.',
+        'On resume, authenticate the budget owner, compare the checkpoint version and action hash, and create a new review request if any material field changed.',
+        'Advance the graph once with an atomic resume token, then create the order using the workflow ID as an idempotency key and persist its receipt.',
+      ],
+      result: 'The workflow survives a long pause or worker restart, stale and duplicate approvals are rejected, and only the exact reviewed order can be created once.',
+    },
+    interview: {
+      prompt: 'What must be validated when resuming an interrupted human-in-the-loop graph?',
+      answer: 'Validate the workflow and checkpoint identifiers, expected state version, authenticated responder and role, response schema, expiration, and binding to the exact pending action or hash. Consume the resume atomically, recheck current policy, and use idempotency for any following side effect.',
+    },
+  },
+  Subgraphs: {
+    explanation: [
+      'A subgraph packages a cohesive multi-step workflow behind typed input and output contracts, such as document verification or account provisioning. In a LangGraph-style design, the parent explicitly maps selected state into the child and merges only declared results back, while internal prompts, retries, and temporary fields remain scoped to the subgraph rather than leaking into one global state object.',
+      'Use subgraphs when a sequence has distinct ownership, reuse, permissions, evaluation, or checkpointing needs, not merely to hide a few lines of routing. Shared mutable state, ambiguous checkpoint namespaces, and swallowed interrupts make nesting difficult to resume and debug, so define parent-child identifiers, error and cancellation propagation, state versioning, and whether child interrupts surface to the parent or are handled locally.',
+    ],
+    whyItMatters: 'Subgraphs provide modularity at a real workflow boundary. Explicit state mapping and interrupt propagation let teams reuse complex agent behavior without coupling every node to the parent graph or weakening persistence semantics.',
+    useCases: [
+      'Reusing an identity-verification workflow across onboarding and account recovery',
+      'Encapsulating research, citation checking, and synthesis as one callable workflow',
+      'Giving a team ownership of a deploy-and-verify flow with its own permissions and tests',
+    ],
+    workedExample: {
+      scenario: 'Customer onboarding calls a reusable identity-verification subgraph that may pause for a manual document review.',
+      steps: [
+        'Map the parent customer and document references into a versioned child input without copying unrelated profile or billing state.',
+        'Run extraction, authoritative checks, and confidence routing inside a child checkpoint namespace linked to the parent workflow ID.',
+        'Surface a low-confidence document interrupt to the parent as a typed pending-review outcome and preserve both checkpoint identifiers for resume.',
+        'After an authenticated reviewer resumes the child, merge only verified identity status and evidence references into the parent before provisioning continues.',
+      ],
+      result: 'The verification workflow is independently testable and reusable, a human pause resumes at the correct nested state, and the parent receives only governed outputs.',
+    },
+    interview: {
+      prompt: 'What contracts are needed to make a nested agent subgraph safely reusable?',
+      answer: 'Define versioned input and output schemas, explicit parent-child state mapping, scoped credentials, checkpoint and correlation identifiers, error and cancellation behavior, interrupt propagation, and allowed side effects. The child should expose evidence-backed outcomes rather than sharing its entire mutable state.',
+    },
+  },
+  'Multi-agent orchestration': {
+    explanation: [
+      'Multi-agent orchestration governs how specialist agents are assigned work, exchange evidence, and converge on an outcome. A supervisor, deterministic scheduler, or explicit handoff graph should send typed task envelopes containing scope, permissions, deadline, budget, correlation ID, and expected result schema; agents should return artifacts and status rather than relying on an unbounded shared chat.',
+      'The orchestrator must handle concurrency, duplicate messages, partial failure, contradictory findings, and termination without assuming that another model will resolve them. Cap handoffs and total calls, isolate credentials, make tasks idempotent, preserve provenance across synthesis, and define escalation and cancellation rules; evaluate end-to-end outcomes and coordination overhead as well as each specialist in isolation.',
+    ],
+    whyItMatters: 'Orchestration is what makes several agents one reliable system. Explicit contracts, budgets, and conflict rules prevent delegation from obscuring authority, evidence, or responsibility for completion.',
+    useCases: [
+      'Coordinating parallel database, network, and application diagnostics during an incident',
+      'Assigning research questions to specialists and synthesizing only cited results',
+      'Managing a builder and independent verifier with separate write permissions',
+    ],
+    workedExample: {
+      scenario: 'An incident coordinator delegates diagnosis to database, network, and application specialists while production changes require an operator.',
+      steps: [
+        'Create three read-only tasks with the same incident correlation ID, bounded time windows, domain-specific tools, deadlines, and typed finding schemas.',
+        'Run them concurrently, retry only idempotent reads, and mark timed-out tasks explicitly instead of allowing the coordinator to infer success from silence.',
+        'Merge findings by cited metric and timestamp, surface contradictions and missing evidence, and use deterministic severity policy to choose continue, escalate, or conclude.',
+        'Route any remediation proposal to an authenticated operator with an exact action diff; cancel remaining work and persist all task outcomes when the incident closes.',
+      ],
+      result: 'Specialists reduce diagnostic elapsed time while the coordinator retains bounded execution, evidence provenance, failure visibility, and a single controlled path to production changes.',
+    },
+    interview: {
+      prompt: 'What prevents a multi-agent workflow from becoming an endless conversation?',
+      answer: 'Use a finite task graph or supervisor policy, typed messages, per-task and global budgets, maximum handoffs, explicit done, failed, blocked, and cancelled states, deadlines, and deterministic escalation. Agents should exchange evidence-backed artifacts, while the orchestrator owns termination and side-effect authorization.',
+    },
+  },
+  'Framework landscape': {
+    explanation: [
+      'Agent frameworks emphasize different abstraction levels. LangChain commonly supplies composable model, prompt, tool, and retrieval building blocks, with LangGraph-style runtimes for explicit stateful graphs; Semantic Kernel centers on functions or plugins and process-oriented orchestration that fits Microsoft-centric application stacks; CrewAI emphasizes role-and-task crews; and AutoGen emphasizes conversational or event-driven multi-agent patterns and flexible experimentation.',
+      'These are conceptual tendencies, not permanent feature boundaries, because APIs and capabilities evolve. Start with requirements for durable state, approvals, tool contracts, multi-agent coordination, observability, language and hosting fit, then verify current documentation and spike the riskiest workflow; keep business policy, storage, and tools portable so framework selection does not decide authorization or make migration prohibitively expensive.',
+    ],
+    whyItMatters: 'A framework shapes control flow, debugging, persistence, and team operations. Understanding its center of gravity helps teams choose an abstraction that fits the actual workflow rather than forcing a simple agent into fashionable complexity.',
+    useCases: [
+      'Choosing graph-oriented persistence for a workflow with long human approval pauses',
+      'Selecting plugin-oriented integration for an existing .NET or Microsoft application estate',
+      'Comparing crew or conversational patterns for a genuinely multi-agent research prototype',
+    ],
+    workedExample: {
+      scenario: 'A team is selecting a framework for a procurement assistant with retrieval, week-long approval pauses, and one privileged purchase-order action.',
+      steps: [
+        'Turn the workflow into acceptance tests for typed state, checkpoint resume, approval binding, retrieval citations, idempotency, trace export, deployment fit, and failure recovery.',
+        'Evaluate LangChain plus a graph runtime for explicit durable routing and Semantic Kernel for alignment with the existing application and plugin surface.',
+        'Consider CrewAI or AutoGen only if a measured need for specialist collaboration remains after testing a single orchestrated agent, then prototype the same approval path rather than comparing demos.',
+        'Inject crashes, duplicate resumes, stale approvals, unauthorized tool requests, and version upgrades, score operational effort, and isolate domain adapters before choosing.',
+      ],
+      result: 'The selected framework is supported by evidence from the production-critical path, and the team can change orchestration libraries without rewriting purchasing policy or integrations.',
+    },
+    interview: {
+      prompt: 'How would you conceptually choose among LangChain, Semantic Kernel, CrewAI, and AutoGen?',
+      answer: 'Choose from workflow requirements, not brand categories: LangChain is often useful for composable LLM and retrieval primitives, graph extensions for explicit stateful control, Semantic Kernel for function or plugin integration and process patterns, CrewAI for role-and-task crew ergonomics, and AutoGen for flexible conversational multi-agent systems. Verify current capabilities with the same failure-oriented prototype and prefer the least complex option that meets the controls.',
+    },
+  },
 } satisfies Record<string, AiLessonDetails>

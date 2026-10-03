@@ -3,6 +3,7 @@ import { fdeDeliveryLessonDetails } from './fde-core-content-delivery'
 import { fdePlatformLessonDetails } from './fde-core-content-platform'
 import { fdeSystemsLessonDetails } from './fde-core-content-systems'
 import type { FdeLessonDetails } from './fde-core-lesson-types'
+import { systemDesignFundamentalsMasteryTopics } from './fde-core-mastery-system-design'
 import {
   defineLearningPath,
   type LearningChapterSeed,
@@ -49,16 +50,17 @@ export const fdeCoreLearningPath = defineLearningPath({
       summary: 'Move from requirements to an operable design by estimating scale, defining boundaries, and planning for failure.',
       outcomes: ['Clarify functional and nonfunctional needs', 'Estimate scale', 'Defend an end-to-end design'],
       platformFocus: 'System-design interviews reward a structured conversation more than a memorized diagram.',
+      masteryTopics: systemDesignFundamentalsMasteryTopics,
       examples: [
-        ['Clarify the job', 'Start with actors, workflows, and the outcome the system must produce.', 'For a notification system, ask who sends, who receives, and what delivery guarantee users need.'],
-        ['Name quality attributes', 'Turn words like fast and reliable into measurable targets.', 'Define P95 latency below 500 ms and 99.9% monthly availability.'],
-        ['Estimate load', 'Back-of-the-envelope math determines which constraints matter.', 'Convert ten million daily events into average and peak events per second.'],
-        ['Draw system boundaries', 'Separate clients, services, storage, and external dependencies before adding detail.', 'Place a webhook provider outside the trust boundary and your ingestion API inside it.'],
-        ['Define the data model', 'Identify durable entities, identity, ownership, and lifecycle.', 'Model delivery attempts separately from webhook events so every retry remains auditable.'],
-        ['Design the API', 'Contracts should expose behavior, idempotency, pagination, and errors.', 'Require an idempotency key when a client creates a payment.'],
-        ['Scale stateless work', 'Stateless compute can be replicated behind load balancing.', 'Move session state to a shared store before scaling API instances horizontally.'],
-        ['Absorb bursts', 'Queues decouple arrival rate from processing capacity.', 'Buffer a campaign spike so workers deliver messages at a sustainable rate.'],
-        ['Design failure paths', 'For every dependency, define timeout, retry, fallback, and visibility.', 'Time out a pricing service, return a stale quote with a warning, and emit an alert.'],
+        ['Clarify the job', 'Requirements clarification turns a broad request into a precise system job with named users, outcomes, constraints, and exclusions.', 'For a notification system, ask who sends, who receives, and what delivery guarantee users need.'],
+        ['Name quality attributes', 'Quality attributes are measurable targets for how well a system performs, including latency, availability, durability, security, and recovery.', 'Define P95 latency below 500 ms and 99.9% monthly availability.'],
+        ['Estimate load', 'Load estimation uses simple arithmetic to approximate traffic, concurrency, bandwidth, and storage before choosing architecture.', 'Convert ten million daily events into average and peak events per second.'],
+        ['Draw system boundaries', 'A system boundary shows what each component owns and where data, trust, or failure crosses into another system.', 'Place a webhook provider outside the trust boundary and your ingestion API inside it.'],
+        ['Define the data model', 'A data model defines the durable facts, identities, relationships, states, and invariants a system must preserve.', 'Model delivery attempts separately from webhook events so every retry remains auditable.'],
+        ['Design the API', 'An API is a behavioral contract for operations, identity, validation, errors, retries, concurrency, and completion.', 'Require an idempotency key when a client creates a payment.'],
+        ['Load balancing & stateless services', 'A load balancer distributes traffic across healthy instances; stateless handlers let any instance safely serve the next request.', 'Move session state to a shared store before scaling API instances horizontally.'],
+        ['Absorb bursts', 'A durable queue buffers temporary traffic spikes so producers can accept work faster than bounded consumers process it.', 'Buffer a campaign spike so workers deliver messages at a sustainable rate.'],
+        ['Design failure paths', 'A failure path defines what users, services, and operators do when work times out, partially completes, or cannot continue.', 'Time out a pricing service, return a stale quote with a warning, and emit an alert.'],
       ],
     },
     {
