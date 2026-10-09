@@ -1,5 +1,7 @@
+import { automationLabs } from './labs-automation'
 import { deliveryLabs } from './labs-delivery'
 import { foundationLabs } from './labs-foundation'
+import { governanceLabs } from './labs-governance'
 import { operateLabs } from './labs-operate'
 import { scaleLabs } from './labs-scale'
 import { forPlatform, labPlatforms, type Lab, type LabSeed, type LabTask, type PlatformText } from './types'
@@ -7,7 +9,9 @@ import { forPlatform, labPlatforms, type Lab, type LabSeed, type LabTask, type P
 const labSeeds: readonly LabSeed[] = [
   ...foundationLabs,
   ...scaleLabs,
+  ...automationLabs,
   ...deliveryLabs,
+  ...governanceLabs,
   ...operateLabs,
 ]
 

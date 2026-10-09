@@ -22,7 +22,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <ClerkProvider>{children}</ClerkProvider>
+        <ClerkProvider>
+          {children}
+          <footer className="site-branding">Build by Atif shaikh</footer>
+        </ClerkProvider>
       </body>
     </html>
   )
